@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tune">Abstimmen</string>
+    <string name="heard">%1$s mit %2$d dB gehört</string>
+    <plurals name="stations_heard">
+        <item quantity="one">%d Station gehört</item>
+        <item quantity="other">%d Stationen gehört</item>
+    </plurals>
+</resources>

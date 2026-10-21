@@ -1,0 +1,5 @@
+{
+  "app": {"title": "Funkkonsole"},
+  "heard": "{name} gehört",
+  "stations": {"one": "eine Station", "other": "{n} Stationen"}
+}

@@ -1,0 +1,14 @@
+# OpenHamShack controller pads (shack_pad), from the OpenHamShack box's
+# 91-openhamshack-pad.rules. Only group shack-input can read them: on the
+# controller that is the shack-input host service, never an app
+# (CONTROLLER-PAD.md §6.1). On a Linux desktop, add the operator to
+# shack-input instead.
+#
+# Ajazz AKP03E: its hidraw nodes (input0 is the pad; input1, its keyboard
+# face, is given too but never opened as the pad).
+KERNEL=="hidraw*", ATTRS{idVendor}=="0300", ATTRS{idProduct}=="3002", MODE="0660", GROUP="shack-input"
+# A USB keypad or keyboard the operator chose (and only that: shack-keypad
+# checks the chosen list). libinput is told to leave it alone, so its keys
+# never type into the screen as well; the host grabs it besides. Takes
+# effect when it is next plugged in.
+SUBSYSTEM=="input", KERNEL=="event*", ACTION!="remove", PROGRAM="/usr/local/sbin/shack-keypad %k", MODE="0660", GROUP="shack-input", ENV{LIBINPUT_IGNORE_DEVICE}="1"

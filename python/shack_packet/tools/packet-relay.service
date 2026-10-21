@@ -1,0 +1,34 @@
+# The packet link-test relay (packet_relay.py) on the OpenHamShack
+# controller box. Listens on 127.0.0.1 only; `tailscale serve --bg --tcp
+# 30480 tcp://127.0.0.1:30480` puts it on the tailnet and nowhere else.
+# Installed as /etc/systemd/system/ohs-packet-relay.service, the script as
+# /opt/ohs-packet-relay/packet_relay.py. Runs as shack so the session logs
+# under /var/lib/ohs-packet-relay/sessions are that account's to read.
+#
+#   sudo systemctl stop ohs-packet-relay        # stop it
+#   sudo systemctl disable --now ohs-packet-relay && sudo tailscale serve --tcp 30480 off   # remove it
+
+[Unit]
+Description=OpenHamShack packet link-test relay (tailnet only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=shack
+Group=shack
+ExecStart=/usr/bin/python3 /opt/ohs-packet-relay/packet_relay.py --listen 127.0.0.1:30480 --log-dir /var/lib/ohs-packet-relay/sessions
+StateDirectory=ohs-packet-relay
+StateDirectoryMode=0755
+UMask=0022
+Restart=on-failure
+RestartSec=2
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ReadWritePaths=/var/lib/ohs-packet-relay
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target

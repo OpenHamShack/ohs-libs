@@ -1,0 +1,68 @@
+{
+  "schema": 1,
+  "id": "pts-2025",
+  "title": "Swedish amateur exemption (PTSFS 2025:1)",
+  "short": "Sweden (PTS)",
+  "authority": "Post- och telestyrelsen (PTS)",
+  "countries": ["SE"],
+  "plan": "",
+  "status": "researched",
+  "partial": true,
+  "coverage": {"loHz": 135700, "hiHz": 10500000000},
+  "gaps": [],
+  "source": {"title": "PTSFS 2025:1, Post- och telestyrelsens föreskrifter om undantag från tillståndsplikt för användning av vissa radiosändare, 3 kap. (Amatörradiotrafik)", "url": "https://pts.se/contentassets/b05c8a7d01a64783aafc6a19e1b78590/ptsfs-2025-1-foreskrifter-om-undantag-fran-tillstandsplikt-for-anvandning-av-vissa-radiosandare.pdf", "version": "Beslutade 20 februari 2025, utkom 4 mars 2025, in force 17 March 2025", "date": "2025-02-20", "checked": "2026-10-08", "sha256": "bd9ece78d49dcd45691cbdef8414e5c8fee089cd0f923ee483fcdc73dc4d571d"},
+  "classes": [
+    {"id": "insteg", "name": "Entry certificate (instegscertifikat)"},
+    {"id": "certifikat", "name": "Amateur radio certificate"}
+  ],
+  "edges": "closed",
+  "allocations": [
+    {"loHz": 135700, "hiHz": 137800, "limits": {"certifikat": [{"watts": 1, "unit": "ERP"}]}, "note": "", "src": "P1 27 § p.14"},
+    {"loHz": 472000, "hiHz": 479000, "limits": {"certifikat": [{"watts": 1, "unit": "EIRP"}]}, "note": "", "src": "P1 35 § p.15"},
+    {"loHz": 1810000, "hiHz": 1850000, "limits": {"certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 38 § p.16"},
+    {"loHz": 1850000, "hiHz": 1900000, "limits": {"certifikat": [{"watts": 10, "unit": "PEP"}]}, "note": "", "src": "P1 39 § p.16"},
+    {"loHz": 1900000, "hiHz": 1950000, "limits": {"certifikat": [{"watts": 100, "unit": "PEP"}]}, "note": "", "src": "P1 40 § p.16"},
+    {"loHz": 1950000, "hiHz": 2000000, "limits": {"certifikat": [{"watts": 10, "unit": "PEP"}]}, "note": "", "src": "P1 41 § p.16"},
+    {"loHz": 3500000, "hiHz": 3800000, "limits": {"certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 43 § p.16"},
+    {"loHz": 5351500, "hiHz": 5366500, "limits": {"certifikat": [{"watts": 15, "unit": "EIRP"}]}, "note": "", "src": "P1 46 § p.16"},
+    {"loHz": 7000000, "hiHz": 7200000, "limits": {"insteg": [{"watts": 25, "unit": "PEP"}], "certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 48 § p.16, 49 § p.17"},
+    {"loHz": 10100000, "hiHz": 10150000, "limits": {"certifikat": [{"watts": 150, "unit": "PEP"}]}, "note": "", "src": "P1 52 § p.17"},
+    {"loHz": 14000000, "hiHz": 14350000, "limits": {"insteg": [{"watts": 25, "unit": "PEP"}], "certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 59 §, 60 § p.18"},
+    {"loHz": 18068000, "hiHz": 18168000, "limits": {"certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 61 § p.18"},
+    {"loHz": 21000000, "hiHz": 21450000, "limits": {"insteg": [{"watts": 25, "unit": "PEP"}], "certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 62 §, 63 § p.18"},
+    {"loHz": 24890000, "hiHz": 24990000, "limits": {"certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 64 § p.18"},
+    {"loHz": 28000000, "hiHz": 29700000, "limits": {"insteg": [{"watts": 25, "unit": "PEP"}], "certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 85 §, 86 § p.21"},
+    {"loHz": 50000000, "hiHz": 52000000, "limits": {"insteg": [{"watts": 25, "unit": "PEP"}], "certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 98 §, 99 § p.23"},
+    {"loHz": 144000000, "hiHz": 146000000, "limits": {"insteg": [{"watts": 25, "unit": "ERP"}], "certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "entry certificate: 25 W ERP", "src": "P1 103 §, 104 § p.23"},
+    {"loHz": 432000000, "hiHz": 438000000, "limits": {"certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 123 § p.26"},
+    {"loHz": 1240000000, "hiHz": 1300000000, "limits": {"certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 154 § p.34"},
+    {"loHz": 2400000000, "hiHz": 2450000000, "limits": {"certifikat": [{"watts": 0.1, "unit": "PEP"}]}, "note": "100 mW PEP; more needs a PTS permit", "src": "P1 185 § p.47"},
+    {"loHz": 5650000000, "hiHz": 5850000000, "limits": {"certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 203 § p.51"},
+    {"loHz": 10000000000, "hiHz": 10500000000, "limits": {"certifikat": [{"watts": 200, "unit": "PEP"}]}, "note": "", "src": "P1 213 § p.53"}
+  ],
+  "channelled": [],
+  "emissions": [],
+  "refused": [
+    {"loHz": 69900000, "hiHz": 70500000, "text": "70 MHz is not an amateur band in Sweden: it needs a temporary permit from PTS", "src": "se.md s.3.1, s.3.2"},
+    {"loHz": 430000000, "hiHz": 432000000, "text": "430-432 MHz is not an amateur band in Sweden", "src": "se.md s.3.1, s.3.2"},
+    {"loHz": 438000000, "hiHz": 440000000, "text": "438-440 MHz is not an amateur band in Sweden", "src": "se.md s.3.1, s.3.2"},
+    {"loHz": 2300000000, "hiHz": 2400000000, "text": "2300-2400 MHz is not an amateur band in Sweden: PTS auctioned it", "src": "se.md s.3.1, s.3.2"},
+    {"loHz": 3400000000, "hiHz": 3410000000, "text": "3.4 GHz is not an amateur band in Sweden", "src": "se.md s.3.1, s.3.2"}
+  ],
+  "permits": [],
+  "conditions": [],
+  "satellite": [
+    {"loHz": 2400000000, "hiHz": 2450000000, "direction": "both", "src": "P1 185 § p.47; se.md s.4"}
+  ],
+  "cept": {"T/R 61-01": ["certifikat"], "T/R 61-02": ["certifikat"]},
+  "ceptSrc": "PTSFS 2025:1 27 §; CEPT T/R 61-01 Annex 2 (16 Feb 2024) p.7 notes 15-16; ECC/REC/(05)06 Annex 2 p.5",
+  "ceptVisitor": {"T/R 61-01": "certifikat"},
+  "notes": [
+    {"topic": "identification", "text": "Send the call sign at the start and end of each contact, and repeat it at short intervals while it continues.", "src": "P1 27 § p.14"},
+    {"topic": "ce-marking", "text": "An entry certificate may be used only with CE-marked transmitters: not a home-built or modified one, nor a software-defined radio not marked as an amateur transmitter.", "src": "P1 49 § p.17"},
+    {"topic": "unattended", "text": "An entry certificate gives no right to automatic stations or remote control.", "src": "P1 49 § p.17"},
+    {"topic": "automatic", "text": "Beacons, repeaters and position transmitters must identify regularly with the responsible person's call sign.", "src": "P1 27 § p.14"},
+    {"topic": "permit", "text": "Higher power (up to 1 kW), 70 MHz and more than 100 mW on 2400-2450 MHz need an individual PTS permit; OpenHamShack holds the exemption's limits.", "src": "se.md s.1, s.3.1"}
+  ],
+  "partialWhy": "Researched on 08/10/2026 from the cited instrument and not yet second-checked; what the transcription left out is listed in its module docstring and in openhamshack-nb docs/ham/countries/se.md"
+}

@@ -1,0 +1,67 @@
+#!/bin/sh
+# Everything ohs-libs checks before a release (REPO-LAYOUT.md §3): every
+# package's tests, the packaging kit's descriptor tests, every vector set,
+# the band-plan validator, the gettext templates, the i18n check on this
+# repository itself, and one version
+# for every artefact.
+#
+# Usage: tools/test.sh            (uses $SHACK_PY, else ~/build/venvs/ohs-libs/bin/python)
+#
+# Each package runs in its own pytest process: they share test file names
+# (test_vectors.py), and a package must pass on its own, as it is released.
+# Temporary files go under ~/build, never /tmp (a small tmpfs every session
+# on the host shares; the sync vectors write 10,000-record databases).
+set -eu
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
+PY=${SHACK_PY:-$HOME/build/venvs/ohs-libs/bin/python}
+BASETEMP=${SHACK_TEST_TMP:-$HOME/build/pytest-ohs-libs-$$}
+export PYTHONDONTWRITEBYTECODE=1
+trap 'rm -rf "$BASETEMP"' EXIT
+cd "$ROOT"
+mkdir -p "$BASETEMP"
+
+fail=0
+step() { printf '\n== %s\n' "$1"; }
+
+step "one version everywhere"
+"$PY" - <<'PY' || fail=1
+import pathlib, re, sys, tomllib
+root = pathlib.Path(".")
+want = (root / "VERSION").read_text().strip()
+bad = []
+for pp in sorted(root.glob("python/*/pyproject.toml")):
+    got = tomllib.loads(pp.read_text())["project"]["version"]
+    if got != want:
+        bad.append(f"{pp}: {got}")
+for init in sorted(root.glob("python/*/src/*/__init__.py")):
+    m = re.search(r'^__version__ = "([^"]+)"', init.read_text(), re.M)
+    if m and m.group(1) != want:
+        bad.append(f"{init}: {m.group(1)}")
+for b in bad:
+    print(f"{b} differs from VERSION {want}")
+sys.exit(1 if bad else 0)
+PY
+
+step "band-plan dataset"
+"$PY" -m shack_bandplan.validate data/bandplan || fail=1
+
+step "gettext templates"
+"$PY" tools/extract_pot.py --check || fail=1
+
+step "i18n check on ohs-libs"
+"$PY" -m shack_i18n.check || fail=1
+
+for pkg in python/*/; do
+    [ -d "$pkg/tests" ] || continue
+    step "tests: $pkg"
+    "$PY" -m pytest -q -p no:cacheprovider --basetemp="$BASETEMP/$(basename "$pkg")" "$pkg/tests" || fail=1
+done
+
+step "tests: packaging/"
+"$PY" -m pytest -q -p no:cacheprovider --basetemp="$BASETEMP/packaging" packaging/tests || fail=1
+
+if [ "$fail" -ne 0 ]; then
+    printf '\nFAILED\n'
+    exit 1
+fi
+printf '\nall green\n'

@@ -1,0 +1,5 @@
+# Build and test by-products of this package (pip install -e, pytest, build).
+*.egg-info/
+__pycache__/
+build/
+dist/

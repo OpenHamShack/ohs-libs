@@ -1,0 +1,145 @@
+{
+ "id": "T8",
+ "spec": "SYNC.md §8 T8",
+ "title": "Store's clock 2 days fast: clock_ahead; offset re-measured, unacked ops re-stamped; no future HLC on the controller",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {
+   "skewMs": 172800000
+  },
+  "B": {}
+ },
+ "steps": [
+  {
+   "do": "profile",
+   "store": "A",
+   "set": {
+    "callsign": "GM4BRI"
+   }
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "update",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "rst_rcvd": "57"
+   }
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C1"
+  },
+  {
+   "do": "add",
+   "store": "B",
+   "id": "00000000-0000-7000-8000-000000000002",
+   "fields": {
+    "call": "F4XYZ",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  },
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "tick",
+   "ms": 1000
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  },
+  {
+   "do": "update",
+   "store": "B",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "rst_rcvd": "59"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  }
+ ],
+ "expect": [
+  {
+   "noFutureHlc": {
+    "controller": "C1"
+   }
+  },
+  {
+   "count": {
+    "where": [
+     "A",
+     "B",
+     "C1"
+    ],
+    "collection": "logbook",
+    "live": 2
+   }
+  },
+  {
+   "record": {
+    "where": [
+     "A",
+     "B",
+     "C1"
+    ],
+    "collection": "logbook",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "live": true,
+    "fields": {
+     "call": "DL1ABC",
+     "rst_rcvd": "59"
+    }
+   }
+  },
+  {
+   "converged": {
+    "where": [
+     "A",
+     "B",
+     "C1"
+    ],
+    "collection": "logbook"
+   }
+  }
+ ],
+ "runner": "script"
+}

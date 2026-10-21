@@ -1,0 +1,10 @@
+# What the AppImage build installs besides the app's own requirements.
+# Pinned: a new PyInstaller or PyGObject changes what ships.
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.8
+# PyGObject 3.48 is the last series on libgirepository-1.0: 3.50+ needs
+# girepository-2.0 from GLib 2.80, which bookworm (2.74) does not have,
+# and the 1.0 library is what hosts from bookworm to trixie and Ubuntu
+# 22.04-24.04 all still carry.
+PyGObject==3.48.2
+pycairo==1.26.1

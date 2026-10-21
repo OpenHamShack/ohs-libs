@@ -1,0 +1,67 @@
+{
+ "id": "T9",
+ "spec": "SYNC.md §8 T9",
+ "title": "Store's clock reads 1970: HLCs at or above the clock floor",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {
+   "clock": "1970-01-01T00:00:10Z"
+  }
+ },
+ "steps": [
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "profile",
+   "store": "A",
+   "set": {
+    "callsign": "GM4BRI"
+   }
+  },
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  }
+ ],
+ "expect": [
+  {
+   "hlcAtLeastFloor": {
+    "store": "A"
+   }
+  },
+  {
+   "hlcAtLeastFloor": {
+    "store": "C1"
+   }
+  },
+  {
+   "count": {
+    "where": [
+     "C1"
+    ],
+    "collection": "logbook",
+    "live": 1
+   }
+  }
+ ],
+ "runner": "script"
+}

@@ -1,0 +1,23 @@
+# Template for the server's own sentences.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+#: srv/app.py:8
+msgid "This device is held by another app."
+msgstr ""
+
+#: srv/app.py:9
+msgid "The pairing code has expired."
+msgstr ""
+
+#: srv/app.py:14
+msgid ""
+"Type a licence "
+"name."
+msgstr ""
+
+msgid "{n} station heard"
+msgid_plural "{n} stations heard"
+msgstr[0] ""
+msgstr[1] ""

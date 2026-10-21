@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "app": "qo100wb",
+  "actions": [
+    {"id": "transmit", "kind": "press", "arm": true, "tx": true, "single": true, "label": "pad.transmit", "group": "transmit"},
+    {"id": "preview", "kind": "press", "label": "pad.preview", "group": "transmit", "short": ["PREV", ""]},
+    {"id": "record", "kind": "press", "label": "pad.record", "group": "receive"},
+    {"id": "source", "kind": "press", "label": "pad.source", "group": "transmit", "short": ["SRC", ""]},
+    {"id": "screens", "kind": "press", "label": "pad.screens", "group": "screens", "short": ["SPLIT", "screen"]},
+    {"id": "aim", "kind": "press", "label": "pad.aim", "group": "receive", "short": ["RX", ""]},
+    {"id": "tx-preset", "kind": "press", "label": "pad.tx_preset", "group": "transmit", "short": ["TX", "band"]},
+    {"id": "rx-preset", "kind": "press", "label": "pad.rx_preset", "group": "receive", "short": ["RX", "band"]},
+    {"id": "modcod", "kind": "press", "label": "pad.modcod", "group": "transmit", "short": ["MOD", ""]},
+    {"id": "power", "kind": "turn", "label": "pad.power", "group": "transmit", "short": ["PWR", "dB"]},
+    {"id": "rx-cycle", "kind": "press", "label": "pad.rx_cycle", "group": "receive", "short": ["RX", "grid"], "needs": ["rx_cycle"]},
+    {"id": "rx-tune", "kind": "turn", "label": "pad.rx_tune", "group": "receive", "short": ["RX", "MHz"]},
+    {"id": "symbol-rate", "kind": "turn", "label": "pad.symbol_rate", "group": "transmit", "short": ["SR", "kS"]}
+  ]
+}

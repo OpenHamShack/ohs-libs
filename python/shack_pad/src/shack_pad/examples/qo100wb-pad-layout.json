@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "ajazz-akp03e": {
+    "K1": {"press": "transmit"}, "K2": {"press": "preview"}, "K3": {"press": "record"},
+    "K4": {"press": "source"}, "K5": {"press": "screens"}, "K6": {"press": "aim"},
+    "B1": {"press": "tx-preset"}, "B2": {"press": "rx-preset"}, "B3": {"press": "modcod"},
+    "D1": {"press": "none", "turn": "power"}, "D2": {"press": "rx-cycle", "turn": "rx-tune"},
+    "D3": {"press": "none", "turn": "symbol-rate"}
+  },
+  "keypad": {
+    "NUMLOCK": {"press": "none"}, "KPSLASH": {"press": "rx-cycle"}, "KPASTERISK": {"press": "aim"},
+    "KPMINUS": {"press": "rx-tune:down"}, "KPPLUS": {"press": "rx-tune:up"},
+    "KP7": {"press": "tx-preset"}, "KP8": {"press": "rx-preset"}, "KP9": {"press": "modcod"},
+    "KP4": {"press": "power:down"}, "KP5": {"press": "symbol-rate:up"}, "KP6": {"press": "power:up"},
+    "KP1": {"press": "source"}, "KP2": {"press": "screens"}, "KP3": {"press": "record"},
+    "KP0": {"press": "preview"}, "KPDOT": {"press": "none"}, "KPENTER": {"press": "transmit"}
+  }
+}

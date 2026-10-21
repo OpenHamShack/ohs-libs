@@ -1,0 +1,12 @@
+{
+  "app": {"title": "Radio console"},
+  "station": "Station",
+  "ptt": "PTT",
+  "ptt.tip": "Push to talk",
+  "intro": "Nested text under a translated element",
+  "usb": "Upper sideband",
+  "tx": {"blocked": "Transmit blocked"},
+  "heard": "Heard {name}",
+  "ready": "Ready",
+  "stations": {"one": "{n} station", "other": "{n} stations"}
+}

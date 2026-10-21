@@ -1,0 +1,9 @@
+# I18N.md §3.3's example, except that its "S9+" and "fakebox" can never be
+# findings (no two letters in a row; an all-lower-case identifier), so as
+# entries they would be stale. See test_allow.py.
+# glob | "literal" (exact, JSON-quoted) | reason (required)
+ohsnb/ui/smeter.py         | "S9+40dB" | S-meter scale marking, not language
+ohsradio/ui/bandbar.py       | "IBP"     | the NCDXF/IARU beacon project's name
+*                         | "GM4BRI"  | the test station's callsign, data
+android/**/DebugPanel.kt  | "Fakebox" | debug build only, never shown to users
+ohsnb/ui/*.py              | "Pipe | inside" | the literal is JSON, so "|" may appear in it

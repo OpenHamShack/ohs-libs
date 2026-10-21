@@ -1,0 +1,18 @@
+#!/bin/sh
+# Mirror image of postinst: refresh the same caches on remove/purge so a
+# stale menu entry or icon doesn't linger. Same rule - a missing tool must
+# never turn an uninstall into a failure.
+set -e
+
+case "$1" in
+    remove|purge)
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database -q /usr/share/applications 2>/dev/null || true
+        fi
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+            gtk-update-icon-cache -q -f /usr/share/icons/hicolor 2>/dev/null || true
+        fi
+        ;;
+esac
+
+exit 0

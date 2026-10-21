@@ -1,0 +1,14 @@
+{
+  "schema": 1,
+  "ajazz-akp03e": {
+    "K1": {"press": "ptt"}, "K2": {"press": "mute"}, "K3": {"press": "record"},
+    "K4": {"press": "mode:next"}, "K5": {"press": "scope"}, "K6": {"press": "step"},
+    "B1": {"press": "band:next"}, "B2": {"press": "none"}, "B3": {"press": "page"},
+    "D1": {"press": "none", "turn": "volume"}, "D2": {"press": "step", "turn": "tune"},
+    "D3": {"press": "none", "turn": "band"}
+  },
+  "keypad": {
+    "KPENTER": {"press": "ptt"}, "KPPLUS": {"press": "tune:up"}, "KPMINUS": {"press": "tune:down"},
+    "KP0": {"press": "mute"}, "KP1": {"press": "mode:next"}, "KP2": {"press": "step"}
+  }
+}

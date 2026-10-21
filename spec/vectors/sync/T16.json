@@ -1,0 +1,95 @@
+{
+ "id": "T16",
+ "spec": "SYNC.md §8 T16",
+ "title": "10,000 records pulled in pages while another store keeps writing: no record missed; all converge",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {},
+  "B": {}
+ },
+ "steps": [
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "addMany",
+   "store": "A",
+   "count": 10000,
+   "idPrefix": "00000000-0000-7000-8001-"
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C1",
+   "pageLimit": 500,
+   "duringEachPage": [
+    {
+     "do": "tick",
+     "ms": 10
+    },
+    {
+     "do": "add",
+     "store": "A",
+     "idFromPage": "00000000-0000-7000-8002-",
+     "fields": {
+      "call": "PAGE",
+      "start": "2026-10-09T10:12:30Z"
+     }
+    },
+    {
+     "do": "update",
+     "store": "A",
+     "id": "00000000-0000-7000-8001-000000000042",
+     "fieldsFromPage": "comment"
+    },
+    {
+     "do": "sync",
+     "store": "A"
+    }
+   ]
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  }
+ ],
+ "expect": [
+  {
+   "converged": {
+    "where": [
+     "A",
+     "B",
+     "C1"
+    ],
+    "collection": "logbook"
+   }
+  },
+  {
+   "countAtLeast": {
+    "where": [
+     "B"
+    ],
+    "collection": "logbook",
+    "live": 10020
+   }
+  }
+ ],
+ "runner": "script"
+}

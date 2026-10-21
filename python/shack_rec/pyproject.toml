@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-rec"
+version = "0.1.0"
+description = "OpenHamShack recordings on the controller: receive audio as FLAC, the recordings folder with its disk limit and free-space floor, and HTTP range requests for playback"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# numpy, as shack_cw and shack_dsp: the FLAC encoder is a few vector
+# operations a block, and every app with receive audio already ships numpy.
+# No codec library: see flac.py for why the encoder is our own.
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+shack_rec = ["locale/*.pot", "locale/*/LC_MESSAGES/*.mo"]

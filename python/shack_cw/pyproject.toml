@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-cw"
+version = "0.1.0"
+description = "OpenHamShack CW: the Morse decoder every receiving app shares (any sample rate, the speed learnt from the sender), the Morse tables and keying envelopes, and the bench that measures the decoder"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# numpy, as the decoder always had in NB: the per-frame work is a few small
+# matrix products, and every app with receive audio already ships numpy.
+# The first ohs-libs package that is not standard library only.
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# The neural engine's weights (shack_cw.nn): ours, NumPy-loadable, 270 kB.
+# Frozen desktop builds collect package data the same way.
+[tool.setuptools.package-data]
+"shack_cw.nn" = ["*.npz"]

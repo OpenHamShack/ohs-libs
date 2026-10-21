@@ -1,0 +1,26 @@
+# Where ohscore/data/cty.dat and cty.dat-copyright.txt came from, and their
+# hashes. Written by tools/cty-refresh.py, which also checks the two files
+# against it (the suite runs that check, tests/test_cty_bundled.py); edit
+# it by running the tool, not by hand.
+#
+# The edition is AD1C's "Big CTY" (https://www.country-files.com/big-cty/),
+# the size of cty.dat WSJT-X and Debian's hamradio-files carry (the copy
+# a Debian 13 wsjtx installs is Big CTY of June 2025): the contest edition
+# of the same date has an eighth of its exact calls - 2,708 against
+# 22,951 in the 15/09/2026 pair - and the rest are the special-event and
+# DXpedition calls back to 2000 that FT8 is full of. The zip's other files (cty.csv, swiftlog_cty.dat,
+# README, HISTORY) are not carried.
+#
+# Licence (copyright.txt in the zip, and https://www.country-files.com/copyright/,
+# both read 08/10/2026): the MIT licence, with "Copyright © 1994-" and no
+# holder named on either - the files are Jim Reisert AD1C's. It permits
+# copying and redistribution with the notice included, which is why
+# cty.dat-copyright.txt travels beside cty.dat everywhere it is shipped.
+#
+# Fields, "|"-separated:
+#   zip  | file | sha256 | url        the download, unmodified
+#   file | name | sha256 | member     a file in ohscore/data, and the zip member it is, byte for byte
+
+zip  | bigcty-20260915.zip | 8481ebb66692971d54b10a95fcbc0ae05116ad511322971c267f497a64b27112 | https://www.country-files.com/bigcty/download/2026/bigcty-20260915.zip
+file | cty.dat | 887d44ed2ae0b4f108b1a50672a8fcb6e8fe4c9601a1fdb644269a7e2ce3a646 | cty.dat
+file | cty.dat-copyright.txt | 0a60141339ea3a48d067065fa0aeadd776892aa7f029bafe17adb2109bc0c219 | copyright.txt

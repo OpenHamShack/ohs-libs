@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-client"
+version = "0.1.0"
+description = "OpenHamShack local logbook and station profile, offline first, with controller sync"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+dependencies = []
+
+[project.optional-dependencies]
+discovery = ["zeroconf>=0.131"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+# The English template ships with the package so a translator, or an app
+# bundling its own catalogs, starts from the sentences this exact version
+# says; compiled catalogs (.mo) are what gettext loads at run time.
+shack_client = ["locale/*.pot", "locale/*/LC_MESSAGES/*.mo"]

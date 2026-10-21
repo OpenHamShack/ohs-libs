@@ -1,0 +1,4 @@
+# What the macOS build installs besides the app's own requirements
+# (pywebview brings PyObjC). Pinned: a new PyInstaller changes what ships.
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.8

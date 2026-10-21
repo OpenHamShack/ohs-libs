@@ -1,0 +1,110 @@
+{
+ "id": "T6",
+ "spec": "SYNC.md §8 T6",
+ "title": "Edit with a greater HLC than a delete: live, with the edit; history shows both",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {},
+  "B": {}
+ },
+ "steps": [
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C1"
+  },
+  {
+   "do": "tick",
+   "ms": 1000
+  },
+  {
+   "do": "delete",
+   "store": "B",
+   "id": "00000000-0000-7000-8000-000000000001"
+  },
+  {
+   "do": "tick",
+   "ms": 1000
+  },
+  {
+   "do": "update",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "comment": "still here"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  }
+ ],
+ "expect": [
+  {
+   "record": {
+    "where": [
+     "A",
+     "B",
+     "C1"
+    ],
+    "collection": "logbook",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "live": true,
+    "fields": {
+     "comment": "still here",
+     "call": "DL1ABC"
+    }
+   }
+  },
+  {
+   "history": {
+    "controller": "C1",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "edits": 3,
+    "kinds": [
+     "create",
+     "delete",
+     "update"
+    ]
+   }
+  }
+ ],
+ "runner": "script"
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhamshack.com/schemas/pad-actions-1.json",
+  "title": "pad-actions.json: what an app's pad can do (CONTROLLER-PAD.md §3)",
+  "description": "The shape only. Rules across fields (only ptt/transmit set tx; ptt holds, transmit arms; shared vocabulary kinds) are checked by shack_pad.actions.validate.",
+  "type": "object",
+  "required": ["schema", "app", "actions"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"const": 1},
+    "app": {"type": "string", "minLength": 1},
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "label"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9:-]{0,47}$"},
+          "kind": {"enum": ["press", "turn"]},
+          "label": {"type": "string", "pattern": "^[a-z0-9_]+(\\.[a-z0-9_-]+)+$"},
+          "group": {"enum": ["transmit", "receive", "audio", "screens", "other"]},
+          "short": {"type": "array", "items": {"type": "string"}, "minItems": 2, "maxItems": 2},
+          "icon": {"type": "string"},
+          "tx": {"type": "boolean"},
+          "hold": {"type": "boolean"},
+          "arm": {"type": "boolean"},
+          "single": {"type": "boolean"},
+          "needs": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

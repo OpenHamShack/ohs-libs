@@ -1,0 +1,20 @@
+#!/bin/sh
+# Refresh the desktop and icon caches so the launcher and icon show up
+# without a logout. Each tool is optional: a minimal or container install
+# may not have update-desktop-database or gtk-update-icon-cache, and a
+# missing cache-refresh tool is cosmetic (the entry appears at the next
+# login anyway), never a reason to fail the package install.
+set -e
+
+case "$1" in
+    configure)
+        if command -v update-desktop-database >/dev/null 2>&1; then
+            update-desktop-database -q /usr/share/applications 2>/dev/null || true
+        fi
+        if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+            gtk-update-icon-cache -q -f /usr/share/icons/hicolor 2>/dev/null || true
+        fi
+        ;;
+esac
+
+exit 0

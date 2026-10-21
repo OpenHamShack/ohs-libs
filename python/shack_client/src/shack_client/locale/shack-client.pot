@@ -1,0 +1,57 @@
+# English template for the shack-client domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-client\n"
+
+#: python/shack_client/src/shack_client/station.py
+msgid "A contact needs a callsign"
+msgstr ""
+
+#: python/shack_client/src/shack_client/station.py
+msgid "A contact needs a start time"
+msgstr ""
+
+#: python/shack_client/src/shack_client/controller.py
+msgid "A sync push carries at most 500 records."
+msgstr ""
+
+#: python/shack_client/src/shack_client/controller.py
+msgid "Changing the station profile needs the Transmit level."
+msgstr ""
+
+#: python/shack_client/src/shack_client/station.py
+msgid "The choice is merge or use-controller"
+msgstr ""
+
+#: python/shack_client/src/shack_client/transport.py
+msgid "The controller answered with something that is not JSON."
+msgstr ""
+
+#: python/shack_client/src/shack_client/station.py
+msgid "The start time {start} is not an ISO date and time"
+msgstr ""
+
+#: python/shack_client/src/shack_client/station.py
+msgid "There is no contact with that id in this logbook"
+msgstr ""
+
+#: python/shack_client/src/shack_client/discovery.py
+msgid "This controller is newer than this app: update the app to use it"
+msgstr ""
+
+#: python/shack_client/src/shack_client/controller.py
+msgid "This controller's sync history was restored from a backup; syncing again from the start."
+msgstr ""
+
+#: python/shack_client/src/shack_client/discovery.py
+msgid "{address} is not an OpenHamShack controller"
+msgstr ""
+
+#: python/shack_client/src/shack_client/station.py
+msgid "{locator} is not a Maidenhead locator (4, 6 or 8 characters)"
+msgstr ""
+
+#: python/shack_client/src/shack_client/station.py
+msgid "{name} is not a logbook field name: fields are lower-case ADIF names"
+msgstr ""

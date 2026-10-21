@@ -1,0 +1,19 @@
+<!doctype html>
+<html>
+<head>
+  <title data-i18n="app.title">Radio console</title>
+  <script>document.title = "Not checked here";</script>
+</head>
+<body>
+  <h1 data-i18n="station">Station</h1>
+  <button data-i18n="ptt" data-i18n-attr="title:ptt.tip" title="Push to talk">PTT</button>
+  <div data-i18n="intro"><b>Nested</b> text under a translated element</div>
+  <code>rigctl -m 3073</code>
+  <pre>Log lines stay as they are</pre>
+  <span translate="no">GM4BRI IO75RL</span>
+  <option value="Upper sideband" data-i18n="usb">Upper sideband</option>
+  <p>— 14.074 —</p>
+  <p>{% if tx %}{{ freq }}{% endif %}</p>
+  <input type="text" value="Not a button">
+</body>
+</html>

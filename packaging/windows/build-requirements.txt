@@ -1,0 +1,9 @@
+# What the Windows build installs besides the app's own requirements.
+# Pinned: a new PyInstaller or pythonnet changes what ships.
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.8
+# pywebview's WebView2 backend runs through pythonnet (on the .NET
+# Framework 4.x every Windows 10/11 has); pywebview itself leaves it
+# unpinned.
+pythonnet==3.2.1
+clr_loader==0.3.1

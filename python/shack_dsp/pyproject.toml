@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-dsp"
+version = "0.1.0"
+description = "OpenHamShack DSP for receive audio: NR2, the spectral noise reduction every rig app runs on the server, and the bench that measures it"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# numpy, as shack_cw: two FFTs and a dozen vector operations a frame, and
+# every app with receive audio already ships numpy.
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

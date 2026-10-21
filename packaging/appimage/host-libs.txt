@@ -1,0 +1,46 @@
+# Libraries removed from the frozen bundle so the host's are used: the
+# AppImage borrows the host's GTK and WebKitGTK (README.md), and those load
+# the host's GLib, cairo, X11/Wayland and C++ runtime. A bundled copy from
+# bookworm would be found first (PyInstaller puts its folder on the library
+# path) and, being older, break the host's newer WebKitGTK with missing
+# symbols. One shell glob per line, matched against file names in the
+# bundle's _internal folder.
+libglib-2.0.so*
+libgobject-2.0.so*
+libgio-2.0.so*
+libgmodule-2.0.so*
+libgthread-2.0.so*
+libgirepository-1.0.so*
+libcairo.so*
+libcairo-gobject.so*
+libpixman-1.so*
+libpango*.so*
+libharfbuzz*.so*
+libfreetype.so*
+libfontconfig.so*
+libpng16.so*
+libX*.so*
+libxcb*.so*
+libwayland*.so*
+libgtk-3.so*
+libgdk-3.so*
+libgdk_pixbuf*.so*
+libwebkit2gtk*.so*
+libjavascriptcoregtk*.so*
+libepoxy.so*
+libatk*.so*
+libdbus-1.so*
+libsystemd.so*
+libmount.so*
+libblkid.so*
+libselinux.so*
+libpcre2*.so*
+libexpat.so*
+libuuid.so*
+libbrotli*.so*
+libstdc++.so*
+libgcc_s.so*
+libz.so*
+libbz2.so*
+liblzma.so*
+libzstd.so*

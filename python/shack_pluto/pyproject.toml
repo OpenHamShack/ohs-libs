@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-pluto"
+version = "0.1.0"
+description = "OpenHamShack Pluto family: firmware identity, the on-device transmitter guard, range and the AD9364 enable, XO calibration per Pluto"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# The core is stdlib only. libiio comes from the caller (each app already
+# has its own import of the bindings, with its own trap: openhamshack-nb
+# import_iio); SSH is paramiko, in the extra, because every desktop bundle
+# already carries cryptography and paramiko is pure Python on top of it.
+dependencies = []
+
+[project.optional-dependencies]
+ssh = ["paramiko>=3.4"]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

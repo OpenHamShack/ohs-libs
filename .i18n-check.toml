@@ -1,0 +1,27 @@
+# shack-i18n-check on ohs-libs itself (I18N.md §5 item 1).
+#
+# Excluded, with why:
+# - every package's tests/: the checker's own fixtures are wrong on
+#   purpose, and test assertions are not shown to anyone;
+# - shack_client/testing.py: the reference controller is a test double,
+#   never served to a person; the real controller's sentences are
+#   shack_client/controller.py's, which are checked;
+# - shack_i18n: a developer tool whose output (findings, bad-config
+#   errors) is read by developers in English, like log lines (I18N.md §1
+#   rule 8);
+# - shack-bandplan.pot: its msgids are used by the dataset and
+#   messages.T, not by `_()` calls, so every entry would be reported as
+#   unused; tools/extract_pot.py --check keeps it complete instead.
+exclude = ["python/*/tests/**", "python/shack_client/src/shack_client/testing.py", "python/shack_i18n/**",
+           "python/shack_bandplan/src/shack_bandplan/locale/**"]
+
+[python]
+# The libraries raise these with whole sentences that apps show as they
+# are (a refused contact, a bad locator, a refused pairing). shack_bandplan's
+# DataError is not one: it means a broken install, for the developer.
+# shack_rig's are the same kind: PttRefused's reason "is for a person"
+# (lease.py), and the serial and audio errors exist to tell an operator
+# far from the radio which of several causes it is (serialio.py,
+# usbaudio.py). Its CivError is not: a malformed frame is a bug report.
+user_facing_exceptions = ["ValueError", "LookupError", "PairingError", "PttRefused", "SerialError", "PortMissing",
+                          "PortDenied", "PortBusy", "AudioError"]

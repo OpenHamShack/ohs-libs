@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tune">Tune</string>
+    <string name="transmit">Transmit</string>
+    <string name="ready">Ready</string>
+    <string name="heard">Heard %1$s at %2$d dB</string>
+    <plurals name="stations_heard">
+        <item quantity="one">%d station heard</item>
+        <item quantity="other">%d stations heard</item>
+    </plurals>
+</resources>

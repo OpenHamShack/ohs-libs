@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-desktop"
+version = "0.1.0"
+description = "OpenHamShack desktop shell: a web-UI app's own loopback server, token-guarded, in a native window"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# The core is stdlib only: the token guard, the single-instance lock, the
+# browser fallback and the child-process half all work without anything
+# installed, which is what makes the fallback a fallback. The window is the
+# extra. On Linux pywebview draws with the system's WebKitGTK through
+# PyGObject (Debian: python3-gi gir1.2-webkit2-4.1), which pip cannot
+# usefully install, so it is not listed; never the qt extra (PACKAGING.md).
+dependencies = []
+
+[project.optional-dependencies]
+window = ["pywebview>=6.2,<7"]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+shack_desktop = ["locale/*.pot", "locale/*/LC_MESSAGES/*.mo"]

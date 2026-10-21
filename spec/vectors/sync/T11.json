@@ -1,0 +1,171 @@
+{
+ "id": "T11",
+ "spec": "SYNC.md §8 T11",
+ "title": "Re-pair to a different controller, same callsign: union of both logs; a UUID on both merges per field",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  },
+  "C2": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {},
+  "B": {}
+ },
+ "steps": [
+  {
+   "do": "profile",
+   "store": "A",
+   "set": {
+    "callsign": "GM4BRI"
+   }
+  },
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000002",
+   "fields": {
+    "call": "F4XYZ",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C1"
+  },
+  {
+   "do": "unpair",
+   "store": "B"
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C2"
+  },
+  {
+   "do": "add",
+   "store": "B",
+   "id": "00000000-0000-7000-8000-000000000003",
+   "fields": {
+    "call": "EA8AAA",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "tick",
+   "ms": 1000
+  },
+  {
+   "do": "update",
+   "store": "B",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "qsl_rcvd": "Y"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  },
+  {
+   "do": "tick",
+   "ms": 1000
+  },
+  {
+   "do": "update",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "rst_sent": "59"
+   }
+  },
+  {
+   "do": "unpair",
+   "store": "A"
+  },
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C2",
+   "expect": "paired"
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  }
+ ],
+ "expect": [
+  {
+   "count": {
+    "where": [
+     "A",
+     "B",
+     "C2"
+    ],
+    "collection": "logbook",
+    "live": 3
+   }
+  },
+  {
+   "record": {
+    "where": [
+     "A",
+     "B",
+     "C2"
+    ],
+    "collection": "logbook",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "live": true,
+    "fields": {
+     "qsl_rcvd": "Y",
+     "rst_sent": "59"
+    }
+   }
+  },
+  {
+   "converged": {
+    "where": [
+     "A",
+     "B",
+     "C2"
+    ],
+    "collection": "logbook"
+   }
+  }
+ ],
+ "runner": "script"
+}

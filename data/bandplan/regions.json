@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "byContinent": {"EU": 1, "AF": 1, "NA": 2, "SA": 2, "AS": 3, "OC": 3},
+  "region1InAsia": ["4J", "4L", "4X", "5B", "7O", "9K", "A4", "A6", "A7", "A9", "E4", "EK", "EX", "EY", "EZ", "HZ", "JT", "JY", "OD", "TA", "UA9", "UK", "UN", "YI", "YK", "ZC4"],
+  "region3InAfrica": ["3B9", "FT/X", "FT/Z", "VK0H", "VQ9"],
+  "region2InOceania": ["KH3", "KH4", "KH6", "KH7K"],
+  "src": "ITU RR Art.5 Nos. 5.2-5.9 via ohscore/countries.py region_of"
+}

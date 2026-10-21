@@ -1,0 +1,11 @@
+{
+  "comment": "The SDR monitor's default channel plan: 2 m packet as worked in the UK and most of IARU Region 1. Data, not code: a band-plan dataset (shack_bandplan) or the operator replaces it. kind is a key the app translates (plan.KINDS); label is shown as written.",
+  "spacingHz": 12500,
+  "channels": [
+    {"id": "aprs", "hz": 144800000, "label": "APRS", "kind": "aprs"},
+    {"id": "node-144925", "hz": 144925000, "label": "144.925", "kind": "node"},
+    {"id": "node-1449375", "hz": 144937500, "label": "144.9375", "kind": "node"},
+    {"id": "node-144950", "hz": 144950000, "label": "144.950", "kind": "node"},
+    {"id": "iss", "hz": 145825000, "label": "ISS", "kind": "satellite"}
+  ]
+}

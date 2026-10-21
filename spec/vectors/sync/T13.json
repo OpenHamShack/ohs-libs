@@ -1,0 +1,76 @@
+{
+ "id": "T13",
+ "spec": "SYNC.md §8 T13",
+ "title": "Connection dropped after the server applied a push, before the answer: retry is harmless",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {}
+ },
+ "steps": [
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "dropNextPushAnswer",
+   "controller": "C1"
+  },
+  {
+   "do": "sync",
+   "store": "A",
+   "expectState": "offline"
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  }
+ ],
+ "expect": [
+  {
+   "count": {
+    "where": [
+     "A",
+     "C1"
+    ],
+    "collection": "logbook",
+    "live": 1
+   }
+  },
+  {
+   "history": {
+    "controller": "C1",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "edits": 1
+   }
+  },
+  {
+   "status": {
+    "store": "A",
+    "state": "idle",
+    "pendingRecords": 0
+   }
+  }
+ ],
+ "runner": "script"
+}

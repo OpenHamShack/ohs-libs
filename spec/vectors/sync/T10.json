@@ -1,0 +1,103 @@
+{
+ "id": "T10",
+ "spec": "SYNC.md §8 T10",
+ "title": "Unpair: every record still present and equal; adding a QSO works; no network request is made",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {}
+ },
+ "steps": [
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "markRequests",
+   "store": "A"
+  },
+  {
+   "do": "unpair",
+   "store": "A"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000002",
+   "fields": {
+    "call": "F4XYZ",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "update",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "comment": "after unpair"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "requests": {
+    "store": "A",
+    "sinceMark": 0
+   }
+  },
+  {
+   "status": {
+    "store": "A",
+    "state": "unpaired"
+   }
+  },
+  {
+   "count": {
+    "where": [
+     "A"
+    ],
+    "collection": "logbook",
+    "live": 2
+   }
+  },
+  {
+   "record": {
+    "where": [
+     "A"
+    ],
+    "collection": "logbook",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "live": true,
+    "fields": {
+     "call": "DL1ABC",
+     "comment": "after unpair"
+    }
+   }
+  }
+ ],
+ "runner": "script"
+}

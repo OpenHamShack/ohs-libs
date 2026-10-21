@@ -1,0 +1,345 @@
+# English template for the shack-rig domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-rig\n"
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "DATA MOD has not been read yet, so it could not be put back afterwards"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "EXT P.AMP is off in the radio's menu for {band} MHz (SET > Connectors > External P.AMP)"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+msgid "PTT by {line} needs the interface's serial port"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+#: python/shack_rig/src/shack_rig/yaesu/rig.py
+msgid "PTT is one of {routes}, not {ptt}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/sound.py
+msgid "PortAudio (pyaudio) is not installed, so no sound device can be opened"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/datasetup.py
+msgid "SQC SOURCE is not used: the app reads the squelch over the PC port"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/cm108.py
+msgid "a CM108 GPIO number is 1 to 8, not {gpio}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "a radio's USB serial port cannot be opened on this system; connect to it over the network instead"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/txaudio.py
+msgid "an up-sampling factor must be a whole number of at least 1"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "another program has {device} open"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/txaudio.py
+msgid "aplay (alsa-utils) is not installed, so transmit audio cannot reach the radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "averaging must be one of {values}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+msgid "band is 0 (A) or 1 (B), not {band}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/datasetup.py
+msgid "check the {source} MOD Level on the {radio} (SET > Connectors > MOD Input): peaks of about 3 kHz deviation, below its limiter"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/sound.py
+msgid "choose the radio's sound device; the system default is never used for a radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "edge must be 1 to {top}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/datasetup.py
+msgid "menu {n}: {what}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "mode must be one of {modes}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/cm108.py
+msgid "no CM108-style USB sound chip found for PTT"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+msgid "no PTT is set up for this radio, so it receives only"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/usbaudio.py
+msgid "no USB sound card is visible; the cards here are {others}. A radio's codec appears as a USB-Audio card when it is plugged in and switched on, and the device has to be assigned to this module - Dock360's module page, Devices."
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "no external preamp on this frequency"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "no such preamp setting: {mode}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "no such scope setting: {key}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "nothing to set"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/usb.py
+msgid "receive audio is switched off for this radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "ref_db must be a number from {lo} to {hi}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/datasetup.py
+msgid "set DATA MOD to {source} on the {radio} (SET > Connectors > MOD Input)"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/datasetup.py
+msgid "set DATA OFF MOD to MIC on the {radio} (SET > Connectors > MOD Input)"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/datasetup.py
+msgid "set EXT. DATA BAND to {band} on the radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/datasetup.py
+msgid "set EXT. DATA SPEED to {speed} bps on the radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/yaesu/datasetup.py
+msgid "set the {radio}'s DATA modulation source to USB on the radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "span_hz must be one of {spans}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "speed must be one of {speeds}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/datasetup.py
+msgid "split is on, so the {radio} does not say whether it is on a repeater shift; make sure it is on simplex"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/yaesu/datasetup.py
+msgid "switch the {radio}'s noise reduction, noise blanker, notch, VOX and monitor off on the radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "the radio has not said yet whether an external preamp is enabled on {band} MHz"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/yaesu/rig.py
+msgid "the radio on {device} says it is ID {got}, not an {name} ({want})"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+msgid "the radio on {device} says it is a {got}, not a {name}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+#: python/shack_rig/src/shack_rig/yaesu/rig.py
+msgid "the radio stopped answering"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+#: python/shack_rig/src/shack_rig/yaesu/rig.py
+msgid "the rig's frequency is not known yet, so it is not keyed"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/sound.py
+msgid "the sound device {name} is not connected"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/sound.py
+msgid "the sound device {name} runs at {rate} Hz, which is not a whole multiple of {want} Hz; set it to 48000 Hz in the computer's sound settings"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/sound.py
+msgid "the sound device {name} will not open at {rate} Hz"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/sound.py
+msgid "the sound device {name} would not open ({error})"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/datasetup.py
+msgid "the squelch is fully open on this band, so the radio reports the channel busy all the time and nothing will be sent; close it until the noise stops"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "the {radio}'s DATA MOD has no {source} setting"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/datasetup.py
+msgid "the {radio}'s own USB sound device drops and repeats samples when it transmits (about 1,500 parts per million, measured on 18/10/2026): harmless to FT8 but enough to stop 1200 baud packet decoding on some radios. Use the network (LAN) connection to transmit packet if you can"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/usbaudio.py
+msgid "there are {n} USB sound cards here and nothing says which is the radio: {names}. Put one of their /dev/snd/by-id/... paths in the profile's audio device."
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/usbaudio.py
+msgid "this Python's array('h') is not 16-bit"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "this library does not know where the {radio} keeps DATA MOD; set it to {source} on the radio (SET > Connectors > MOD Input)"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/yaesu/rig.py
+msgid "this library does not know where the {radio} keeps its DATA modulation source; set it to USB on the radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/datasetup.py
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "this radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "this radio has no preamp control here"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "this radio has no scope settings this module can change"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/usbaudio.py
+msgid "this sound card offers {lo}-{hi} Hz and none of it is a whole multiple of {rate}. Capturing at a rate the hardware has not got makes ALSA resample, which was measured on this module's own radio as a 2.1% frequency error and about an eighth of the decodes - so it is refused rather than done quietly."
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/txaudio.py
+msgid "this sound card plays {lo}-{hi} Hz and none of it is a whole multiple of {rate}; transmit audio is refused rather than resampled by the sound system"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+#: python/shack_rig/src/shack_rig/yaesu/rig.py
+msgid "transmitting is switched off for this rig"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/lease.py
+msgid "transmitting needs a TX lease from the app, and none was given"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/models.py
+#: python/shack_rig/src/shack_rig/kenwood/models.py
+#: python/shack_rig/src/shack_rig/yaesu/models.py
+msgid "unknown radio {key}; this module knows {known}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+msgid "vbw must be one of {vbws}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "{baud} is not a speed this can set. Try one of {speeds}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+msgid "{device} answered {got!r}, not a Kenwood ID"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "{device} cannot be opened by this user"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "{device} cannot be watched by the event loop on this system"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/cm108.py
+msgid "{device} could not be opened for PTT: {why}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/cm108.py
+msgid "{device} did not take the PTT pin's first write"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/usbaudio.py
+msgid "{device} does not lead to a sound card. The device may not be plugged in, or may not be assigned to this module - Dock360's module page, Devices."
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "{device} is held by something else"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "{device} is not open"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "{device} is not there"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/yaesu/rig.py
+msgid "{device} opened and the radio did not answer; check the CAT port, its speed ({baud}) and that the radio is on"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+msgid "{device} opened and the radio did not answer; check the PC port cable, the radio's PC port speed (menu 519, {baud} here) and that the radio is on"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+#: python/shack_rig/src/shack_rig/yaesu/rig.py
+msgid "{device} went away"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/cm108.py
+msgid "{device}: permission denied. On Linux the sound chip's HID device needs a udev rule giving it to your user (as Dire Wolf's 99-direwolf-cmedia.rules does)"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/rig.py
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+#: python/shack_rig/src/shack_rig/yaesu/rig.py
+msgid "{mhz} MHz is outside the {radio}'s transmit bands ({bands})"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "{name} is not RTS or DTR"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/cm108.py
+msgid "{n} CM108-style sound chips are plugged in; choose the one wired to the radio's PTT"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/sound.py
+msgid "{n} sound devices are called {name}, and nothing says which is the radio; choose one by its place on the computer"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/serialio.py
+msgid "{n} stop bits is not something a serial port has; use 1 or 2"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/usbaudio.py
+msgid "{rate_in} Hz does not divide into {rate}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/lease.py
+msgid "{what} is not a TX lease"
+msgstr ""

@@ -1,0 +1,46 @@
+# The packaging kit's proof: a tiny web-UI app, built into every installer
+# the kit makes (packaging/README.md). A real app's descriptor sits at the
+# root of its own repository and looks the same.
+
+[app]
+id = "com.openhamshack.hello"          # REPO-LAYOUT §5: com.openhamshack.<kind>
+kind = "hello"
+name = "OpenHamShack Hello"
+summary = "Proves the OpenHamShack desktop packaging kit"
+description = """
+A minimal web-UI app in the OpenHamShack desktop shell: its own server on
+127.0.0.1 behind a per-launch token, shown in a native window, or in the
+default browser when there is no web engine.
+"""
+executable = "shack-hello"              # REPO-LAYOUT §5: shack-<kind>
+version = { file = "VERSION" }
+entry = "shack_hello.__main__:main"
+icon = "platform"                       # brand kit: icons/png/platform/, icons/svg/platform.svg
+categories = ["HamRadio", "Network"]
+keywords = ["OpenHamShack", "amateur radio", "ham radio"]
+license_file = "../../LICENSE"
+
+[python]
+# Copied onto the app's import path. A real app gets shack_desktop from
+# the shared wheel index (REPO-LAYOUT §3); the example takes it from this
+# repository so the kit is proved against the library as it stands.
+paths = ["src", "../../python/shack_desktop/src"]
+# Bundled into the frozen builds (AppImage, Windows, macOS). The AppImage
+# adds PyGObject itself (appimage/README.md says why).
+requirements = ["pywebview==6.2.1"]
+
+[linux]
+# The .deb runs on the system's Python. pywebview is vendored (pure
+# Python, and Debian's python3-webview is a major version behind); the
+# GTK engine comes from the system, and is only recommended: without it
+# the app opens in the browser, which is the shell's designed fallback.
+depends = ["python3 (>= 3.11)"]
+recommends = ["python3-gi", "gir1.2-gtk-3.0", "gir1.2-webkit2-4.1", "python3-tk"]
+
+[windows]
+# Inno Setup's AppId: made once, never changed (upgrades find the old
+# install by it).
+app_guid = "{BE29FBA6-32D9-4CB8-BA53-38130357937A}"
+
+[macos]
+minimum_system = "12.0"

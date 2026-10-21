@@ -1,0 +1,136 @@
+{
+ "id": "T12",
+ "spec": "SYNC.md §8 T12",
+ "title": "Re-pair to a different controller, 'use the controller's log': local equals the controller's; archive .db and .adi exist",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  },
+  "C2": {
+   "name": "MM0XYZ",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {},
+  "B": {}
+ },
+ "steps": [
+  {
+   "do": "profile",
+   "store": "A",
+   "set": {
+    "callsign": "GM4BRI"
+   }
+  },
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "profile",
+   "store": "B",
+   "set": {
+    "callsign": "MM0XYZ"
+   }
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C2"
+  },
+  {
+   "do": "add",
+   "store": "B",
+   "id": "00000000-0000-7000-8000-000000000005",
+   "fields": {
+    "call": "OH2BBB",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  },
+  {
+   "do": "unpair",
+   "store": "A"
+  },
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C2",
+   "expect": "needsDecision"
+  },
+  {
+   "do": "resolve",
+   "store": "A",
+   "choice": "use-controller"
+  }
+ ],
+ "expect": [
+  {
+   "archive": {
+    "store": "A"
+   }
+  },
+  {
+   "converged": {
+    "where": [
+     "A",
+     "C2"
+    ],
+    "collection": "logbook"
+   }
+  },
+  {
+   "count": {
+    "where": [
+     "A"
+    ],
+    "collection": "logbook",
+    "live": 1
+   }
+  },
+  {
+   "record": {
+    "where": [
+     "A"
+    ],
+    "collection": "logbook",
+    "id": "00000000-0000-7000-8000-000000000005",
+    "live": true,
+    "fields": {
+     "call": "OH2BBB"
+    }
+   }
+  }
+ ],
+ "runner": "script"
+}

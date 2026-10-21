@@ -1,0 +1,18 @@
+[
+  {"iso": "GB", "name": "United Kingdom", "regulator": "Ofcom", "entities": ["G", "GM", "GM/s", "GW", "GI", "GD", "GJ", "GU"], "regimes": ["ofcom-2024"], "plan": "rsgb-2026", "region": 1, "status": "checked", "src": "Ofcom Amateur Radio Guidance (14 Oct 2025) s.3.4 p.25"},
+  {"iso": "IE", "name": "Ireland", "regulator": "ComReg", "entities": ["EI"], "regimes": ["comreg-2023"], "plan": "", "region": 1, "status": "researched", "src": "ComReg 09/45R6 s.4.2"},
+  {"iso": "DE", "name": "Germany", "regulator": "BNetzA", "entities": ["DL"], "regimes": ["bnetza-2024"], "plan": "", "region": 1, "status": "researched", "src": "AfuV Anlage 1"},
+  {"iso": "NL", "name": "Netherlands", "regulator": "RDI", "entities": ["PA"], "regimes": ["rdi-2024"], "plan": "", "region": 1, "status": "researched", "src": "nl.md s.1"},
+  {"iso": "BE", "name": "Belgium", "regulator": "BIPT", "entities": ["ON"], "regimes": ["bipt-2019"], "plan": "", "region": 1, "status": "researched", "src": "be.md s.1"},
+  {"iso": "FR", "name": "France", "regulator": "ARCEP", "entities": ["F", "TK", "FR", "FH"], "regimes": ["arcep-2019"], "plan": "", "region": 1, "status": "researched", "src": "ARCEP 2012-1241"},
+  {"iso": "ES", "name": "Spain", "regulator": "SETID", "entities": ["EA", "EA6", "EA8", "EA9"], "regimes": ["setid-2026"], "plan": "", "region": 1, "status": "researched", "src": "Orden IET/1311/2013 art.14"},
+  {"iso": "IT", "name": "Italy", "regulator": "MIMIT", "entities": ["I", "IS", "IT9"], "regimes": ["mimit-2022"], "plan": "", "region": 1, "status": "researched", "src": "CCE art.140"},
+  {"iso": "NO", "name": "Norway", "regulator": "Nkom", "entities": ["LA"], "regimes": ["nkom-2026"], "plan": "", "region": 1, "status": "researched", "src": "FOR-2026-03-23-465, mainland"},
+  {"iso": "SE", "name": "Sweden", "regulator": "PTS", "entities": ["SM"], "regimes": ["pts-2025"], "plan": "", "region": 1, "status": "researched", "src": "PTSFS 2025:1"},
+  {"iso": "DK", "name": "Denmark", "regulator": "Digitaliseringsstyrelsen", "entities": ["OZ"], "regimes": ["digst-2026"], "plan": "", "region": 1, "status": "researched", "src": "BEK 499/2026"},
+  {"iso": "FI", "name": "Finland", "regulator": "Traficom", "entities": ["OH", "OH0", "OJ0"], "regimes": ["traficom-2026"], "plan": "", "region": 1, "status": "researched", "src": "6 K/2019M; F2 s.6 Aland"},
+  {"iso": "US", "name": "United States", "regulator": "FCC", "entities": ["K", "KL", "KH6", "KP4", "KP2", "KP1", "KH3", "KH4"], "regimes": ["fcc-2026"], "plan": "", "region": 2, "status": "researched", "src": "47 CFR 97, Appendix 1"},
+  {"iso": "CA", "name": "Canada", "regulator": "ISED", "entities": ["VE", "CY0", "CY9"], "regimes": ["ised-2022"], "plan": "", "region": 2, "status": "researched", "src": "RBR-4 Schedule I"},
+  {"iso": "AU", "name": "Australia", "regulator": "ACMA", "entities": ["VK"], "regimes": ["acma-2023"], "plan": "", "region": 3, "status": "researched", "src": "Class Licence 2023 s.10, s.17"},
+  {"iso": "NZ", "name": "New Zealand", "regulator": "RSM", "entities": ["ZL", "ZL7", "ZL8", "ZL9"], "regimes": ["rsm-2025"], "plan": "", "region": 3, "status": "researched", "src": "GURL 2025 cl.4(1), 8(3)"}
+]

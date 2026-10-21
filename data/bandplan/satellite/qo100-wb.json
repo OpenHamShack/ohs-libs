@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "id": "qo100-wb",
+  "kind": "satellite",
+  "title": "QO-100 wideband transponder",
+  "status": "checked",
+  "partial": false,
+  "coverage": {"loHz": 2401000000, "hiHz": 2410000000},
+  "gaps": [],
+  "source": {"key": "BATC", "title": "QO-100 WB Bandplan", "url": "https://wiki.batc.org.uk/QO-100_WB_Bandplan", "version": "V3, Feb 2021", "date": "2021-02-01", "checked": "2026-10-09"},
+  "uplinkToDownlinkHz": 8089500000,
+  "uplink": {"loHz": 2401000000, "hiHz": 2410000000},
+  "downlink": {"loHz": 10490500000, "hiHz": 10499500000},
+  "segmentsIn": "uplink",
+  "segments": [
+    {"loHz": 2401000000, "hiHz": 2403000000, "label": "beacon", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "BATC"},
+    {"loHz": 2403000000, "hiHz": 2410000000, "label": "users", "modes": ["datv"], "kind": "", "maxBwHz": null, "src": "BATC"}
+  ],
+  "neighbours": [
+    {"loHz": 2400000000, "hiHz": 2400500000, "label": "QO-100 narrowband transponder"}
+  ],
+  "edgeRule": "symbolRate",
+  "occupiedFactor": 1.35,
+  "channels": [
+    {"srKs": [1000, 1500], "downlinkHz": [10493250000, 10494750000, 10496250000]},
+    {"srKs": [500], "downlinkFirstHz": 10492750000, "stepHz": 500000, "count": 9},
+    {"srKs": [333, 250], "downlinkFirstHz": 10492750000, "stepHz": 500000, "count": 14},
+    {"srKs": [125, 66, 33], "downlinkFirstHz": 10492750000, "stepHz": 250000, "count": 27}
+  ],
+  "preferred": {"belowKs": 333, "rule": "333 kS and below use the segment above 10497.0 MHz first", "aboveDownlinkHz": 10497000000}
+}

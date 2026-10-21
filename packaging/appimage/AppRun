@@ -1,0 +1,6 @@
+#!/bin/sh
+# AppRun: the AppImage's entry. The frozen program is a PyInstaller
+# one-folder build under usr/lib/<executable>; it finds everything relative
+# to itself, so nothing here but the hand-over. @EXE@ is filled in at build.
+here="$(dirname "$(readlink -f "$0")")"
+exec "$here/usr/lib/@EXE@/@EXE@" "$@"

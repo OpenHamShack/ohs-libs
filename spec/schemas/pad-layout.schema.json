@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhamshack.com/schemas/pad-layout-1.json",
+  "title": "pad-layout.json: an app's default map per pad model (CONTROLLER-PAD.md §4)",
+  "description": "Per model, {control: {slot: action}}. Unknown controls, slots a control cannot take and undeclared actions are not schema errors: shack_pad.mapping turns each into nothing with a note, so a layout can only fall back.",
+  "type": "object",
+  "required": ["schema"],
+  "properties": {"schema": {"const": 1}},
+  "additionalProperties": {
+    "type": "object",
+    "additionalProperties": {
+      "type": "object",
+      "properties": {
+        "press": {"type": "string"},
+        "turn": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-pad"
+version = "0.1.0"
+description = "OpenHamShack controller pads (Ajazz AKP03E, USB keypads): drivers, key faces, action maps and the pad as a transmit-lease client"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# The core is stdlib only (CONTROLLER-PAD.md §2): the Linux controller reads
+# the pad through hidraw and keypads through evdev, and keys work without
+# pictures. The extra adds what Windows/macOS need for the pad (hidapi) and
+# what draws the key screens (Pillow).
+dependencies = []
+
+[project.optional-dependencies]
+hid = ["hidapi>=0.14", "Pillow>=10.1"]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+# The JSON Schemas are in the repository's spec/schemas/ (REPO-LAYOUT.md
+# §2), not the wheel: nothing reads them at run time; actions.validate()
+# is the run-time check. The English gettext template does ship, so a
+# translator, or an app bundling its own catalogs, starts from the
+# sentences this exact version says; compiled catalogs (.mo) are what
+# gettext loads at run time.
+shack_pad = ["icons/*.png", "udev/*", "examples/*.json", "locale/*.pot", "locale/*/LC_MESSAGES/*.mo"]

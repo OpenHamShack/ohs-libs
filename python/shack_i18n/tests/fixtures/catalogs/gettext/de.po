@@ -1,0 +1,16 @@
+msgid ""
+msgstr ""
+"Language: de\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "This device is held by another app."
+msgstr "Dieses Gerät wird von einer anderen App gehalten."
+
+#, fuzzy
+msgid "The pairing code has expired."
+msgstr "Der {code} ist abgelaufen."
+
+msgid "{n} station heard"
+msgid_plural "{n} stations heard"
+msgstr[0] "{n} Station gehört"
+msgstr[1] "{n} Stationen gehört"

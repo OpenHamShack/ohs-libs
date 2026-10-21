@@ -1,0 +1,91 @@
+# Technical terms that are the same in every language (I18N.md §1 rule 7 and
+# §3.3). A literal exactly equal to one of these is never a finding, in any
+# repo, without an allow-list entry, and this list is never reported stale.
+#
+# What belongs here: names that are identifiers in the hobby, written the
+# same way in every language. What does not: band names and units, which go
+# through the formatting helpers (§4), and anything a translator might
+# reasonably change. Matching is exact and case-sensitive.
+
+# Mode names as the family's UIs show them (§3.3's list).
+FT8
+FT4
+JS8
+CW
+SSB
+USB
+LSB
+AM
+FM
+RTTY
+SSTV
+DVB-S
+DVB-S2
+DVB-T
+
+# The satellite.
+QO-100
+
+# ADIF MODE enumeration (ADIF 3.1.4, "Mode" table), as ADIF spells them.
+AM
+ARDOP
+ATV
+CHIP
+CLO
+CONTESTI
+CW
+DIGITALVOICE
+DOMINO
+DYNAMIC
+FAX
+FM
+FSK441
+FT8
+HELL
+ISCAT
+JT4
+JT9
+JT44
+JT65
+MFSK
+MSK144
+MT63
+OLIVIA
+OPERA
+PAC
+PAX
+PKT
+PSK
+PSK2K
+Q15
+QRA64
+ROS
+RTTY
+RTTYM
+SSB
+SSTV
+T10
+THOR
+THRB
+TOR
+V4
+VOI
+WINMOR
+WSPR
+
+# ADIF submodes the family's apps offer (ADIF 3.1.4 "Submode" table).
+FST4
+FST4W
+FT4
+JS8
+LSB
+USB
+Q65
+PSK31
+PSK63
+PSK125
+FREEDV
+
+# ADIF PROP_MODE values the QO-100 and EME apps display.
+SAT
+EME

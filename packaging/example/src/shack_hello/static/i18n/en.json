@@ -1,0 +1,7 @@
+{
+  "hello": {
+    "title": "OpenHamShack Hello",
+    "lede": "This window is the app's own server on 127.0.0.1, behind a token made for this launch.",
+    "ok": "The page reached its server with the launch cookie."
+  }
+}

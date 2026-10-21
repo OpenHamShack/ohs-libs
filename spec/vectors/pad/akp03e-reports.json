@@ -1,0 +1,26 @@
+{
+  "$comment": "AKP03E input reports as captured from workshop's pad on 3 Oct 2026 (~/openhamshack/appliance/test_pad.py), one per control code: bytes 0-8 are ACK\\0\\0OK\\0\\0, byte 9 the code, byte 10 1/0 for press/release, padded to 512. Shared by every language's driver (REPO-LAYOUT.md §2 spec/vectors/pad/).",
+  "report_size": 512,
+  "cases": [
+    {"code": 1, "state": 1, "event": ["press", "K1", 0]},
+    {"code": 1, "state": 0, "event": ["release", "K1", 0]},
+    {"code": 2, "state": 1, "event": ["press", "K2", 0]},
+    {"code": 3, "state": 1, "event": ["press", "K3", 0]},
+    {"code": 4, "state": 1, "event": ["press", "K4", 0]},
+    {"code": 5, "state": 1, "event": ["press", "K5", 0]},
+    {"code": 6, "state": 1, "event": ["press", "K6", 0]},
+    {"code": 37, "state": 1, "event": ["press", "B1", 0]},
+    {"code": 48, "state": 1, "event": ["press", "B2", 0]},
+    {"code": 49, "state": 1, "event": ["press", "B3", 0]},
+    {"code": 53, "state": 1, "event": ["press", "D1", 0]},
+    {"code": 51, "state": 1, "event": ["press", "D2", 0]},
+    {"code": 52, "state": 0, "event": ["release", "D3", 0]},
+    {"code": 81, "state": 0, "event": ["turn", "D1", 1]},
+    {"code": 80, "state": 0, "event": ["turn", "D1", -1]},
+    {"code": 145, "state": 0, "event": ["turn", "D2", 1]},
+    {"code": 144, "state": 0, "event": ["turn", "D2", -1]},
+    {"code": 97, "state": 0, "event": ["turn", "D3", 1]},
+    {"code": 96, "state": 0, "event": ["turn", "D3", -1]},
+    {"code": 126, "state": 1, "event": null}
+  ]
+}

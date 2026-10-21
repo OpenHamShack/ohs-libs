@@ -1,0 +1,13 @@
+{
+ "id": "T18",
+ "spec": "SYNC.md §8 T18",
+ "title": "Two processes writing one store: no write lost; only one syncs at a time",
+ "start": "2026-10-09T10:00:00Z",
+ "runner": "processes",
+ "processes": 2,
+ "perProcess": 100,
+ "controllers": {},
+ "stores": {},
+ "steps": [],
+ "expect": []
+}

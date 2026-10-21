@@ -1,0 +1,98 @@
+{
+ "id": "T21",
+ "spec": "SYNC.md §8 T21",
+ "title": "Profile edit from a device without transmit: rejected; local copy rolled back on the next pull; profileRejected reported",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    },
+    "guest": {
+     "password": "pw",
+     "transmit": false
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {},
+  "B": {}
+ },
+ "steps": [
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "profile",
+   "store": "A",
+   "set": {
+    "callsign": "GM4BRI",
+    "locator": "IO75RL"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C1",
+   "user": "guest"
+  },
+  {
+   "do": "tick",
+   "ms": 1000
+  },
+  {
+   "do": "profile",
+   "store": "B",
+   "set": {
+    "locator": "JO62AA"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "B"
+  }
+ ],
+ "expect": [
+  {
+   "status": {
+    "store": "B",
+    "profileRejected": true
+   }
+  },
+  {
+   "profile": {
+    "where": [
+     "A",
+     "B"
+    ],
+    "has": {
+     "callsign": "GM4BRI",
+     "locator": "IO75RL"
+    }
+   }
+  },
+  {
+   "record": {
+    "where": [
+     "C1"
+    ],
+    "collection": "profile",
+    "id": "station",
+    "fields": {
+     "locator": "IO75RL"
+    }
+   }
+  }
+ ],
+ "runner": "script"
+}

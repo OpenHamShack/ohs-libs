@@ -1,0 +1,145 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://openhamshack.org/schemas/sync-vector.schema.json",
+ "title": "A SYNC.md \u00a78 test vector",
+ "description": "Language-neutral script run by every sync implementation (Python, Kotlin, Swift, the Dock360 edition). Time is simulated: 'start' is true time; each controller and store sees true time plus its skew (skewMs, or 'clock' for an absolute start). Controllers are reference controllers with users {name: {password, transmit}}; stores are local stores of one app. runner 'script' runs steps then checks expect; 'unreachable' (T14: adding a QSO while the controller swallows packets returns within budgetMs) and 'processes' (T18: processes writers each add perProcess QSOs to one store; none lost, stamps unique, one sync lease holder) need runner code of their own.",
+ "type": "object",
+ "required": [
+  "id",
+  "spec",
+  "title",
+  "start",
+  "runner",
+  "controllers",
+  "stores",
+  "steps",
+  "expect"
+ ],
+ "properties": {
+  "id": {
+   "type": "string",
+   "pattern": "^T[0-9]+$"
+  },
+  "spec": {
+   "type": "string"
+  },
+  "title": {
+   "type": "string"
+  },
+  "start": {
+   "type": "string"
+  },
+  "runner": {
+   "enum": [
+    "script",
+    "unreachable",
+    "processes"
+   ]
+  },
+  "budgetMs": {
+   "type": "integer"
+  },
+  "processes": {
+   "type": "integer"
+  },
+  "perProcess": {
+   "type": "integer"
+  },
+  "controllers": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "name": {
+      "type": "string"
+     },
+     "skewMs": {
+      "type": "integer"
+     },
+     "users": {
+      "type": "object"
+     }
+    }
+   }
+  },
+  "stores": {
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "properties": {
+     "skewMs": {
+      "type": "integer"
+     },
+     "clock": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "steps": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/step"
+   }
+  },
+  "expect": {
+   "type": "array",
+   "items": {
+    "$ref": "#/$defs/expectation"
+   }
+  }
+ },
+ "$defs": {
+  "step": {
+   "type": "object",
+   "required": [
+    "do"
+   ],
+   "properties": {
+    "do": {
+     "enum": [
+      "add",
+      "addMany",
+      "backup",
+      "delete",
+      "dropNextPushAnswer",
+      "inject",
+      "markRequests",
+      "offline",
+      "pair",
+      "profile",
+      "resolve",
+      "restore",
+      "skew",
+      "sync",
+      "tick",
+      "unpair",
+      "update"
+     ]
+    }
+   },
+   "description": "tick: advance true time by ms; every party's clock moves with it; skew: set a party's clock to true time + ms; resetOffset also zeroes the store's measured clock offset (an error it could not measure); add: store adds a logbook record id with fields (idFromPage: the runner mints prefix + page counter); addMany: store adds count records in one transaction, ids idPrefix + 12-digit index, call T<i>; update: store edits fields of id (fieldsFromPage: set that field to 'page <n>'); delete: store deletes id; profile: store updates its station profile with set; pair: store pairs with controller as user/password (defaults brian/pw); expect paired|needsDecision; pageLimit and duringEachPage (steps run after every pull page of the pairing's sync) are optional; resolve: store answers the last NeedsDecision with choice merge|use-controller; unpair: store unpairs; sync: store runs one sync round; expectState (default idle) is the status state afterwards; fromSeq 0 drops the cursor first; dropNextPushAnswer: controller applies the next push and loses the answer; offline: controller stops (value true) or starts answering; backup: controller snapshots its services database as name; restore: controller restores snapshot name (new epoch); inject: controller receives record as if pushed by another store; markRequests: remember the store's request count for a later requests expectation"
+  },
+  "expectation": {
+   "type": "object",
+   "minProperties": 1,
+   "maxProperties": 1,
+   "propertyNames": {
+    "enum": [
+     "archive",
+     "converged",
+     "count",
+     "countAtLeast",
+     "history",
+     "hlcAtLeastFloor",
+     "noFutureHlc",
+     "profile",
+     "record",
+     "requests",
+     "status"
+    ]
+   },
+   "description": "record: in each of where, record id of collection exists, live as given, fields include the given values, envelope keys in extra present; count: in each of where, the number of live records equals live; countAtLeast: as count, at least; converged: every party in where holds the same records with the same fields, stamps and tombstones; history: the controller's history of id has edits entries, the union of their lost fields equals lostFields, their kinds equal kinds; status: the store's sync status has these values; noFutureHlc: no stamp on the controller is more than 10 minutes ahead of its clock; hlcAtLeastFloor: every stamp on the party is at or above the library's clock floor; archive: the store archived station-*.db and station-*.adi beside itself; requests: the store made sinceMark requests since markRequests; profile: each store's profile contains has (nested subset)"
+  }
+ }
+}

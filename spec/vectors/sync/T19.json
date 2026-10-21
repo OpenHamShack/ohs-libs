@@ -1,0 +1,93 @@
+{
+ "id": "T19",
+ "spec": "SYNC.md §8 T19",
+ "title": "A record with fields this library does not know: kept and pushed back unchanged",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {}
+ },
+ "steps": [
+  {
+   "do": "inject",
+   "controller": "C1",
+   "record": {
+    "collection": "logbook",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "fields": {
+     "call": "DL1ABC",
+     "start": "2026-10-09T10:12:30Z",
+     "app_future_field": "kept",
+     "my_antenna": "dish"
+    },
+    "fieldHlc": {
+     "call": "0000019a3fb2c000-0000-st_FUTURESTORE1",
+     "start": "0000019a3fb2c000-0000-st_FUTURESTORE1",
+     "app_future_field": "0000019a3fb2c000-0000-st_FUTURESTORE1",
+     "my_antenna": "0000019a3fb2c000-0000-st_FUTURESTORE1"
+    },
+    "deletedHlc": null,
+    "createdAt": "2026-10-09T10:13:46.002Z",
+    "origin": {
+     "app": "shack-future",
+     "device": "dev_X",
+     "user": "brian"
+    },
+    "futureEnvelope": {
+     "v": 2
+    }
+   }
+  },
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "update",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "rst_rcvd": "57"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  }
+ ],
+ "expect": [
+  {
+   "record": {
+    "where": [
+     "A",
+     "C1"
+    ],
+    "collection": "logbook",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "live": true,
+    "fields": {
+     "app_future_field": "kept",
+     "my_antenna": "dish",
+     "rst_rcvd": "57"
+    },
+    "extra": {
+     "futureEnvelope": {
+      "v": 2
+     }
+    }
+   }
+  }
+ ],
+ "runner": "script"
+}

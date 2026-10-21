@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "app": "qo100nb",
+  "actions": [
+    {"id": "tune", "kind": "turn", "label": "pad.tune", "group": "receive", "short": ["TUNE", "Hz"], "icon": "tune"},
+    {"id": "step", "kind": "press", "label": "pad.step", "group": "receive", "short": ["STEP", ""]},
+    {"id": "band", "kind": "turn", "label": "pad.band", "group": "receive"},
+    {"id": "band:next", "kind": "press", "label": "pad.band_next", "group": "receive", "short": ["BAND", ""]},
+    {"id": "mode:next", "kind": "press", "label": "pad.mode_next", "group": "receive", "short": ["MODE", ""]},
+    {"id": "mute", "kind": "press", "label": "pad.mute", "group": "audio"},
+    {"id": "volume", "kind": "turn", "label": "pad.volume", "group": "audio", "short": ["VOL", ""]},
+    {"id": "record", "kind": "press", "label": "pad.record", "group": "receive"},
+    {"id": "scope", "kind": "press", "label": "pad.scope", "group": "screens"},
+    {"id": "ptt", "kind": "press", "hold": true, "tx": true, "single": true, "label": "pad.ptt", "group": "transmit"}
+  ]
+}

@@ -1,0 +1,53 @@
+# English template for the shack-desktop domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-desktop\n"
+
+#: python/shack_desktop/src/shack_desktop/guard.py
+msgid "A launch token must be at least 16 characters"
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/paths.py
+msgid "Not an app kind: {kind}"
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "Open again"
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "Quit"
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "The app's server did not answer."
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "The app's server did not start in time."
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "The app's server does not require its launch token, so it will not be shown."
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "The app's server is reachable from the network, so it will not be shown."
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "The app's server stopped while starting."
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "{app} is open in your web browser at {url}. Press Ctrl+C to quit."
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "{app} is open in your web browser."
+msgstr ""
+
+#: python/shack_desktop/src/shack_desktop/shell.py
+msgid "{app} is open in your web browser.\n\nRetry opens it again; Cancel quits."
+msgstr ""

@@ -1,0 +1,27 @@
+# The AppImage build environment: Debian 12 (bookworm), for its glibc 2.36.
+# An AppImage runs on the host's glibc and loads nothing older than what it
+# was linked against, so building on the oldest Debian still supported is
+# what lets one file run on bookworm, trixie, Ubuntu 22.04+ and Fedora alike
+# (PACKAGING.md; Control360 learned the same lesson when a trixie build
+# would not start on bookworm). Pinned by digest: a rebuilt base image
+# changes what we ship, so it changes only when this line does.
+FROM docker.io/library/debian:bookworm-slim@sha256:a4672c0cb26fbdde88e38fa2dfb6c681942306680e41e4378b28770b6e79ee91
+
+# python3-dev and the -dev libraries build PyGObject and pycairo from
+# source (their PyPI releases for Linux are sdists); file, binutils and
+# patchelf are for PyInstaller's binary analysis. No GTK or WebKitGTK:
+# the AppImage uses the host's (README.md).
+# portaudio19-dev builds PyAudio (sound for the Qt radio apps, which bring
+# their own spec); the frozen app carries libportaudio itself. The
+# xcb-util family is what Qt 6's xcb platform plugin needs and many hosts
+# lack (libxcb-cursor0 since Qt 6.5): present here, a Qt app bundles them
+# by keeping them off its own host-libs list.
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      python3 python3-venv python3-dev build-essential pkg-config \
+      libgirepository1.0-dev libcairo2-dev gobject-introspection \
+      ca-certificates file binutils patchelf desktop-file-utils \
+      portaudio19-dev \
+      libxcb-cursor0 libxcb-icccm4 libxcb-util1 libxcb-image0 libxcb-keysyms1 \
+      libxcb-render-util0 libxcb-xkb1 libxkbcommon-x11-0 \
+ && rm -rf /var/lib/apt/lists/*

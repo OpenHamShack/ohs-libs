@@ -1,0 +1,384 @@
+# English template for the shack-packet domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-packet\n"
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "(no subject)"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** /help for the commands, /quit to leave."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** /me text - an action"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** /quit - leave"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** /topic [text] - show or set the topic"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** /who - who is here"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** No input for a while; you have left the conference."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** No topic is set."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** The {room} conference is full ({n} stations). Try again later."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** Too many lines too fast; some were not sent."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** Topic: {topic}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** Unknown command {word}. /help for the commands."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** Welcome to the {room} conference. {n} here: {calls}."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** You have been removed from the conference by the {by}."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** You have left the conference."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** {call} joined"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** {call} left"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** {call} set the topic: {topic}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/conference.py
+msgid "*** {n} here: {calls}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "73, goodbye from {bbs}."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "73, goodbye."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "An OpenHamShack BBS."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "B - disconnect"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Back at the BBS."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Bid: {bid}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "C - the conference room     B - disconnect"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Date/Time: {when}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Enter your message. End it with /EX on a line of its own, or /ABORT to give up."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "From: {sender}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Hello {name}, welcome to the {bbs} BBS."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Home BBS set: {home}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "K n - delete message n"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "K n - kill     KM - kill all your read mail"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "L - list your messages"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "L - new messages     LM - your mail     LL n - the last n     LB - bulletins"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "L> CALL, L< CALL, L@ AREA - messages to, from, at"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Message abandoned."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Message {n} deleted."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Message {n} from {sender} to {to}, {when}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Message {n} kept for {to}. Thank you."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Message {n} killed."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Message {n} saved, for {to} @ {at}."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Messages waiting for you: {n}. H for help."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Msg#   TS   Size To     @BBS    From   Date      Subject"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "N followed by your first name."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "N name, NH bbs, NQ qth - about you     I [CALL] - information"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "NH followed by your home BBS."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "NQ followed by your location."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Name set: {name}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "No bulletins."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "No input for a while; disconnecting. 73."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "No messages."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "No new messages."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "No personal mail for you."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "No unread personal mail."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Only its sender can kill message {n}."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "QTH set: {qth}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "R n - read     RM - read all your new mail"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "R n - read message n"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "S - leave a message for {owner}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "S CALL [@ BBS] - send mail     SB TOPIC [@ AREA] - send a bulletin"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "SB needs a topic of up to six letters or figures, e.g. SB ALL @ GBR."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Send to whom? S followed by a callsign, e.g. S G0ABC."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Subject:"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Subject: {subject}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "That message could not be kept."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "That message is too long for this BBS; it was not kept."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "That message is too long for this mailbox; it was not kept."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "There is no conference on this BBS."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "There is no message {n} for you."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "This BBS does not forward to {at}; it will be kept here for {to} to collect."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "This BBS forwards only with FBB-style partners."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "This BBS is holding as much mail for {to} as it keeps; try later."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "This mailbox only takes messages for {owner}."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Title: {subject}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "To: {to}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Type/Status: {type}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Unknown command {verb}. H for help."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Unknown command. H for help."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Welcome to the mailbox of {owner}."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "Which message? Give its number, as L lists them."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "Which {what}?"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "You have left as many messages as this mailbox keeps from one station."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "You have sent as many messages today as this BBS takes from one station."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "You have {n} new messages. H for help."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "[End of Message #{n} from {sender}]"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "area or BBS"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "callsign"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "callsign or topic"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "{call} has not connected to this BBS."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "{call}: {name}, home BBS {home}, QTH {qth}, last here {when}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "{n} read messages killed."
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/mailbox.py
+msgid "{n}{mark} {when} from {sender} to {to}: {subject}"
+msgstr ""

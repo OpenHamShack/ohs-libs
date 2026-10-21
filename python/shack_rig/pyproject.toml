@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-rig"
+version = "0.1.0"
+description = "OpenHamShack rig control: serial, Icom LAN and USB transports, the CI-V codec, a maker-neutral rig surface with an Icom backend, and a hamlib rigctld server; transmit only under the app's lease"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# Standard library only, as the Icom app was: it runs on a Raspberry Pi
+# appliance that installs offline, and the serial port is a hundred lines of
+# termios (serialio.py says why not pyserial). USB receive audio runs
+# `arecord` from alsa-utils as a subprocess, a system package, not a wheel.
+dependencies = []
+
+[project.optional-dependencies]
+# A desktop app's extras, never the appliance's: PortAudio for sound devices
+# by name on any OS (shack_rig.sound, as openhamshack-nb's desktop apps use it),
+# and pyserial where there is no termios (Windows; serialio.py).
+audio = ["pyaudio>=0.2.13"]
+desktop = ["pyaudio>=0.2.13", "pyserial>=3.5; sys_platform == 'win32'"]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+# The English template ships with the package so a translator, or an app
+# bundling its own catalogs, starts from the sentences this exact version
+# says; compiled catalogs (.mo) are what gettext loads at run time.
+shack_rig = ["locale/*.pot", "locale/*/LC_MESSAGES/*.mo"]

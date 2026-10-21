@@ -1,0 +1,70 @@
+# English template for the shack-rec domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-rec\n"
+
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "Already recording."
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "Could not record to {folder}: {error}"
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "IQ"
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/store.py
+msgid "Not enough free disk space to record: {free} free, and recordings stop at {floor}."
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/audio.py
+msgid "Recording stopped: could not write {file} ({error})"
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "Stop that recording before deleting it."
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/store.py
+msgid "There is no such recording."
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "This app has no {kind} to record."
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/store.py
+msgid "Too many recordings started in the same second."
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "audio"
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/audio.py
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "by the operator"
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "free disk space fell below {floor}"
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "kind must be audio or iq"
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/recordings.py
+msgid "part must be data or meta"
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/audio.py
+msgid "the size limit"
+msgstr ""
+
+#: python/shack_rec/src/shack_rec/audio.py
+msgid "the time limit"
+msgstr ""

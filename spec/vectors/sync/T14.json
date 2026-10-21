@@ -1,0 +1,14 @@
+{
+ "id": "T14",
+ "spec": "SYNC.md §8 T14",
+ "title": "Controller unreachable (packets dropped): adding a QSO returns in under 50 ms",
+ "start": "2026-10-09T10:00:00Z",
+ "runner": "unreachable",
+ "budgetMs": 50,
+ "controllers": {},
+ "stores": {
+  "A": {}
+ },
+ "steps": [],
+ "expect": []
+}

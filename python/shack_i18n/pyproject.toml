@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=77"]  # 77 is the first to read an SPDX "license" string
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-i18n"
+version = "0.1.0"
+description = "OpenHamShack i18n: the user-visible string check (shack-i18n-check) and locale formatting helpers"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "360 Technology" }]
+# Nothing at runtime beyond the standard library: the check runs in every
+# repo's suite, including app images that should not grow for it.
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+shack-i18n-check = "shack_i18n.check:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+shack_i18n = ["data/*.txt"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

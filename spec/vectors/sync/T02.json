@@ -1,0 +1,120 @@
+{
+ "id": "T2",
+ "spec": "SYNC.md §8 T2",
+ "title": "The same push sent 3 times; overlapping pull pages",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {},
+  "B": {}
+ },
+ "steps": [
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "update",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "rst_rcvd": "57"
+   }
+  },
+  {
+   "do": "dropNextPushAnswer",
+   "controller": "C1"
+  },
+  {
+   "do": "sync",
+   "store": "A",
+   "expectState": "offline"
+  },
+  {
+   "do": "dropNextPushAnswer",
+   "controller": "C1"
+  },
+  {
+   "do": "sync",
+   "store": "A",
+   "expectState": "offline"
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C1"
+  },
+  {
+   "do": "sync",
+   "store": "B",
+   "fromSeq": 0
+  },
+  {
+   "do": "sync",
+   "store": "B",
+   "fromSeq": 0
+  }
+ ],
+ "expect": [
+  {
+   "count": {
+    "where": [
+     "A",
+     "B",
+     "C1"
+    ],
+    "collection": "logbook",
+    "live": 1
+   }
+  },
+  {
+   "record": {
+    "where": [
+     "A",
+     "B",
+     "C1"
+    ],
+    "collection": "logbook",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "live": true,
+    "fields": {
+     "call": "DL1ABC",
+     "rst_rcvd": "57"
+    }
+   }
+  },
+  {
+   "history": {
+    "controller": "C1",
+    "id": "00000000-0000-7000-8000-000000000001",
+    "edits": 2,
+    "lostFields": []
+   }
+  }
+ ],
+ "runner": "script"
+}

@@ -1,0 +1,98 @@
+{
+ "id": "T15",
+ "spec": "SYNC.md §8 T15",
+ "title": "Controller restored from a backup (new epoch): client detects it, re-pushes; nothing lost on either side",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {}
+ },
+ "steps": [
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "backup",
+   "controller": "C1",
+   "name": "b1"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000002",
+   "fields": {
+    "call": "F4XYZ",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  },
+  {
+   "do": "restore",
+   "controller": "C1",
+   "name": "b1"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000003",
+   "fields": {
+    "call": "EA8AAA",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  }
+ ],
+ "expect": [
+  {
+   "count": {
+    "where": [
+     "A",
+     "C1"
+    ],
+    "collection": "logbook",
+    "live": 3
+   }
+  },
+  {
+   "converged": {
+    "where": [
+     "A",
+     "C1"
+    ],
+    "collection": "logbook"
+   }
+  }
+ ],
+ "runner": "script"
+}

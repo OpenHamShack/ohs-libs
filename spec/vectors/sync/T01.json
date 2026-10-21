@@ -1,0 +1,97 @@
+{
+ "id": "T1",
+ "spec": "SYNC.md §8 T1",
+ "title": "Two stores add different QSOs offline, then sync",
+ "start": "2026-10-09T10:00:00Z",
+ "controllers": {
+  "C1": {
+   "name": "GM4BRI",
+   "users": {
+    "brian": {
+     "password": "pw",
+     "transmit": true
+    }
+   }
+  }
+ },
+ "stores": {
+  "A": {},
+  "B": {}
+ },
+ "steps": [
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C1"
+  },
+  {
+   "do": "unpair",
+   "store": "A"
+  },
+  {
+   "do": "unpair",
+   "store": "B"
+  },
+  {
+   "do": "add",
+   "store": "A",
+   "id": "00000000-0000-7000-8000-000000000001",
+   "fields": {
+    "call": "DL1ABC",
+    "start": "2026-10-09T10:12:30Z"
+   }
+  },
+  {
+   "do": "add",
+   "store": "B",
+   "id": "00000000-0000-7000-8000-000000000002",
+   "fields": {
+    "call": "F4XYZ",
+    "start": "2026-10-09T10:20:00Z"
+   }
+  },
+  {
+   "do": "pair",
+   "store": "A",
+   "controller": "C1"
+  },
+  {
+   "do": "pair",
+   "store": "B",
+   "controller": "C1"
+  },
+  {
+   "do": "sync",
+   "store": "A"
+  }
+ ],
+ "expect": [
+  {
+   "count": {
+    "where": [
+     "A",
+     "B",
+     "C1"
+    ],
+    "collection": "logbook",
+    "live": 2
+   }
+  },
+  {
+   "converged": {
+    "where": [
+     "A",
+     "B",
+     "C1"
+    ],
+    "collection": "logbook"
+   }
+  }
+ ],
+ "runner": "script"
+}

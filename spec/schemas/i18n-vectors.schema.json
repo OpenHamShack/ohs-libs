@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhamshack.org/schemas/i18n-vectors.schema.json",
+  "title": "OpenHamShack locale formatting vectors",
+  "description": "Shape of spec/vectors/i18n/format.json (I18N.md §5 item 3). Each case expects either 'text' (or 'hz' for parsing) or an 'error' code, never both.",
+  "type": "object",
+  "required": ["version", "frequency", "parse_frequency", "offset", "number", "swr"],
+  "properties": {
+    "description": {"type": "string"},
+    "version": {"const": 1},
+    "frequency": {"type": "array", "items": {"$ref": "#/$defs/frequencyCase"}},
+    "offset": {"type": "array", "items": {"$ref": "#/$defs/frequencyCase"}},
+    "parse_frequency": {"type": "array", "items": {"$ref": "#/$defs/parseCase"}},
+    "number": {"type": "array", "items": {"$ref": "#/$defs/numberCase"}},
+    "swr": {"type": "array", "items": {"$ref": "#/$defs/swrCase"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "locale": {"type": "string"},
+    "error": {"type": "string", "pattern": "^[a-z]+(-[a-z]+)*$"},
+    "note": {"type": "string"},
+    "frequencyCase": {
+      "type": "object",
+      "required": ["locale", "hz", "unit", "decimals"],
+      "properties": {
+        "locale": {"$ref": "#/$defs/locale"},
+        "hz": {"type": "integer"},
+        "unit": {"type": "string"},
+        "decimals": {"type": ["integer", "null"]},
+        "text": {"type": "string"},
+        "error": {"$ref": "#/$defs/error"},
+        "note": {"$ref": "#/$defs/note"}
+      },
+      "oneOf": [{"required": ["text"]}, {"required": ["error"]}],
+      "additionalProperties": false
+    },
+    "parseCase": {
+      "type": "object",
+      "required": ["text", "locale", "unit"],
+      "properties": {
+        "text": {"type": "string"},
+        "locale": {"$ref": "#/$defs/locale"},
+        "unit": {"type": ["string", "null"]},
+        "hz": {"type": "integer"},
+        "error": {"$ref": "#/$defs/error"},
+        "note": {"$ref": "#/$defs/note"}
+      },
+      "oneOf": [{"required": ["hz"]}, {"required": ["error"]}],
+      "additionalProperties": false
+    },
+    "numberCase": {
+      "type": "object",
+      "required": ["locale", "x", "decimals"],
+      "properties": {
+        "locale": {"$ref": "#/$defs/locale"},
+        "x": {"type": "number"},
+        "decimals": {"type": "integer"},
+        "text": {"type": "string"},
+        "error": {"$ref": "#/$defs/error"},
+        "note": {"$ref": "#/$defs/note"}
+      },
+      "oneOf": [{"required": ["text"]}, {"required": ["error"]}],
+      "additionalProperties": false
+    },
+    "swrCase": {
+      "type": "object",
+      "required": ["locale", "x"],
+      "properties": {
+        "locale": {"$ref": "#/$defs/locale"},
+        "x": {"type": "number"},
+        "text": {"type": "string"},
+        "error": {"$ref": "#/$defs/error"},
+        "note": {"$ref": "#/$defs/note"}
+      },
+      "oneOf": [{"required": ["text"]}, {"required": ["error"]}],
+      "additionalProperties": false
+    }
+  }
+}

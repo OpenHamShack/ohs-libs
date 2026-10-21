@@ -1,0 +1,400 @@
+[
+ {
+  "id": "20m-ncdxf-wessex",
+  "kind": "beacon",
+  "band": "20m",
+  "khz": 14100.0,
+  "host": "wessex.zapto.org",
+  "port": 8074,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "17m-ncdxf-wessex",
+  "kind": "beacon",
+  "band": "17m",
+  "khz": 18110.0,
+  "host": "wessex.zapto.org",
+  "port": 8074,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "15m-ncdxf-ei5in",
+  "kind": "beacon",
+  "band": "15m",
+  "khz": 21150.0,
+  "host": "44.31.191.63",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "20m-ncdxf-ei5in",
+  "kind": "beacon",
+  "band": "20m",
+  "khz": 14100.0,
+  "host": "44.31.191.63",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "40m-act-ei5in",
+  "kind": "activity",
+  "band": "40m",
+  "khz": 7025.0,
+  "host": "44.31.191.63",
+  "port": 8073,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "30m-act-wessex",
+  "kind": "activity",
+  "band": "30m",
+  "khz": 10115.0,
+  "host": "wessex.zapto.org",
+  "port": 8074,
+  "seconds": 120,
+  "gain": 55
+ },
+ {
+  "id": "80m-act-kc2fd",
+  "kind": "activity",
+  "band": "80m",
+  "khz": 3530.0,
+  "host": "23175.proxy.kiwisdr.com",
+  "port": 80,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "40m-act-kc2fd",
+  "kind": "activity",
+  "band": "40m",
+  "khz": 7030.0,
+  "host": "23175.proxy.kiwisdr.com",
+  "port": 80,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "20m-noise-wessex",
+  "kind": "noise",
+  "band": "20m",
+  "khz": 14011.0,
+  "host": "wessex.zapto.org",
+  "port": 8074,
+  "seconds": 120,
+  "gain": 55
+ },
+ {
+  "id": "12m-ncdxf-wessex",
+  "kind": "beacon",
+  "band": "12m",
+  "khz": 24930.0,
+  "host": "wessex.zapto.org",
+  "port": 8074,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "20m-act-ei5in",
+  "kind": "activity",
+  "band": "20m",
+  "khz": 14025.0,
+  "host": "44.31.191.63",
+  "port": 8073,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "17m-ncdxf-oz1aef",
+  "kind": "beacon",
+  "band": "17m",
+  "khz": 18110.0,
+  "host": "87.104.90.69",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "30m-act-oz1aef",
+  "kind": "activity",
+  "band": "30m",
+  "khz": 10110.0,
+  "host": "87.104.90.69",
+  "port": 8073,
+  "seconds": 120,
+  "gain": 55
+ },
+ {
+  "id": "80m-act-w4kel",
+  "kind": "activity",
+  "band": "80m",
+  "khz": 3530.0,
+  "host": "21748.proxy.kiwisdr.com",
+  "port": 80,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "40m-act-w4kel",
+  "kind": "activity",
+  "band": "40m",
+  "khz": 7030.0,
+  "host": "21748.proxy.kiwisdr.com",
+  "port": 80,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "80m-act-k1vl",
+  "kind": "activity",
+  "band": "80m",
+  "khz": 3550.0,
+  "host": "sdr.k1vl.com",
+  "port": 8075,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "40m-noise-k1vl",
+  "kind": "noise",
+  "band": "40m",
+  "khz": 7045.0,
+  "host": "sdr.k1vl.com",
+  "port": 8075,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "20m-ncdxf-heppen-a",
+  "kind": "beacon",
+  "band": "20m",
+  "khz": 14100.0,
+  "host": "websdr.heppen.be",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "17m-ncdxf-heppen-a",
+  "kind": "beacon",
+  "band": "17m",
+  "khz": 18110.0,
+  "host": "websdr.heppen.be",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "20m-ncdxf-heppen-b",
+  "kind": "beacon",
+  "band": "20m",
+  "khz": 14100.0,
+  "host": "websdr.heppen.be",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "20m-act-heppen",
+  "kind": "activity",
+  "band": "20m",
+  "khz": 14035.0,
+  "host": "websdr.heppen.be",
+  "port": 8073,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "40m-act-w3hfu",
+  "kind": "activity",
+  "band": "40m",
+  "khz": 7020.0,
+  "host": "sdr.hfunderground.com",
+  "port": 8073,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "80m-act-w3hfu",
+  "kind": "activity",
+  "band": "80m",
+  "khz": 3540.0,
+  "host": "sdr.hfunderground.com",
+  "port": 8073,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "30m-act-w3hfu",
+  "kind": "activity",
+  "band": "30m",
+  "khz": 10112.0,
+  "host": "sdr.hfunderground.com",
+  "port": 8073,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "20m-ncdxf-wessex-c",
+  "kind": "beacon",
+  "band": "20m",
+  "khz": 14100.0,
+  "host": "wessex.zapto.org",
+  "port": 8074,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "17m-ncdxf-wessex-c",
+  "kind": "beacon",
+  "band": "17m",
+  "khz": 18110.0,
+  "host": "wessex.zapto.org",
+  "port": 8074,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "15m-ncdxf-wessex-c",
+  "kind": "beacon",
+  "band": "15m",
+  "khz": 21150.0,
+  "host": "wessex.zapto.org",
+  "port": 8074,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "17m-ncdxf-ei5in-c",
+  "kind": "beacon",
+  "band": "17m",
+  "khz": 18110.0,
+  "host": "44.31.191.63",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "20m-ncdxf-ei5in-c",
+  "kind": "beacon",
+  "band": "20m",
+  "khz": 14100.0,
+  "host": "44.31.191.63",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "15m-ncdxf-ei5in-c",
+  "kind": "beacon",
+  "band": "15m",
+  "khz": 21150.0,
+  "host": "44.31.191.63",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "20m-ncdxf-oz1aef-c",
+  "kind": "beacon",
+  "band": "20m",
+  "khz": 14100.0,
+  "host": "87.104.90.69",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "17m-ncdxf-oz1aef-c",
+  "kind": "beacon",
+  "band": "17m",
+  "khz": 18110.0,
+  "host": "87.104.90.69",
+  "port": 8073,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "20m-act-oz1aef",
+  "kind": "activity",
+  "band": "20m",
+  "khz": 14045.0,
+  "host": "87.104.90.69",
+  "port": 8073,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "40m-act-k1vl",
+  "kind": "activity",
+  "band": "40m",
+  "khz": 7025.0,
+  "host": "sdr.k1vl.com",
+  "port": 8075,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "20m-ncdxf-k1vl",
+  "kind": "beacon",
+  "band": "20m",
+  "khz": 14100.0,
+  "host": "sdr.k1vl.com",
+  "port": 8075,
+  "seconds": 180,
+  "align": 180,
+  "gain": 55
+ },
+ {
+  "id": "80m-noise-k1vl",
+  "kind": "noise",
+  "band": "80m",
+  "khz": 3575.0,
+  "host": "sdr.k1vl.com",
+  "port": 8075,
+  "seconds": 120,
+  "gain": 50
+ },
+ {
+  "id": "40m-w1aw-bulletin-k1vl",
+  "kind": "w1aw",
+  "band": "40m",
+  "khz": 7047.5,
+  "host": "sdr.k1vl.com",
+  "port": 8075,
+  "seconds": 900,
+  "gain": 50
+ },
+ {
+  "id": "20m-w1aw-bulletin-wessex",
+  "kind": "w1aw",
+  "band": "20m",
+  "khz": 14047.5,
+  "host": "wessex.zapto.org",
+  "port": 8074,
+  "seconds": 900,
+  "gain": 55
+ }
+]

@@ -1,0 +1,70 @@
+{
+  "plan": "rsgb-2026",
+  "about": "Rows of the RSGB 2026 plan that ohsradio/plans/rsgb_2026.py does not carry, transcribed from the PDF itself on 09/10/2026 (openhamshack docs/research/BANDPLAN-GAPS.md, re-read against the PDF's text layer). tools/export_ohscore.py drops the generated rows inside each 'drop' span, adds 'segments', and closes the export's own gaps inside 'fills'. Each row's src names the PDF page and that band's own effective-from date, since the plan has no single date.",
+  "sources": {"R1": {"sha256": "ea57433369857cc69be4dccc0fbb085ddcf1e8c16b5e2364bd96c2e1af773c83"}},
+  "drop": [
+    {"loHz": 2320000000, "hiHz": 2322000000, "why": "13 cm re-transcribed from p.25: 2321-2322 MHz is 20 kHz, not 25 kHz, and the local beacons split the narrow band"},
+    {"loHz": 3400000000, "hiHz": 3400995000, "why": "9 cm re-transcribed from p.26 to add the local beacons"},
+    {"loHz": 5760000000, "hiHz": 5762000000, "why": "6 cm re-transcribed from p.27: EME in the narrow band, and its beacons"},
+    {"loHz": 10475000000, "hiHz": 10500000000, "why": "3 cm satellite row re-cited from p.28 with the rest of the band"}
+  ],
+  "fills": [
+    {"loHz": 135700, "hiHz": 137800},
+    {"loHz": 472000, "hiHz": 479000},
+    {"loHz": 10000000000, "hiHz": 10500000000}
+  ],
+  "segments": [
+    {"loHz": 135700, "hiHz": 137800, "label": "CW, QRSS and narrow-band digital", "modes": ["cw", "digi"], "kind": "", "maxBwHz": 200, "src": "R1 p.6 (136 kHz, effective 1 Jan 2022)"},
+    {"loHz": 472000, "hiHz": 479000, "label": "CW, QRSS and narrow-band digital", "modes": ["cw", "digi"], "kind": "", "maxBwHz": 500, "src": "R1 p.7 (472 kHz, effective 1 Jan 2024)"},
+    {"loHz": 2310000000, "hiHz": 2310500000, "label": "repeater links", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": 200000, "src": "R1 p.25 (13 cm, effective 1 Jan 2024)"},
+    {"loHz": 2311000000, "hiHz": 2315000000, "label": "high speed data", "modes": ["digi"], "kind": "", "maxBwHz": 200000, "src": "R1 p.25 (13 cm, effective 1 Jan 2024)"},
+    {"loHz": 2320000000, "hiHz": 2320750000, "label": "preferred narrow band; moonbounce 2320.000-2320.025", "modes": ["cw", "digi", "ssb"], "kind": "", "maxBwHz": 2700, "src": "R1 p.25 (13 cm, effective 1 Jan 2024)"},
+    {"loHz": 2320750000, "hiHz": 2320800000, "label": "local beacons", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "R1 p.25 (13 cm, effective 1 Jan 2024; local beacons, 10 W erp max)"},
+    {"loHz": 2320800000, "hiHz": 2321000000, "label": "beacons", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "R1 p.25 (13 cm, effective 1 Jan 2024; IARU column 2320.8-2321 beacons exclusive, UK column propagation beacons 2320.800-2320.990: the wider, as both are printed)"},
+    {"loHz": 2321000000, "hiHz": 2322000000, "label": "FM/DV (Note 1: data where 2322-2400 MHz is not available)", "modes": ["dv", "fm"], "kind": "", "maxBwHz": 20000, "src": "R1 p.25 (13 cm, effective 1 Jan 2024)"},
+    {"loHz": 2322000000, "hiHz": 2350000000, "label": "wideband modes, including data and ATV", "modes": ["am", "atv", "cw", "datv", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.25 (13 cm, effective 1 Jan 2024)"},
+    {"loHz": 2390000000, "hiHz": 2400000000, "label": "all modes", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.25 (13 cm, effective 1 Jan 2024)"},
+    {"loHz": 2400000000, "hiHz": 2450000000, "label": "satellites and ATV repeater outputs", "modes": null, "kind": "satellite", "maxBwHz": null, "src": "R1 p.25 (13 cm, effective 1 Jan 2024; ATV repeater outputs 2435 and 2440; Note 3: 2433-2443 ATV only if no satellite uses it, which a station cannot know, so reserved)"},
+    {"loHz": 3400000000, "hiHz": 3400750000, "label": "narrow band (CW, SSB, MGM, EME)", "modes": ["cw", "digi", "ssb"], "kind": "", "maxBwHz": 2700, "src": "R1 p.26 (9 cm, effective 1 Jan 2021)"},
+    {"loHz": 3400750000, "hiHz": 3400800000, "label": "local beacons", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "R1 p.26 (9 cm, effective 1 Jan 2021; local beacons, 10 W erp max)"},
+    {"loHz": 3400800000, "hiHz": 3400995000, "label": "propagation beacons", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "R1 p.26 (9 cm, effective 1 Jan 2021)"},
+    {"loHz": 3401000000, "hiHz": 3402000000, "label": "data, remote control", "modes": ["digi"], "kind": "", "maxBwHz": 200000, "src": "R1 p.26 (9 cm, effective 1 Jan 2021; the UK column, as the IARU column misprints 200 kHz beside 3400-3401)"},
+    {"loHz": 3402000000, "hiHz": 3410000000, "label": "wideband modes, including DATV repeater outputs", "modes": ["am", "atv", "cw", "datv", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.26 (9 cm, effective 1 Jan 2021)"},
+    {"loHz": 5650000000, "hiHz": 5668000000, "label": "satellite uplinks", "modes": null, "kind": "satellite", "maxBwHz": null, "src": "R1 p.27 (6 cm, effective 1 Jan 2024; Amateur Satellite Service, Earth to space only)"},
+    {"loHz": 5668000000, "hiHz": 5670000000, "label": "alternative narrow band", "modes": ["cw", "digi", "ssb"], "kind": "", "maxBwHz": 2700, "src": "R1 p.27 (6 cm, effective 1 Jan 2024)"},
+    {"loHz": 5670000000, "hiHz": 5680000000, "label": "all modes", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.27 (6 cm, effective 1 Jan 2024)"},
+    {"loHz": 5755000000, "hiHz": 5760000000, "label": "all modes", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.27 (6 cm, effective 1 Jan 2024)"},
+    {"loHz": 5760000000, "hiHz": 5760750000, "label": "narrow band (CW, SSB, MGM, EME)", "modes": ["cw", "digi", "ssb"], "kind": "", "maxBwHz": 2700, "src": "R1 p.27 (6 cm, effective 1 Jan 2024)"},
+    {"loHz": 5760750000, "hiHz": 5760800000, "label": "local beacons", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "R1 p.27 (6 cm, effective 1 Jan 2024; local beacons, 10 W erp max)"},
+    {"loHz": 5760800000, "hiHz": 5760995000, "label": "propagation beacons", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "R1 p.27 (6 cm, effective 1 Jan 2024)"},
+    {"loHz": 5760995000, "hiHz": 5762000000, "label": "narrow band (CW, SSB, MGM, EME), above the beacons", "modes": ["cw", "digi", "ssb"], "kind": "", "maxBwHz": 2700, "src": "R1 p.27 (6 cm, effective 1 Jan 2024; the 5760-5762 narrow-band row runs on past the beacons)"},
+    {"loHz": 5762000000, "hiHz": 5765000000, "label": "all modes", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.27 (6 cm, effective 1 Jan 2024)"},
+    {"loHz": 5820000000, "hiHz": 5830000000, "label": "all modes", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.27 (6 cm, effective 1 Jan 2024)"},
+    {"loHz": 5830000000, "hiHz": 5850000000, "label": "satellite downlinks", "modes": null, "kind": "satellite", "maxBwHz": null, "src": "R1 p.27 (6 cm, effective 1 Jan 2024; Amateur Satellite Service, space to Earth only)"},
+    {"loHz": 10000000000, "hiHz": 10125000000, "label": "all modes (Note-4: Primary User restrictions); ATV repeater outputs 10065", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.28 (3 cm, effective 1 Jan 2024)"},
+    {"loHz": 10225000000, "hiHz": 10250000000, "label": "all modes; ATV repeaters 10240", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.28 (3 cm, effective 1 Jan 2024)"},
+    {"loHz": 10250000000, "hiHz": 10350000000, "label": "digital modes", "modes": ["digi"], "kind": "", "maxBwHz": null, "src": "R1 p.28 (3 cm, effective 1 Jan 2024)"},
+    {"loHz": 10350000000, "hiHz": 10368000000, "label": "all modes; wideband 10352.5-10368 (Note-2: wideband FM preferred 10350-10400)", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.28 (3 cm, effective 1 Jan 2024)"},
+    {"loHz": 10368000000, "hiHz": 10368750000, "label": "narrow band", "modes": ["cw", "digi", "ssb"], "kind": "", "maxBwHz": 2700, "src": "R1 p.28 (3 cm, effective 1 Jan 2024)"},
+    {"loHz": 10368750000, "hiHz": 10368800000, "label": "local beacons", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "R1 p.28 (3 cm, effective 1 Jan 2024; local beacons, 10 W erp max)"},
+    {"loHz": 10368800000, "hiHz": 10368995000, "label": "propagation beacons", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "R1 p.28 (3 cm, effective 1 Jan 2024)"},
+    {"loHz": 10368995000, "hiHz": 10370000000, "label": "narrow band, above the beacons", "modes": ["cw", "digi", "ssb"], "kind": "", "maxBwHz": 2700, "src": "R1 p.28 (3 cm, effective 1 Jan 2024; the 10368-10370 narrow-band row runs on past the beacons)"},
+    {"loHz": 10370000000, "hiHz": 10450000000, "label": "all modes; voice repeater RX 10371, ATV repeaters 10425", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.28 (3 cm, effective 1 Jan 2024)"},
+    {"loHz": 10450000000, "hiHz": 10452000000, "label": "alternative narrow band (Note-3); unattended operation 10400-10475", "modes": ["cw", "digi", "ssb"], "kind": "", "maxBwHz": 2700, "src": "R1 p.28 (3 cm, effective 1 Jan 2024)"},
+    {"loHz": 10452000000, "hiHz": 10475000000, "label": "all modes and satellites; unattended operation 10400-10475; voice repeater TX 10471", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "R1 p.28 (3 cm, effective 1 Jan 2024)"},
+    {"loHz": 10475000000, "hiHz": 10500000000, "label": "satellites", "modes": null, "kind": "satellite", "maxBwHz": null, "src": "R1 p.28 (3 cm, effective 1 Jan 2024; Note-5: Amateur Satellite Service only)"}
+  ],
+  "centres": [
+    {"hz": 5668200000, "label": "alternative narrow band centre", "mode": "usb"},
+    {"hz": 10368100000, "label": "narrow band centre", "mode": "usb"}
+  ],
+  "unplanned": [
+    {"loHz": 2310500000, "hiHz": 2311000000, "why": "RSGB 2026 p.25 gives no UK usage for 2310.5-2311 MHz"},
+    {"loHz": 2315000000, "hiHz": 2320000000, "why": "RSGB 2026 p.25 gives no UK usage for 2315-2320 MHz (the IARU column says only 'national band plans')"},
+    {"loHz": 3400995000, "hiHz": 3401000000, "why": "RSGB 2026 p.26 gives no UK usage between the beacons and 3401 MHz"},
+    {"loHz": 10125000000, "hiHz": 10225000000, "why": "RSGB 2026 p.28 prints no row for 10125-10225 MHz, which is not in the UK licence"}
+  ],
+  "advisories": [
+    {"loHz": 472000, "hiHz": 475000, "modes": ["cw"], "maxBwHz": 200, "text": "RSGB 2026 Note-1 recommends 472-475 kHz for CW only, at most 200 Hz wide: this signal is outside that recommendation", "src": "R1 p.7 Note-1 (630 m; a usage recommendation, so a warning, never a refusal)"}
+  ]
+}

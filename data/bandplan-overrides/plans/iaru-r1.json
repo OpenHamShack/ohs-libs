@@ -1,0 +1,34 @@
+{
+  "plan": "iaru-r1",
+  "about": "IARU Region 1 rows that ohsradio/plans/iaru_r1.py does not carry (2200 m, 630 m, 3 cm), transcribed from the sources on 09/10/2026 (openhamshack docs/research/BANDPLAN-GAPS.md, re-read against the PDFs' text layer). tools/export_ohscore.py adds 'segments' and closes the export's own gaps inside 'fills'.",
+  "sources": {"I1": {"sha256": "8deb428d565ce79a173d773ff2c0226201c09f0afbb2e46ef1a68729840835cf"},
+              "I2": {"sha256": "147190bd1295cd9050dd735f7d8088f9dbeb1a30c228784fb91b611428caf631"}},
+  "drop": [],
+  "fills": [
+    {"loHz": 135700, "hiHz": 137800},
+    {"loHz": 472000, "hiHz": 479000},
+    {"loHz": 10000000000, "hiHz": 10500000000}
+  ],
+  "segments": [
+    {"loHz": 135700, "hiHz": 137800, "label": "CW, QRSS and narrow band digital modes", "modes": ["cw", "digi"], "kind": "", "maxBwHz": 200, "src": "I1 p.1 (effective 16 Oct 2020)"},
+    {"loHz": 472000, "hiHz": 475000, "label": "CW (proposed usage, VA14_C4_Rec_02)", "modes": ["cw"], "kind": "", "maxBwHz": 200, "src": "I1 p.1 (effective 16 Oct 2020)"},
+    {"loHz": 475000, "hiHz": 479000, "label": "narrow band modes: CW, digimodes (500 Hz suggested; proposed usage, VA14_C4_Rec_02)", "modes": ["cw", "digi"], "kind": "", "maxBwHz": null, "src": "I1 p.1 (effective 16 Oct 2020)"},
+    {"loHz": 10000000000, "hiHz": 10150000000, "label": "MGM", "modes": ["digi"], "kind": "", "maxBwHz": null, "src": "I2 p.51 (VHF Handbook v10.03)"},
+    {"loHz": 10150000000, "hiHz": 10250000000, "label": "all modes", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "I2 p.51 (VHF Handbook v10.03)"},
+    {"loHz": 10250000000, "hiHz": 10350000000, "label": "MGM", "modes": ["digi"], "kind": "", "maxBwHz": null, "src": "I2 p.51 (VHF Handbook v10.03)"},
+    {"loHz": 10350000000, "hiHz": 10368000000, "label": "all modes", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "I2 p.51 (VHF Handbook v10.03)"},
+    {"loHz": 10368000000, "hiHz": 10368800000, "label": "all modes; narrow band centre of activity 10368.2; 10368.750-10368.800 local beacon (footnote b)", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": 2700, "src": "I2 p.51 (VHF Handbook v10.03)"},
+    {"loHz": 10368800000, "hiHz": 10368990000, "label": "beacons", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "I2 p.51 (VHF Handbook v10.03; beacons only, footnote c)"},
+    {"loHz": 10369000000, "hiHz": 10370000000, "label": "all modes", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "I2 p.51 (VHF Handbook v10.03)"},
+    {"loHz": 10370000000, "hiHz": 10450000000, "label": "all modes", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "I2 p.51 (VHF Handbook v10.03)"},
+    {"loHz": 10450000000, "hiHz": 10452000000, "label": "narrow band modes where 10368-10370 MHz is not available (footnote a)", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "I2 p.51 (VHF Handbook v10.03)"},
+    {"loHz": 10452000000, "hiHz": 10500000000, "label": "all modes; amateur satellite service", "modes": ["am", "cw", "digi", "dv", "fm", "image", "ssb"], "kind": "", "maxBwHz": null, "src": "I2 p.51 (VHF Handbook v10.03)"}
+  ],
+  "centres": [
+    {"hz": 10368200000, "label": "narrow band centre", "mode": "usb"}
+  ],
+  "unplanned": [
+    {"loHz": 10368990000, "hiHz": 10369000000, "why": "the IARU R1 10 GHz plan (VHF Handbook p.51) prints nothing between the beacons and 10369 MHz"}
+  ],
+  "advisories": []
+}

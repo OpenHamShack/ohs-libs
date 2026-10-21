@@ -1,0 +1,213 @@
+# English template for the shack-pad domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-pad\n"
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "A {kind} cannot {slot}"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "APPS"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "ARM"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "Another program has the controller open. Close the Ajazz or Mirabox Stream Dock software (also from the system tray), OpenDeck, or another OpenHamShack app's window, then unplug the controller and plug it in again."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "Between 1 and {n} pages"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "Controller disconnected ({why})"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "Found {name} (USB {vid:04x}:{pid:04x}). Only the Ajazz AKP03E rev. 2 (USB 0300:3002) works with this app so far: send this report so support can be added."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "No Ajazz or Mirabox controller is plugged in (looked for USB 0300:3002). Check the cable - a data cable, not a charge-only one - and try another USB port."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "No such page"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "Not an action this app offers"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "Not while on air: the transmit key stays where it is until you are off air"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "Not while on the air: stop transmitting first."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "ON AIR"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "PAGE"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "PTT"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "Pages 2-{n} cannot be reached: no control is set to Next page"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "TX"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "The Pillow library is missing: the keys work, but show no pictures."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "The controller could not be opened ({why}). Unplug it and plug it in again; if it still fails, send the controller report."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "The controller stopped working ({why}). Unplug it and plug it in again; if it keeps happening, send the controller report."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "The controller was unplugged, or its USB connection reset. Plug it in again; nothing transmits while it is away."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "The controller would not take a picture for its keys ({why}). If the Ajazz or Mirabox software is running, close it; otherwise send the controller report - this may be a different revision of the pad."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "The controller's output report is {n} bytes, not the {want} this app sends: it is a different revision. Send this report."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "The system refused access to the controller. Another program probably has it: close the Ajazz or Mirabox Stream Dock software (also from the system tray), then unplug the controller and plug it in again."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "The {name} is plugged in, but its control interface is not where it was expected: send this report."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "This computer does not let the app open the controller (no permission). The app's udev rule is missing: reinstall the package, or see the guide's controller section; then unplug the controller and plug it in again."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "This computer does not let the app open the controller ({path}: no permission). The app's udev rule is missing: reinstall the package, or see the guide's controller section; then unplug the controller and plug it in again."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "This installation is missing the hidapi library, so the controller cannot be reached. Reinstall the app; if that does not help, send this report."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "Windows would not open the controller ({why}). Usually another program has it: close the Ajazz or Mirabox Stream Dock software (also from the system tray), then unplug the controller and plug it in again. If it still fails, send the controller report."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "a {kind} cannot {slot}; left out"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "again"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/tx.py
+msgid "already on air from another client"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "no lease"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "nothing instead"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "ok"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "press"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "pressed"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "refused"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/router.py
+msgid "test"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "using the default"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{aid!r} is not an action of this app here; {instead}"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{aid} can only be set on page 1; it is the same key on every page"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{aid} is a {kind} action"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{aid} is a {kind} action; {instead}"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{aid} was on {where}; kept on {keep}"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{cid} is not a control on the {model}"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{cid} is {aid} on every page; change it on page 1"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{cid} on page {n}"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{cid} on page {n}: keeps {aid} on every page"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{cid}: not a control on the {model}; left out"
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/diagnose.py
+msgid "{names} is running and may be using the controller. Close it (also from the system tray, by the clock), then unplug the controller and plug it in again."
+msgstr ""
+
+#: python/shack_pad/src/shack_pad/mapping.py
+msgid "{where}: {aid} can only be set on page 1; left out"
+msgstr ""

@@ -1,0 +1,545 @@
+# English template for the shack-bandplan domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-bandplan\n"
+
+#: regimes/mimit-2022.json:refused
+msgid "10.0-10.3 GHz is not allocated to amateurs in Italy"
+msgstr ""
+
+#: regimes/nkom-2026.json:refused
+msgid "10.00-10.25 GHz is not an amateur band in Norway"
+msgstr ""
+
+#: regimes/ofcom-2024.json:refused
+msgid "10.125-10.225 GHz is not in the UK amateur licence"
+msgstr ""
+
+#: regimes/traficom-2026.json:refused
+msgid "1240-1300 MHz needs a separate, case-by-case licence from Traficom whose terms are not published; if you hold one, enter its terms as your own licence in Settings › Licence & plan"
+msgstr ""
+
+#: regimes/mimit-2022.json:refused
+msgid "1245-1267 MHz is not allocated to amateurs in Italy"
+msgstr ""
+
+#: regimes/mimit-2022.json:refused
+msgid "1298-1300 MHz is not allocated to amateurs in Italy"
+msgstr ""
+
+#: regimes/ofcom-2024.json:refused
+msgid "13 cm above 2450 MHz is not in the UK amateur licence"
+msgstr ""
+
+#: regimes/rsm-2025.json:refused
+msgid "13 cm in New Zealand starts at 2396 MHz: 2300-2396 MHz is a mobile management right."
+msgstr ""
+
+#: regimes/comreg-2023.json:refused
+msgid "1300-1304 MHz is for repeaters by individual application, and the licence's power for it (\"0W (0 dBW)\") contradicts itself: OpenHamShack does not transmit there"
+msgstr ""
+
+#: regimes/ofcom-2024.json:refused
+msgid "146-147 MHz is an innovation band: it needs a Full licence and a Notice of Variation"
+msgstr ""
+
+#: regimes/rsm-2025.json:refused
+msgid "160 m in New Zealand ends at 1950 kHz (GURL 2025, clause 3)."
+msgstr ""
+
+#: regimes/mimit-2022.json:conditions.ariExperiment160m
+msgid "1810-1830 kHz is open in Italy only for MIMIT's 2026 propagation experiment, with each contact logged on ARI's portal within 24 hours; tick it in Settings › Licence & plan if you take part"
+msgstr ""
+
+#: regimes/setid-2026.json:conditions.inContest
+msgid "1850-2000 kHz is open in Spain in 2026 for contests only (SETID resolution of 4 December 2025); tick it in Settings › Licence & plan if you are operating in a contest"
+msgstr ""
+
+#: regimes/fcc-2026.json:refused
+msgid "219-220 MHz is only for fixed point-to-point digital message forwarding, after written notice to ARRL and AMTS licensees (47 CFR 97.303(l)); OpenHamShack does not transmit there."
+msgstr ""
+
+#: regimes/ised-2022.json:refused
+msgid "220-222 MHz is open to amateurs only in exceptional circumstances, to assist in disaster relief (footnote C11), so OpenHamShack does not transmit there."
+msgstr ""
+
+#: regimes/fcc-2026.json:conditions.utcNotified2200m
+msgid "2200 m (135.7-137.8 kHz) may be used only from a fixed station whose location was notified to the Utilities Telecom Council at least 30 days ago without objection (47 CFR 97.303(g)); tick it in Settings › Licence & plan if this station's was."
+msgstr ""
+
+#: regimes/ofcom-2024.json:refused
+msgid "2300-2302 MHz is an innovation band: it needs a Full licence and a Notice of Variation"
+msgstr ""
+
+#: regimes/setid-2026.json:conditions.holdsSa2300
+msgid "2300-2316 MHz needs a special authorisation from SETID (Orden IET/614/2015); tick it in Settings › Licence & plan if you hold one"
+msgstr ""
+
+#: regimes/digst-2026.json:refused
+msgid "2300-2400 MHz is not an amateur band in Denmark"
+msgstr ""
+
+#: regimes/pts-2025.json:refused
+msgid "2300-2400 MHz is not an amateur band in Sweden: PTS auctioned it"
+msgstr ""
+
+#: regimes/fcc-2026.json:refused
+msgid "2310-2390 MHz is not an amateur band in the United States (47 CFR 97.301(a))."
+msgstr ""
+
+#: regimes/setid-2026.json:conditions.holdsSa2332
+msgid "2332-2400 MHz needs a special authorisation from SETID (Orden IET/614/2015); tick it in Settings › Licence & plan if you hold one"
+msgstr ""
+
+#: regimes/ofcom-2024.json:refused
+msgid "2350-2390 MHz is not in the UK amateur licence"
+msgstr ""
+
+#: regimes/comreg-2023.json:conditions.holdsComRegSatellitePermit
+msgid "2400-2450 MHz needs an individual authorisation from ComReg, for satellite operation only; tick it in Settings › Licence & plan if you hold one"
+msgstr ""
+
+#: regimes/setid-2026.json:conditions.holdsSa2410
+msgid "2410-2450 MHz needs a special authorisation from SETID (Orden IET/614/2015); tick it in Settings › Licence & plan if you hold one"
+msgstr ""
+
+#: regimes/rsm-2025.json:refused
+msgid "26.95-27.30 MHz is open to amateurs for telemetry and telecommand only (GURL 2025, special condition 4), so OpenHamShack does not transmit there."
+msgstr ""
+
+#: regimes/setid-2026.json:refused
+msgid "3.4 GHz is not allocated to amateurs in Spain"
+msgstr ""
+
+#: regimes/pts-2025.json:refused
+msgid "3.4 GHz is not an amateur band in Sweden"
+msgstr ""
+
+#: regimes/acma-2023.json:conditions.inAu34GhzExcludedArea
+msgid "3.4-3.6 GHz may not be used where a transmission would reach the HCIS areas of Schedule 3 of the Amateur Stations Class Licence or a spectrum-licensed area (s 18(1)-(2)); untick it in Settings › Licence & plan if this station is clear of them."
+msgstr ""
+
+#: regimes/fcc-2026.json:conditions.inWhiteSandsBox
+msgid "33 cm may not be used inside the White Sands Missile Range box, 31°41'-34°30'N and 104°11'-107°30'W (47 CFR 97.303(n)); untick it in Settings › Licence & plan if this station is outside it."
+msgstr ""
+
+#: regimes/fcc-2026.json:refused
+msgid "3300-3450 MHz is not in Part 97: amateurs continue there only under footnote US103, which names no class or power and may be withdrawn at any time, so OpenHamShack does not transmit there."
+msgstr ""
+
+#: regimes/ofcom-2024.json:refused
+msgid "3410-3475 MHz is not in the UK amateur licence"
+msgstr ""
+
+#: regimes/rsm-2025.json:refused
+msgid "3410-3500 MHz is not open to New Zealand amateurs."
+msgstr ""
+
+#: regimes/fcc-2026.json:refused
+msgid "3450-3500 MHz stopped being an amateur band on 14 April 2022."
+msgstr ""
+
+#: regimes/traficom-2026.json:conditions.inFinnish4mExcludedArea
+msgid "4 m may not be used in Lieksa, Ilomantsi, Joensuu, Kontiolahti, Polvijärvi, Juuka, Nurmes, Valtimo, Kuhmo, Hyrynsalmi, Suomussalmi, Ristijärvi or Sotkamo; Settings › Licence & plan says this station is there, or has not been told otherwise"
+msgstr ""
+
+#: regimes/setid-2026.json:conditions.notified8m
+msgid "40.650-40.750 MHz may be used only from a fixed station after notice to the Jefatura Provincial de Inspección de Telecomunicaciones (SETID resolution of 13 October 2025); tick it in Settings › Licence & plan if you have given notice and are transmitting from a fixed station"
+msgstr ""
+
+#: regimes/bipt-2019.json:refused
+msgid "40.66-40.69 MHz needs an individual permit from BIPT, and its conditions were found only on UBA's page, not in a BIPT text: OpenHamShack does not transmit there"
+msgstr ""
+
+#: regimes/mimit-2022.json:conditions.ariExperiment8m
+msgid "40.660-40.700 MHz is open in Italy only for MIMIT's 2026 propagation experiment, with each contact logged on ARI's portal within 24 hours; tick it in Settings › Licence & plan if you take part"
+msgstr ""
+
+#: regimes/digst-2026.json:refused
+msgid "430-432 MHz is not an amateur band in Denmark"
+msgstr ""
+
+#: regimes/traficom-2026.json:refused
+msgid "430-432 MHz is not an amateur band in Finland"
+msgstr ""
+
+#: regimes/nkom-2026.json:refused
+msgid "430-432 MHz is not an amateur band in Norway"
+msgstr ""
+
+#: regimes/pts-2025.json:refused
+msgid "430-432 MHz is not an amateur band in Sweden"
+msgstr ""
+
+#: regimes/ofcom-2024.json:conditions.nearLondon
+msgid "431-432 MHz may not be used within 100 km of Charing Cross (Ofcom licence, Schedule 1, Tables A-C, 431-432 MHz); Settings › Licence & plan says this station is"
+msgstr ""
+
+#: regimes/mimit-2022.json:refused
+msgid "434-435 MHz is not allocated to amateurs in Italy"
+msgstr ""
+
+#: regimes/mimit-2022.json:refused
+msgid "438-440 MHz is not allocated to amateurs in Italy"
+msgstr ""
+
+#: regimes/digst-2026.json:refused
+msgid "438-440 MHz is not an amateur band in Denmark"
+msgstr ""
+
+#: regimes/nkom-2026.json:refused
+msgid "438-440 MHz is not an amateur band in Norway"
+msgstr ""
+
+#: regimes/pts-2025.json:refused
+msgid "438-440 MHz is not an amateur band in Sweden"
+msgstr ""
+
+#: regimes/traficom-2026.json:refused
+msgid "438.0625-438.1625 MHz is for repeater transmitters only in Finland"
+msgstr ""
+
+#: regimes/rsm-2025.json:refused
+msgid "5320 kHz is an AREC spot frequency for AREC activities under AREC call signs, not an amateur band, so OpenHamShack does not transmit there."
+msgstr ""
+
+#: regimes/rsm-2025.json:refused
+msgid "5395 kHz is an AREC spot frequency for AREC activities under AREC call signs, not an amateur band, so OpenHamShack does not transmit there."
+msgstr ""
+
+#: regimes/setid-2026.json:conditions.holdsSa5650
+msgid "5650-5700 MHz needs a special authorisation from SETID (Orden IET/614/2015); tick it in Settings › Licence & plan if you hold one"
+msgstr ""
+
+#: regimes/mimit-2022.json:refused
+msgid "5670-5760 MHz is not allocated to amateurs in Italy"
+msgstr ""
+
+#: regimes/setid-2026.json:conditions.holdsSa5720
+msgid "5720-5760 MHz needs a special authorisation from SETID (Orden IET/614/2015); tick it in Settings › Licence & plan if you hold one"
+msgstr ""
+
+#: regimes/setid-2026.json:conditions.holdsSa5762
+msgid "5762-5850 MHz needs a special authorisation from SETID (Orden IET/614/2015); tick it in Settings › Licence & plan if you hold one"
+msgstr ""
+
+#: regimes/mimit-2022.json:refused
+msgid "5770-5830 MHz is not allocated to amateurs in Italy"
+msgstr ""
+
+#: regimes/traficom-2026.json:conditions.inTohmajarvi6mArea
+msgid "6 m transmitters may not be used in part of Tohmajärvi; Settings › Licence & plan says this station is there, or has not been told otherwise"
+msgstr ""
+
+#: regimes/acma-2023.json:refused
+msgid "60 m is not in the Australian amateur class licence, although the spectrum plan allocates it (CL s 17 and Schedule 2)."
+msgstr ""
+
+#: regimes/rsm-2025.json:refused
+msgid "614-622 MHz is not an amateur band: only NZART's licensed ATV repeater sites use it."
+msgstr ""
+
+#: regimes/fcc-2026.json:conditions.utcNotified630m
+msgid "630 m (472-479 kHz) may be used only from a fixed station whose location was notified to the Utilities Telecom Council at least 30 days ago without objection (47 CFR 97.303(g)); tick it in Settings › Licence & plan if this station's was."
+msgstr ""
+
+#: regimes/pts-2025.json:refused
+msgid "70 MHz is not an amateur band in Sweden: it needs a temporary permit from PTS"
+msgstr ""
+
+#: regimes/arcep-2019.json:refused
+msgid "70-70.5 MHz is not allocated to amateurs in France"
+msgstr ""
+
+#: regimes/bnetza-2024.json:refused
+msgid "70-70.5 MHz is not in the German amateur licence in 2026: the toleration for class A ended on 31 December 2025, and no new conditions from BNetzA have been confirmed"
+msgstr ""
+
+#: regimes/traficom-2026.json:refused
+msgid "70.000-70.050 MHz is for amateur beacons only in Finland"
+msgstr ""
+
+#: regimes/ofcom-2024.json:refused
+msgid "70.5-71.5 MHz is an innovation band: it needs a Full licence and a Notice of Variation"
+msgstr ""
+
+#: regimes/rsm-2025.json:refused
+msgid "80 m in New Zealand ends at 3900 kHz (GURL 2025, clause 3)."
+msgstr ""
+
+#: regimes/fcc-2026.json:conditions.inColoradoWyomingBox
+msgid "902.4-902.6 MHz may not be used inside the Colorado/Wyoming box, 39-42°N and 103-108°W (47 CFR 97.303(n)(3)); untick it in Settings › Licence & plan if this station is outside it."
+msgstr ""
+
+#: regimes/fcc-2026.json:conditions.inColoradoWyomingBox
+msgid "904.3-904.7 MHz may not be used inside the Colorado/Wyoming box, 39-42°N and 103-108°W (47 CFR 97.303(n)(3)); untick it in Settings › Licence & plan if this station is outside it."
+msgstr ""
+
+#: regimes/fcc-2026.json:conditions.inColoradoWyomingBox
+msgid "925.3-925.7 MHz may not be used inside the Colorado/Wyoming box, 39-42°N and 103-108°W (47 CFR 97.303(n)(3)); untick it in Settings › Licence & plan if this station is outside it."
+msgstr ""
+
+#: regimes/fcc-2026.json:conditions.inColoradoWyomingBox
+msgid "927.3-927.7 MHz may not be used inside the Colorado/Wyoming box, 39-42°N and 103-108°W (47 CFR 97.303(n)(3)); untick it in Settings › Licence & plan if this station is outside it."
+msgstr ""
+
+#: regimes/comreg-2023.json:refused
+msgid "Above 5366.5 kHz, Irish 60 m use is only on spot frequencies, and the licence does not say whether a spot frequency is the carrier or the centre of the channel, nor how wide a channel is: OpenHamShack refuses them until that is confirmed"
+msgstr ""
+
+#: shack_bandplan.messages:plan_bandwidth
+msgid "Band plan: the {label} segment ({span}) is for signals up to {max} Hz; this one is {width} Hz"
+msgstr ""
+
+#: shack_bandplan.messages:plan_output
+msgid "Band plan: {span} is {label}: not for transmitting"
+msgstr ""
+
+#: shack_bandplan.messages:plan_mode
+msgid "Band plan: {what} is not what the {label} segment ({span}) is for"
+msgstr ""
+
+#: regimes/bipt-2019.json:refused
+msgid "Belgian 4 m use is only 69.950 MHz and 70.1125-70.4125 MHz"
+msgstr ""
+
+#: regimes/bipt-2019.json:refused
+msgid "Belgian 60 m use is only 5351.5-5366.5 kHz"
+msgstr ""
+
+#: regimes/comreg-2023.json:refused
+msgid "Below 5351.5 kHz, Irish 60 m use is only on spot frequencies, and the licence does not say whether a spot frequency is the carrier or the centre of the channel, nor how wide a channel is: OpenHamShack refuses them until that is confirmed"
+msgstr ""
+
+#: regimes/rdi-2024.json:refused
+msgid "Dutch 60 m use is only 5351.5-5366.5 kHz"
+msgstr ""
+
+#: regimes/traficom-2026.json:refused
+msgid "Finnish 60 m use is only 5351.5-5366.5 kHz"
+msgstr ""
+
+#: regimes/arcep-2019.json:refused
+msgid "French 60 m use is only 5351.5-5366.5 kHz"
+msgstr ""
+
+#: regimes/bnetza-2024.json:refused
+msgid "German 60 m use is only 5351.5-5366.5 kHz"
+msgstr ""
+
+#: regimes/ised-2022.json:refused
+msgid "In Canada, 60 m may be used only on the channels centred on 5332, 5348, 5373 and 5405 kHz and in 5351.5-5366.5 kHz (RBR-4 Schedule I, footnote C21)."
+msgstr ""
+
+#: regimes/ofcom-2024.json:permits.gb-146
+msgid "In Scotland, and within 40 km of the Scottish border or coast, the 146 MHz NoV stops at 146.9375 MHz"
+msgstr ""
+
+#: regimes/fcc-2026.json:refused
+msgid "In the United States, 60 m may be used only on the channels centred on 5332, 5348, 5373 and 5405 kHz and in 5351.5-5366.5 kHz (47 CFR 97.303(h)(3))."
+msgstr ""
+
+#: shack_bandplan.messages:at_sea
+msgid "Maritime or aeronautical mobile (/MM, /AM): no country's licence applies by itself. Transmit stays locked until you choose the licence you operate under in the station profile"
+msgstr ""
+
+#: regimes/acma-2023.json:conditions.inWaQuietZone
+msgid "No amateur station may operate within 150 km of 26.704167 S, 116.658889 E, the Western Australia Radio Quiet Zone (Amateur Stations Class Licence s 18(3)); untick it in Settings › Licence & plan if this station is outside it."
+msgstr ""
+
+#: regimes/fcc-2026.json:conditions.northOfLineA
+msgid "No amateur station may transmit on 420-430 MHz from north of Line A (47 CFR 97.303(m)(1)); untick it in Settings › Licence & plan if this station is south of it."
+msgstr ""
+
+#: shack_bandplan.messages:no_class
+msgid "No licence class chosen: transmit stays locked until you choose yours in the station profile"
+msgstr ""
+
+#: shack_bandplan.messages:no_regime_in
+msgid "No licence for {country} is written into OpenHamShack yet: transmit stays locked until you choose a licence or enter your own licence's segments and power limits in the station profile"
+msgstr ""
+
+#: shack_bandplan.messages:no_regime
+msgid "No licence is set up for this station's country yet: transmit stays locked until you choose a licence or enter your own in the station profile"
+msgstr ""
+
+#: regimes/mimit-2022.json:refused
+msgid "Only 5351.5-5366.5 kHz of 60 m is allocated to amateurs in Italy"
+msgstr ""
+
+#: regimes/setid-2026.json:refused
+msgid "Only 5351.5-5366.5 kHz of 60 m is open to amateurs in Spain"
+msgstr ""
+
+#: regimes/setid-2026.json:refused
+msgid "Only 70.150-70.250 MHz of 4 m is open to amateurs in Spain"
+msgstr ""
+
+#: shack_bandplan.messages:power_not_judged
+msgid "OpenHamShack's data holds no power limit for the {permit}: power was not checked"
+msgstr ""
+
+#: plans/rsgb-2026.json:advisories
+msgid "RSGB 2026 Note-1 recommends 472-475 kHz for CW only, at most 200 Hz wide: this signal is outside that recommendation"
+msgstr ""
+
+#: regimes/rdi-2024.json:refused
+msgid "The Dutch 13 cm allocation starts at 2320 MHz"
+msgstr ""
+
+#: regimes/rdi-2024.json:refused
+msgid "The Dutch 160 m allocation ends at 1880 kHz"
+msgstr ""
+
+#: regimes/traficom-2026.json:refused
+msgid "The Finnish 4 m allocation ends at 70.300 MHz"
+msgstr ""
+
+#: regimes/bnetza-2024.json:refused
+msgid "The German 13 cm allocation starts at 2320 MHz"
+msgstr ""
+
+#: regimes/comreg-2023.json:refused
+msgid "The Irish licence excludes 10.270-10.300 GHz"
+msgstr ""
+
+#: shack_bandplan.messages:data_researched
+msgid "The data for {regime} was transcribed from its source but has not yet been second-checked: check the licence itself before relying on it"
+msgstr ""
+
+#: shack_bandplan.messages:unknown_regime
+msgid "The licence {regime} is not one this version of OpenHamShack knows: choose yours again in the station profile"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_too_wide
+msgid "The signal is {width} kHz wide; the {title} allows {max} kHz at most"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_below
+msgid "The signal reaches down to {edge}, into the {title}'s {label} segment"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_neighbour
+msgid "The signal reaches the {label} ({uplink})"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_terrestrial
+msgid "The signal reaches the {title}'s uplink ({uplink}); only a satellite uplink to it may transmit there"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_above
+msgid "The signal reaches {edge}, above the top of the {title} ({top})"
+msgstr ""
+
+#: shack_bandplan.messages:plan_reserved
+msgid "The signal would reach the {label} ({span}), where the band plan keeps everyone off"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_reserved
+msgid "The signal would reach the {label} segment ({seg}), where nobody transmits"
+msgstr ""
+
+#: shack_bandplan.messages:no_country
+msgid "The station's country is not known: transmit stays locked until you set your callsign or choose the country in the station profile, or enter your own licence"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_seg_width
+msgid "The {label} segment allows {max} Hz at most; this signal is {width} Hz wide"
+msgstr ""
+
+#: shack_bandplan.messages:permit_researched
+msgid "The {permit} in OpenHamShack's data comes from a transcription that has not been checked against the permit document"
+msgstr ""
+
+#: shack_bandplan.messages:plan_gap
+msgid "The {plan} data does not cover {span} yet: only the licence was checked there"
+msgstr ""
+
+#: shack_bandplan.messages:plan_unplanned
+msgid "The {plan} plan prints nothing for {span}: only the licence was checked there"
+msgstr ""
+
+#: shack_bandplan.messages:wrong_class
+msgid "Your licence class belongs to a different licence than {regime}: choose your class again in the station profile"
+msgstr ""
+
+#: shack_bandplan.messages:no_segments
+msgid "Your own licence has no segments yet: transmit stays locked until you enter them in the station profile"
+msgstr ""
+
+#: shack_bandplan.messages:left_allocation
+msgid "{class} licence: the signal would leave the allocation ({span})"
+msgstr ""
+
+#: shack_bandplan.messages:permit_class
+msgid "{class} licence: the {permit} is open only to {who} licensees"
+msgstr ""
+
+#: shack_bandplan.messages:channel_class
+msgid "{class} licence: {label} is open only to {who} licensees"
+msgstr ""
+
+#: shack_bandplan.messages:power_measured_over
+msgid "{class} licence: {limit} maximum {where} (measured {got})"
+msgstr ""
+
+#: shack_bandplan.messages:power_estimated_over
+msgid "{class} licence: {limit} maximum {where}, and the power chain's estimate is {got}. An estimate, so a warning, not a refusal: check it with a power meter"
+msgstr ""
+
+#: shack_bandplan.messages:emission_mode
+msgid "{class} licence: {mode} is not permitted on {span}"
+msgstr ""
+
+#: shack_bandplan.messages:emission_width
+msgid "{class} licence: {span} allows signals up to {max} Hz; this one is {width} Hz"
+msgstr ""
+
+#: shack_bandplan.messages:class_not_allowed
+msgid "{class} licence: {span} is not available"
+msgstr ""
+
+#: shack_bandplan.messages:channel_width
+msgid "{label} allows {max} kHz at most; this signal is {width} kHz"
+msgstr ""
+
+#: shack_bandplan.messages:channel_segment
+msgid "{label}: the signal must lie inside one of {where} ({span} does not)"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_only
+msgid "{regime} allows {span} for the amateur-satellite service only, and this is not a satellite uplink"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_unstated
+msgid "{regime} as written here says nothing about the amateur-satellite service"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_not_permitted
+msgid "{regime} does not permit an amateur-satellite uplink on {span}"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_unknown
+msgid "{satellite} is not a satellite in OpenHamShack's data"
+msgstr ""
+
+#: shack_bandplan.messages:unconfirmed
+msgid "{span} is marked unconfirmed in OpenHamShack's data for {regime}: it stays refused until it has been checked against the licence"
+msgstr ""
+
+#: shack_bandplan.messages:not_amateur
+msgid "{span} is not an amateur band"
+msgstr ""
+
+#: shack_bandplan.messages:outside_own
+msgid "{span} is outside every segment of your own licence: add the segment in the station profile if your licence allows it"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_outside
+msgid "{span} is outside the {title} ({uplink} up)"
+msgstr ""
+
+#: shack_bandplan.messages:satellite_mode
+msgid "{what} is not allowed in the {label} segment ({seg})"
+msgstr ""

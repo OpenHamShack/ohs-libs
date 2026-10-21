@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "id": "qo100-nb",
+  "kind": "satellite",
+  "title": "QO-100 narrowband transponder",
+  "status": "researched",
+  "partial": false,
+  "coverage": {"loHz": 10489500000, "hiHz": 10490000000},
+  "gaps": [],
+  "source": {"key": "Q1", "title": "AMSAT-DL QO-100 narrowband bandplan, beacons, IARU R1 emergency notice", "url": "https://amsat-dl.org/en/p4-a-nb-transponder-bandplan-and-operating-guidelines/", "version": "as compiled in openhamshack-nb docs/qo100-research.md s.1 (2026-10-04)", "date": "2026-10-04", "checked": "2026-10-04"},
+  "uplinkToDownlinkHz": 8089500000,
+  "uplink": {"loHz": 2400000000, "hiHz": 2400500000},
+  "downlink": {"loHz": 10489500000, "hiHz": 10490000000},
+  "segmentsIn": "downlink",
+  "maxBwHz": 2700,
+  "edgeRule": "occupied",
+  "segments": [
+    {"loHz": 10489500000, "hiHz": 10489505000, "label": "lower beacon", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "Q1"},
+    {"loHz": 10489505000, "hiHz": 10489540000, "label": "CW only", "modes": ["cw"], "kind": "", "maxBwHz": 2700, "src": "Q1"},
+    {"loHz": 10489540000, "hiHz": 10489580000, "label": "narrow digimodes (500 Hz max)", "modes": ["cw", "digi", "dv", "image"], "kind": "", "maxBwHz": 500, "src": "Q1"},
+    {"loHz": 10489580000, "hiHz": 10489650000, "label": "digimodes (2.7 kHz max)", "modes": ["cw", "digi", "dv", "image"], "kind": "", "maxBwHz": 2700, "src": "Q1"},
+    {"loHz": 10489650000, "hiHz": 10489745000, "label": "SSB only", "modes": ["am", "ssb"], "kind": "", "maxBwHz": 2700, "src": "Q1"},
+    {"loHz": 10489745000, "hiHz": 10489755000, "label": "middle beacon", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "Q1"},
+    {"loHz": 10489755000, "hiHz": 10489850000, "label": "SSB only", "modes": ["am", "ssb"], "kind": "", "maxBwHz": 2700, "src": "Q1"},
+    {"loHz": 10489850000, "hiHz": 10489857500, "label": "AMSAT-DL broadcast", "modes": null, "kind": "protected", "maxBwHz": null, "src": "Q1"},
+    {"loHz": 10489857500, "hiHz": 10489865000, "label": "emergency (10489.860)", "modes": ["am", "cw", "digi", "dv", "image", "ssb"], "kind": "", "maxBwHz": 2700, "src": "Q1"},
+    {"loHz": 10489865000, "hiHz": 10489990000, "label": "mixed modes, contests", "modes": ["am", "cw", "digi", "dv", "image", "ssb"], "kind": "", "maxBwHz": 2700, "src": "Q1"},
+    {"loHz": 10489990000, "hiHz": 10489997000, "label": "multimedia beacon", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "Q1"},
+    {"loHz": 10489997000, "hiHz": 10490000000, "label": "upper beacon", "modes": null, "kind": "beacon", "maxBwHz": null, "src": "Q1"}
+  ],
+  "beacons": [
+    {"id": "lower", "label": "Lower beacon (CW F1A)", "downlinkHz": 10489500000, "kind": "f1a", "refHz": 10489500200},
+    {"id": "middle", "label": "Middle beacon (400 bd BPSK)", "downlinkHz": 10489750000, "kind": "bpsk", "refHz": 10489750000},
+    {"id": "mm", "label": "Multimedia beacon (8APSK)", "downlinkHz": 10489995000, "kind": "mm", "refHz": 10489995000},
+    {"id": "upper", "label": "Upper beacon (CW)", "downlinkHz": 10490000000, "kind": "f1a", "refHz": 10489999800}
+  ],
+  "neighbours": [
+    {"loHz": 2401000000, "hiHz": 2410000000, "label": "QO-100 wideband transponder"}
+  ]
+}

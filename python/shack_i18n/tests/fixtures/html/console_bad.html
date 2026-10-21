@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+<head>
+  <title>Radio console</title> <!-- expect-finding -->
+  <style>body { font-family: "Not text"; }</style>
+  <script>const msg = "Not checked here";</script>
+</head>
+<body>
+  <h1>Station</h1> <!-- expect-finding -->
+  <button title="Push to talk">PTT</button> <!-- expect-finding (attribute and text) -->
+  <input type="submit" value="Save settings"> <!-- expect-finding -->
+  <img src="dish.png" alt="Dish pointing"> <!-- expect-finding -->
+  <input placeholder="Callsign" data-i18n-attr="title:call.title"> <!-- expect-finding -->
+  <p>
+    Unclosed paragraph text <!-- expect-finding -->
+  <li>A list item <!-- expect-finding -->
+</body>
+</html>

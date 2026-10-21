@@ -1,0 +1,16 @@
+/* Brand kit tokens (brand/tokens/tokens.css): light by default, dark when
+   the OS is. System fonts only: no external assets. */
+:root { color-scheme: light dark; --bg: #f2f4f7; --surface: #ffffff; --ink: #0d1520; --dim: #46536a; --accent: #00728f; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0a0e13; --surface: #121922; --ink: #e8eef5; --dim: #a3b0bf; --accent: #4fd1e8; }
+}
+html, body { margin: 0; background: var(--bg); color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 640px; margin: 32px auto; padding: 24px; background: var(--surface); border-radius: 12px; }
+.icon { display: block; margin-bottom: 12px; }
+h1 { font-size: 28px; margin: 0 0 8px; }
+p { color: var(--dim); line-height: 1.5; }
+dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 20px 0; }
+dt { color: var(--dim); }
+dd { margin: 0; font-family: ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+.ok { color: var(--accent); font-weight: 600; }

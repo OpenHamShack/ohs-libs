@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhamshack.org/schemas/bandplan.schema.json",
+  "title": "OpenHamShack band-plan and licence dataset, schema 1",
+  "description": "BANDPLAN-DATA.md. One file, one $defs entry per kind of data file; a reader picks the entry for the file it reads (manifest, vocab, countries, regions, regime, plan, satellite, repeaters, presets). Shape only: the rules that need more than one row at a time (no overlaps, permits on refused rows, coverage) are shack_bandplan.validate's.",
+  "$defs": {
+    "hz": {"type": "integer", "minimum": 0, "maximum": 3000000000000},
+    "watts": {"type": "number", "exclusiveMinimum": 0},
+    "date": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "src": {"type": "string", "minLength": 1},
+    "classId": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "modeClass": {"enum": ["cw", "ssb", "am", "fm", "digi", "dv", "image", "datv", "atv"]},
+    "unit": {"enum": ["PEP", "mean", "carrier", "ERP", "EIRP"]},
+    "status": {"enum": ["checked", "researched", "draft"]},
+    "span": {
+      "type": "object", "required": ["loHz", "hiHz"],
+      "properties": {"loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"}}
+    },
+    "gap": {
+      "type": "object", "required": ["loHz", "hiHz", "why"], "additionalProperties": false,
+      "properties": {"loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"}, "why": {"type": "string", "minLength": 1}}
+    },
+    "source": {
+      "type": "object", "required": ["title", "url", "version", "date", "checked"],
+      "properties": {
+        "key": {"type": "string"}, "title": {"type": "string", "minLength": 1}, "url": {"type": "string", "minLength": 1},
+        "version": {"type": "string", "minLength": 1}, "date": {"$ref": "#/$defs/date"}, "checked": {"$ref": "#/$defs/date"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "limit": {
+      "type": "object", "required": ["watts", "unit"], "additionalProperties": false,
+      "properties": {
+        "watts": {"$ref": "#/$defs/watts"}, "unit": {"$ref": "#/$defs/unit"},
+        "modes": {"type": "array", "items": {"$ref": "#/$defs/modeClass"}, "minItems": 1, "uniqueItems": true}
+      }
+    },
+    "limits": {"type": "array", "items": {"$ref": "#/$defs/limit"}, "minItems": 1},
+    "statusBlock": {
+      "type": "object", "required": ["status", "partial", "coverage", "gaps"],
+      "properties": {
+        "status": {"$ref": "#/$defs/status"}, "partial": {"type": "boolean"},
+        "coverage": {"$ref": "#/$defs/span"}, "gaps": {"type": "array", "items": {"$ref": "#/$defs/gap"}},
+        "partialWhy": {"type": "string"}
+      }
+    },
+    "segment": {
+      "type": "object", "required": ["loHz", "hiHz", "label", "modes", "kind", "maxBwHz", "src"], "additionalProperties": false,
+      "properties": {
+        "loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"}, "label": {"type": "string", "minLength": 1},
+        "modes": {"oneOf": [{"type": "null"}, {"type": "array", "items": {"$ref": "#/$defs/modeClass"}, "uniqueItems": true}]},
+        "kind": {"enum": ["", "beacon", "satellite", "protected", "output"]},
+        "maxBwHz": {"oneOf": [{"type": "null"}, {"type": "number", "exclusiveMinimum": 0}]},
+        "src": {"$ref": "#/$defs/src"}
+      }
+    },
+
+    "manifest": {
+      "type": "object", "required": ["schema", "dataVersion", "files"],
+      "properties": {
+        "schema": {"const": 1},
+        "dataVersion": {"type": "string", "pattern": "^\\d{4}\\.\\d{2}\\.\\d+$"},
+        "generatedBy": {"type": "string"}, "generatedFrom": {"type": "object"},
+        "regimes": {"type": "array", "items": {"type": "string"}},
+        "plans": {"type": "array", "items": {"type": "string"}},
+        "satellites": {"type": "array", "items": {"type": "string"}},
+        "files": {"type": "object", "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+      }
+    },
+    "vocab": {
+      "type": "object", "required": ["schema", "modeClasses", "modeClass", "units", "segmentKinds", "bands"],
+      "properties": {
+        "schema": {"const": 1},
+        "modeClasses": {"type": "array", "items": {"$ref": "#/$defs/modeClass"}, "uniqueItems": true},
+        "modeClass": {"type": "object", "additionalProperties": {"$ref": "#/$defs/modeClass"}},
+        "fallbackClass": {"type": "object", "additionalProperties": {"$ref": "#/$defs/modeClass"}},
+        "classWord": {"type": "object", "additionalProperties": {"type": "string"}},
+        "units": {"type": "array", "items": {"$ref": "#/$defs/unit"}},
+        "segmentKinds": {"type": "array", "items": {"type": "string"}},
+        "reservedKinds": {"type": "array", "items": {"type": "string"}},
+        "bands": {"type": "array", "items": {
+          "type": "object", "required": ["name", "loHz", "hiHz"],
+          "properties": {"name": {"type": "string"}, "loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"}}}},
+        "bandsSrc": {"type": "string"}
+      }
+    },
+    "countries": {
+      "type": "array", "items": {
+        "type": "object", "required": ["iso", "name", "regulator", "entities", "regimes", "plan", "region", "status", "src"],
+        "additionalProperties": false,
+        "properties": {
+          "iso": {"type": "string", "pattern": "^[A-Z]{2}$"}, "name": {"type": "string"}, "regulator": {"type": "string"},
+          "entities": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "regimes": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+          "plan": {"type": "string"}, "region": {"enum": [1, 2, 3]}, "status": {"$ref": "#/$defs/status"},
+          "src": {"$ref": "#/$defs/src"}
+        }
+      }
+    },
+    "regions": {
+      "type": "object", "required": ["schema", "byContinent", "region1InAsia", "region3InAfrica", "region2InOceania", "src"],
+      "properties": {
+        "schema": {"const": 1},
+        "byContinent": {"type": "object", "additionalProperties": {"enum": [1, 2, 3]}},
+        "region1InAsia": {"type": "array", "items": {"type": "string"}},
+        "region3InAfrica": {"type": "array", "items": {"type": "string"}},
+        "region2InOceania": {"type": "array", "items": {"type": "string"}},
+        "src": {"$ref": "#/$defs/src"}
+      }
+    },
+    "regime": {
+      "allOf": [{"$ref": "#/$defs/statusBlock"}],
+      "type": "object",
+      "required": ["schema", "id", "title", "short", "authority", "countries", "plan", "source", "classes", "edges",
+                   "allocations", "channelled", "emissions", "refused", "permits", "conditions", "satellite", "cept",
+                   "ceptSrc", "ceptVisitor", "notes"],
+      "properties": {
+        "schema": {"const": 1},
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"},
+        "title": {"type": "string", "minLength": 1}, "short": {"type": "string", "minLength": 1},
+        "authority": {"type": "string", "minLength": 1},
+        "countries": {"type": "array", "items": {"type": "string", "pattern": "^[A-Z]{2}$"}, "minItems": 1},
+        "plan": {"type": "string"},
+        "source": {"$ref": "#/$defs/source"},
+        "classes": {"type": "array", "minItems": 1, "items": {
+          "type": "object", "required": ["id", "name"], "additionalProperties": false,
+          "properties": {"id": {"$ref": "#/$defs/classId"}, "name": {"type": "string", "minLength": 1}}}},
+        "edges": {"enum": ["closed", "lower-open"]},
+        "allocations": {"type": "array", "minItems": 1, "items": {
+          "type": "object", "required": ["loHz", "hiHz", "limits", "note", "src"], "additionalProperties": false,
+          "properties": {
+            "loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"},
+            "limits": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/limits"}},
+            "note": {"type": "string"}, "src": {"$ref": "#/$defs/src"},
+            "validFrom": {"$ref": "#/$defs/date"}, "validTo": {"$ref": "#/$defs/date"},
+            "regions": {"type": "array", "items": {"enum": [1, 2, 3]}, "minItems": 1},
+            "unconfirmed": {"type": "boolean"}, "satelliteOnly": {"type": "boolean"}}}},
+        "channelled": {"type": "array", "items": {
+          "type": "object", "required": ["loHz", "hiHz", "label", "where", "segments", "limits", "maxBwHz", "src"],
+          "additionalProperties": false,
+          "properties": {
+            "loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"}, "label": {"type": "string"}, "where": {"type": "string"},
+            "segments": {"type": "array", "minItems": 1, "items": {"type": "array", "prefixItems": [{"$ref": "#/$defs/hz"}, {"$ref": "#/$defs/hz"}], "minItems": 2, "maxItems": 2}},
+            "limits": {"type": "object", "additionalProperties": {"$ref": "#/$defs/limits"}},
+            "maxBwHz": {"oneOf": [{"type": "null"}, {"type": "number", "exclusiveMinimum": 0}]},
+            "src": {"$ref": "#/$defs/src"}}}},
+        "emissions": {"type": "array", "items": {
+          "type": "object", "required": ["loHz", "hiHz", "modes", "maxBwHz", "note", "src"], "additionalProperties": false,
+          "properties": {
+            "loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"},
+            "modes": {"type": "object", "additionalProperties": {"type": "array", "items": {"$ref": "#/$defs/modeClass"}}},
+            "maxBwHz": {"oneOf": [{"type": "null"}, {"type": "number", "exclusiveMinimum": 0}]},
+            "note": {"type": "string"}, "src": {"$ref": "#/$defs/src"}}}},
+        "refused": {"type": "array", "items": {
+          "type": "object", "required": ["loHz", "hiHz", "text", "src"], "additionalProperties": false,
+          "properties": {
+            "loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"}, "text": {"type": "string", "minLength": 1},
+            "src": {"$ref": "#/$defs/src"}, "permit": {"type": "string"}}}},
+        "permits": {"type": "array", "items": {
+          "type": "object", "required": ["id", "label", "loHz", "hiHz", "classes", "limits", "status", "src"],
+          "additionalProperties": false,
+          "properties": {
+            "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$"}, "label": {"type": "string"},
+            "loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"},
+            "classes": {"type": "array", "items": {"$ref": "#/$defs/classId"}, "minItems": 1},
+            "limits": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/limits"}]},
+            "variants": {"type": "array", "items": {
+              "type": "object", "required": ["condition", "when", "text"],
+              "properties": {"condition": {"type": "string"}, "when": {"type": "boolean"},
+                             "loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"}, "text": {"type": "string"}}}},
+            "validTo": {"$ref": "#/$defs/date"},
+            "status": {"$ref": "#/$defs/status"}, "src": {"$ref": "#/$defs/src"}}}},
+        "conditions": {"type": "array", "items": {
+          "type": "object", "required": ["key", "label", "default", "src"], "additionalProperties": false,
+          "properties": {
+            "key": {"type": "string", "pattern": "^[a-z][A-Za-z0-9]*$"}, "label": {"type": "string"},
+            "loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"},
+            "default": {"type": "boolean"}, "when": {"type": "boolean"},
+            "refuse": {"type": "string"}, "limit": {"$ref": "#/$defs/limit"},
+            "derive": {"type": "object", "properties": {"dxccPrefix": {"type": "array", "items": {"type": "string"}}}},
+            "src": {"$ref": "#/$defs/src"}}}},
+        "satellite": {"oneOf": [{"type": "null"}, {"type": "array", "items": {
+          "type": "object", "required": ["loHz", "hiHz", "direction", "src"], "additionalProperties": false,
+          "properties": {"loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"},
+                         "direction": {"enum": ["both", "up", "down"]}, "src": {"$ref": "#/$defs/src"}}}}]},
+        "cept": {"type": "object", "propertyNames": {"enum": ["T/R 61-01", "T/R 61-02", "ECC/REC (05)06"]},
+                 "additionalProperties": {"type": "array", "items": {"$ref": "#/$defs/classId"}}},
+        "ceptSrc": {"type": "string"},
+        "ceptVisitor": {"type": "object", "additionalProperties": {"$ref": "#/$defs/classId"}},
+        "notes": {"type": "array", "items": {
+          "type": "object", "required": ["topic", "text", "src"],
+          "properties": {"topic": {"type": "string"}, "text": {"type": "string"}, "src": {"$ref": "#/$defs/src"}}}}
+      }
+    },
+    "plan": {
+      "allOf": [{"$ref": "#/$defs/statusBlock"}],
+      "type": "object",
+      "required": ["schema", "id", "title", "short", "source", "region", "countries", "segments", "centres", "ibp"],
+      "properties": {
+        "schema": {"const": 1}, "id": {"type": "string"}, "title": {"type": "string"}, "short": {"type": "string"},
+        "source": {"$ref": "#/$defs/source"}, "sources": {"type": "array", "items": {"$ref": "#/$defs/source"}},
+        "region": {"enum": [1, 2, 3]}, "countries": {"type": "array", "items": {"type": "string"}},
+        "segments": {"type": "array", "items": {"$ref": "#/$defs/segment"}},
+        "centres": {"type": "array", "items": {
+          "type": "object", "required": ["hz", "label", "mode"],
+          "properties": {"hz": {"$ref": "#/$defs/hz"}, "label": {"type": "string"}, "mode": {"type": "string"}}}},
+        "ibp": {"type": "array", "items": {"$ref": "#/$defs/hz"}},
+        "unplanned": {"description": "Spans inside the coverage where the source itself prints nothing. Unlike gaps (what the transcription lacks) they do not make a file partial; the guard warns that only the licence was checked there.",
+                      "type": "array", "items": {"$ref": "#/$defs/gap"}},
+        "advisories": {"description": "A plan's recommendations that are not its table rows (RSGB 630 m Note-1). A signal touching one that is not of its modes, or wider than its maxBwHz, gets a warning carrying text: never a refusal, whatever the plan guard.",
+                       "type": "array", "items": {
+          "type": "object", "required": ["loHz", "hiHz", "modes", "maxBwHz", "text", "src"], "additionalProperties": false,
+          "properties": {"loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"},
+                         "modes": {"oneOf": [{"type": "null"}, {"type": "array", "items": {"$ref": "#/$defs/modeClass"}, "uniqueItems": true}]},
+                         "maxBwHz": {"oneOf": [{"type": "null"}, {"type": "number", "exclusiveMinimum": 0}]},
+                         "text": {"type": "string", "minLength": 1}, "src": {"$ref": "#/$defs/src"}}}}
+      }
+    },
+    "satellite": {
+      "allOf": [{"$ref": "#/$defs/statusBlock"}],
+      "type": "object",
+      "required": ["schema", "id", "kind", "title", "source", "uplinkToDownlinkHz", "uplink", "segmentsIn", "segments", "edgeRule"],
+      "properties": {
+        "schema": {"const": 1}, "id": {"type": "string"}, "kind": {"const": "satellite"}, "title": {"type": "string"},
+        "source": {"$ref": "#/$defs/source"},
+        "uplinkToDownlinkHz": {"$ref": "#/$defs/hz"},
+        "uplink": {"$ref": "#/$defs/span"}, "downlink": {"$ref": "#/$defs/span"},
+        "segmentsIn": {"enum": ["uplink", "downlink"]},
+        "maxBwHz": {"type": "number", "exclusiveMinimum": 0},
+        "segments": {"type": "array", "items": {"$ref": "#/$defs/segment"}, "minItems": 1},
+        "neighbours": {"type": "array", "items": {
+          "type": "object", "required": ["loHz", "hiHz", "label"],
+          "properties": {"loHz": {"$ref": "#/$defs/hz"}, "hiHz": {"$ref": "#/$defs/hz"}, "label": {"type": "string"}}}},
+        "edgeRule": {"enum": ["symbolRate", "occupied"]},
+        "occupiedFactor": {"type": "number"},
+        "beacons": {"type": "array"},
+        "channels": {"type": "array", "items": {
+          "type": "object", "required": ["srKs"],
+          "properties": {"srKs": {"type": "array", "items": {"type": "integer"}},
+                         "downlinkHz": {"type": "array", "items": {"$ref": "#/$defs/hz"}},
+                         "downlinkFirstHz": {"$ref": "#/$defs/hz"}, "stepHz": {"type": "integer"}, "count": {"type": "integer"}}}},
+        "preferred": {"type": "object"}
+      }
+    },
+    "repeaters": {
+      "type": "object", "required": ["schema", "byPlan", "byCountry"],
+      "properties": {"schema": {"const": 1}, "byPlan": {"type": "array"}, "byCountry": {"type": "array"}}
+    },
+    "presets": {
+      "type": "array", "items": {
+        "type": "object", "required": ["kind", "presets", "src"],
+        "properties": {
+          "kind": {"type": "string"}, "country": {"type": "string", "pattern": "^[A-Z]{2}$"}, "region": {"enum": [1, 2, 3]},
+          "everywhere": {"type": "boolean"},
+          "presets": {"type": "array", "items": {
+            "type": "object", "required": ["label"],
+            "properties": {"label": {"type": "string"}, "txHz": {"$ref": "#/$defs/hz"}, "rxHz": {"$ref": "#/$defs/hz"},
+                           "mode": {"type": "string"}, "permit": {"type": "string"}, "satellite": {"type": "string"}}}},
+          "src": {"$ref": "#/$defs/src"}
+        }
+      }
+    }
+  }
+}

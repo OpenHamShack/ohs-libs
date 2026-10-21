@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-packet"
+version = "0.1.0"
+description = "OpenHamShack packet radio modem: Bell 202 AFSK 1200 receive and transmit, HDLC, the AX.25 frame codec, FX.25 and APRS payloads"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# numpy, as shack_cw and shack_dsp: the demodulator's filters run as a few
+# vector operations a block instead of a Python loop a sample, which is what
+# lets the SDR monitor run sixteen channels on one core.
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+# The radio links (shack_packet.radios) drive real radios through the rig
+# library; the modem and the engine need nothing but numpy.
+radios = ["shack-rig>=0.1"]
+test = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+shack_packet = ["locale/*.pot", "locale/*/LC_MESSAGES/*.mo", "sdr/channels.json"]
