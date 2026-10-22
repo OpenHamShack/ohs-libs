@@ -19,7 +19,7 @@ from __future__ import annotations
 from .decoder import REF_OFFSETS, Decoder, amplitudes, window_frames
 from .morse import CODE_TO_CHAR, CODE_TO_PROSIGN, MORSE, PROSIGNS, envelope, envelope_of, runs, text_to_codes
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["CODE_TO_CHAR", "CODE_TO_PROSIGN", "Decoder", "MORSE", "PROSIGNS", "REF_OFFSETS", "amplitudes", "envelope",
            "envelope_of", "runs", "text_to_codes", "window_frames"]

@@ -19,4 +19,4 @@ from .messages import translate
 __all__ = ["OCCUPIED_FACTOR", "Context", "DataError", "Dataset", "Signal", "band_of", "bands", "bundled",
            "channels", "check", "context", "dvb_occupied_hz", "in_force", "limits", "load", "presets",
            "translate"]
-__version__ = "0.1.0"
+__version__ = "0.2.0"

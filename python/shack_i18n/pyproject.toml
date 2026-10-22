@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shack-i18n"
-version = "0.1.0"
+version = "0.2.0"
 description = "OpenHamShack i18n: the user-visible string check (shack-i18n-check) and locale formatting helpers"
 readme = "README.md"
 requires-python = ">=3.11"

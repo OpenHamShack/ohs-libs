@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shack-pluto"
-version = "0.1.0"
+version = "0.2.0"
 description = "OpenHamShack Pluto family: firmware identity, the on-device transmitter guard, range and the AD9364 enable, XO calibration per Pluto"
 readme = "README.md"
 requires-python = ">=3.11"

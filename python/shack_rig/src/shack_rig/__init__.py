@@ -17,7 +17,7 @@ from .model import DATA_CAPABLE, MODES, RigModel, band_buttons, mode_label, spli
 from .rig import STATE_KEYS, Rig
 from .rigctl import RigctlServer
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["DATA_CAPABLE", "Lease", "MODES", "PttRefused", "Rig", "RigModel", "RigctlServer",
            "STATE_KEYS", "TxLease", "band_buttons", "mode_label", "split_mode_label"]

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shack-rig"
-version = "0.1.0"
+version = "0.2.0"
 description = "OpenHamShack rig control: serial, Icom LAN and USB transports, the CI-V codec, a maker-neutral rig surface with an Icom backend, and a hamlib rigctld server; transmit only under the app's lease"
 readme = "README.md"
 requires-python = ">=3.11"

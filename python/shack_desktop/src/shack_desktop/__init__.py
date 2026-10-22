@@ -22,7 +22,7 @@ from .guard import Guard
 from .paths import base_dir, data_dir
 from .shell import ShellError, check_private, choose_engine, run
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["Guard", "LoopbackHTTPServer", "ServerEnv", "ShellError", "base_dir", "check_private", "choose_engine", "data_dir",
            "is_server_child", "run", "self_command", "server_env", "watch_parent"]

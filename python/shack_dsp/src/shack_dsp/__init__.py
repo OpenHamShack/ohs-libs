@@ -16,6 +16,6 @@ from __future__ import annotations
 
 from .nr2 import Nr2, Nr2Stream, frame_for
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["Nr2", "Nr2Stream", "frame_for"]

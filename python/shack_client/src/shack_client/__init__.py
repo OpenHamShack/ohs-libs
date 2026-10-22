@@ -16,4 +16,4 @@ from .transport import Offline
 
 __all__ = ["Controller", "DiscoveryUnavailable", "Logbook", "NeedsDecision", "Offline", "Pairing", "PairingError",
            "Profile", "Qso", "Station", "discover", "well_known"]
-__version__ = "0.1.0"
+__version__ = "0.2.0"

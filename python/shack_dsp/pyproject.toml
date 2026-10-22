@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shack-dsp"
-version = "0.1.0"
+version = "0.2.0"
 description = "OpenHamShack DSP for receive audio: NR2, the spectral noise reduction every rig app runs on the server, and the bench that measures it"
 readme = "README.md"
 requires-python = ">=3.11"

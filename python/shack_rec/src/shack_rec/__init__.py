@@ -22,7 +22,7 @@ from .http import RangeNotSatisfiable, file_headers, parse_range
 from .recordings import Limits, Recordings
 from .store import GB, Refused, Store, size_text
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["AudioRecorder", "FlacWriter", "GB", "Limits", "RangeNotSatisfiable", "Recordings", "Refused", "Store",
            "file_headers", "parse_range", "size_text"]

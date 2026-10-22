@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shack-pad"
-version = "0.1.0"
+version = "0.2.0"
 description = "OpenHamShack controller pads (Ajazz AKP03E, USB keypads): drivers, key faces, action maps and the pad as a transmit-lease client"
 readme = "README.md"
 requires-python = ">=3.11"

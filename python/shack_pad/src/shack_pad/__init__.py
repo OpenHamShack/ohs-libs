@@ -15,7 +15,7 @@ from .focus import DesktopPad, PadFocus
 from .router import InProcessApp, InputHost, PadAction, PadApp
 from .tx import LocalLease, PadTx, TxLease
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["Action", "DeclarationError", "DesktopPad", "Face", "InProcessApp", "InputHost", "LocalLease",
            "PadAction", "PadApp", "PadFocus", "PadTx", "TxLease", "load_actions", "validate_actions"]

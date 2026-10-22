@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shack-packet"
-version = "0.1.0"
+version = "0.2.0"
 description = "OpenHamShack packet radio modem: Bell 202 AFSK 1200 receive and transmit, HDLC, the AX.25 frame codec, FX.25 and APRS payloads"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -4,4 +4,4 @@
 the Python implementation of the shared formatting helpers (§4).
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

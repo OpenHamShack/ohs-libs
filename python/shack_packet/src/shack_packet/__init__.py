@@ -49,7 +49,7 @@ from .engine import Connection, Engine, Event, IncomingCall, Runner
 from .errors import PacketError
 from .identity import Station
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["Address", "ChannelConfig", "Connection", "Control", "Engine", "Event", "Frame", "FrameError",
            "FrameType", "IncomingCall", "LinkConfig", "Modulator", "PacketError", "RadioLink", "Received",

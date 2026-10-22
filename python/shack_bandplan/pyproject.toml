@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shack-bandplan"
-version = "0.1.0"
+version = "0.2.0"
 description = "OpenHamShack band plans and licence rules as data, and the transmit check every app shares"
 readme = "README.md"
 requires-python = ">=3.11"
