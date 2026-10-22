@@ -1,0 +1,10 @@
+# maturin, which builds the shack-sdr wheels (tools/build-sdr-wheels.sh), pinned
+# by version and by the hash of each wheel we install it from, the same pin as
+# openhamshack-nb's ohsdigi wheels: the Linux build container and the Mac mini.
+# `pip install --require-hashes` refuses anything else. To move to a newer
+# maturin, take every hash from https://pypi.org/pypi/maturin/<v>/json, and
+# move ohsdigi's with it.
+maturin==1.15.0 \
+    --hash=sha256:653020a63525bb224e5ab0adf02e17a2e08bc86dbea7fc1399c9a56d7529b99e \
+    --hash=sha256:0ebf9767892725083138e671c34482c660317a2f3d6a29fc0e0f34e9d8c99136 \
+    --hash=sha256:cd35772633f489841132bc8e71d6fc7f842df30b9c05cd5cdf1ee1ddcb744cc7
