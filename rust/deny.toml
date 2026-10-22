@@ -1,0 +1,55 @@
+# cargo-deny for the ohs-libs workspace (RADIO-SDR-PLAN §5.5), run by
+# tools/test.sh as `cargo deny check bans licenses`. Advisories are not
+# checked here: that needs the network, and the per-commit suite must not.
+
+[graph]
+all-features = true
+
+[licenses]
+# GPL-3.0-or-later and what is compatible with it. Anything else fails, so
+# a new dependency's licence is a decision, not an accident.
+allow = [
+    "GPL-3.0-or-later",
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+]
+confidence-threshold = 0.9
+# The list is the policy, not an inventory of what is in use today.
+unused-allowed-license = "allow"
+private = { ignore = true }
+
+[bans]
+multiple-versions = "allow"
+wildcards = "deny"
+allow-wildcard-paths = true
+deny = [
+    # Encumbered codecs, bindings to them and decoders of their formats:
+    # AAC, AMBE and IMBE are only ever loaded at run time from the user's
+    # own install (§9.2), never linked, and never ported, whatever the
+    # licence of the port.
+    { crate = "fdk-aac" },
+    { crate = "fdk-aac-sys" },
+    { crate = "faad2" },
+    { crate = "faad2-sys" },
+    { crate = "faad" },
+    { crate = "mbelib" },
+    { crate = "mbelib-sys" },
+    { crate = "mbelib-rs" },
+    { crate = "symphonia-codec-aac" },
+    { crate = "symphonia-bundle-aac" },
+    { crate = "fdkaac" },
+    { crate = "aac" },
+    # No C is ever compiled into shack_sdr: nothing to build means nothing
+    # can slip in through a build script.
+    { crate = "cc" },
+    { crate = "cmake" },
+    { crate = "bindgen" },
+    { crate = "pkg-config" },
+]

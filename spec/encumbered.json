@@ -1,0 +1,47 @@
+{
+  "about": "What no OpenHamShack artefact may link, define or carry (RADIO-SDR-PLAN §5.5, §9.2). AAC (faad2, fdk-aac) and AMBE/IMBE (mbelib) are patent-encumbered and fdk-aac has its own licence; SDRplay's API is proprietary and the user's own. All are only ever opened at run time from the user's install. Patterns are shell globs, matched case-insensitively. Read by tools/check-encumbered.py.",
+  "libraries": [
+    "libfaad*",
+    "*faad*.dll",
+    "libfdk-aac*",
+    "*fdk-aac*.dll",
+    "libmbe.so*",
+    "libmbe.dll",
+    "libmbe.dylib",
+    "libmbe.*.dylib",
+    "mbelib*",
+    "libsdrplay_api*",
+    "sdrplay_api*.dll"
+  ],
+  "files": [
+    "libfaad*",
+    "*faad*.dll",
+    "libfdk-aac*",
+    "*fdk-aac*.dll",
+    "libmbe.so*",
+    "libmbe.dll",
+    "libmbe.dylib",
+    "libmbe.*.dylib",
+    "mbelib*",
+    "libsdrplay_api*",
+    "sdrplay_api*.dll",
+    "sdrplay_apiService*"
+  ],
+  "symbols": [
+    "NeAACDec*",
+    "aacDecoder_*",
+    "aacEncoder_*",
+    "mbe_process*",
+    "mbe_init*",
+    "mbe_decode*",
+    "sdrplay_api_*"
+  ],
+  "packages": [
+    "libfaad2",
+    "libfaad-dev",
+    "libfdk-aac2",
+    "libfdk-aac2t64",
+    "libfdk-aac-dev",
+    "faad"
+  ]
+}
