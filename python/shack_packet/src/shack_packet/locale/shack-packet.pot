@@ -359,12 +359,32 @@ msgstr ""
 msgid "area or BBS"
 msgstr ""
 
+#: python/shack_packet/src/shack_packet/b2f.py
+msgid "bad Body size"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/b2f.py
+msgid "bad File size"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/b2f.py
+msgid "body shorter than its header"
+msgstr ""
+
 #: python/shack_packet/src/shack_packet/bbs.py
 msgid "callsign"
 msgstr ""
 
 #: python/shack_packet/src/shack_packet/bbs.py
 msgid "callsign or topic"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/b2f.py
+msgid "no Mid"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/b2f.py
+msgid "no end of headers"
 msgstr ""
 
 #: python/shack_packet/src/shack_packet/bbs.py

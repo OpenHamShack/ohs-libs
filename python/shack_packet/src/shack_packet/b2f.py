@@ -51,6 +51,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Protocol
 
 from . import lzhuf
+from .i18n import _
 
 log = logging.getLogger(__name__)
 
@@ -116,11 +117,11 @@ def address(text: str) -> str:
     @ as `SMTP:user@host` (wl2k-go AddressFromString)."""
     text = text.strip()
     if ":" in text:
-        proto, _, rest = text.partition(":")
+        proto, _sep, rest = text.partition(":")
         return f"{proto.upper()}:{rest}" if proto.upper() == "SMTP" else text.upper()
     if "@" not in text:
         return text.upper()
-    user, _, host = text.rpartition("@")
+    user, _sep, host = text.rpartition("@")
     if host.lower() == "winlink.org":
         return user.upper()
     return "SMTP:" + text
@@ -193,7 +194,7 @@ class WinlinkMessage:
         data = bytes(data).lstrip(b" \t\r\n")
         end = data.find(b"\r\n\r\n")
         if end < 0:
-            raise ValueError("no end of headers")
+            raise ValueError(_("no end of headers"))
         heads: list[tuple[str, str]] = []
         for raw in data[:end].split(b"\r\n"):
             line = raw.decode("latin-1")
@@ -208,15 +209,15 @@ class WinlinkMessage:
             get.setdefault(name, []).append(value)
         mid = (get.get("mid") or [""])[0]
         if not mid:
-            raise ValueError("no Mid")
+            raise ValueError(_("no Mid"))
         at = end + 4
         try:
             size = int((get.get("body") or ["0"])[0])
         except ValueError:
-            raise ValueError("bad Body size") from None
+            raise ValueError(_("bad Body size")) from None
         body_bytes = data[at:at + size]
         if len(body_bytes) != size:
-            raise ValueError("body shorter than its header")
+            raise ValueError(_("body shorter than its header"))
         at += size
         charset = CHARSET
         m = re.search(r"charset=\"?([A-Za-z0-9_-]+)", (get.get("content-type") or [""])[0])
@@ -228,13 +229,13 @@ class WinlinkMessage:
             body = body_bytes.decode("latin-1")
         files = []
         for spec in get.get("file", []):
-            n, _, name = spec.partition(" ")
+            n, _sep, name = spec.partition(" ")
             if data[at:at + 2] == b"\r\n":
                 at += 2
             try:
                 n_bytes = int(n)
             except ValueError:
-                raise ValueError("bad File size") from None
+                raise ValueError(_("bad File size")) from None
             chunk = data[at:at + n_bytes]
             if len(chunk) != n_bytes:
                 raise ValueError("attachment shorter than its header")
