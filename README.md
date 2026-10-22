@@ -18,11 +18,12 @@ this directory name until it is renamed deliberately.
 | `python/shack_rec` | Recordings kept on the controller: receive audio as FLAC (our own numpy encoder) with a JSON sidecar, the recordings folder with its disk-use limit and free-space floor, range requests, and the API every app with recordings serves (`python/shack_rec/README.md`). numpy. |
 | `python/shack_desktop` | The desktop form of the web-UI apps: the app's own server on loopback behind a per-launch token, in a native window (pywebview) or the browser (`python/shack_desktop/docs/DESKTOP.md`). |
 | `python/shack_i18n` | `shack-i18n-check` and locale-aware formatting (I18N.md). |
+| `rust/shack_sdr` | Radio's SDR decoders in Rust with a Python face, one wheel `shack-sdr` (RADIO-SDR-PLAN): the decoder host (threads, rings, CPU budget), one catalogue including the Python-backed decoders, RTTY, the runtime codec loader (codec2 shipped; faad2, fdk-aac and mbelib only ever the user's own) and the receive-only RTL-SDR and SDRplay sources moved from `shack_packet.sdr` (`rust/shack_sdr/README.md`). `rust/` is the Cargo workspace. |
 | `kotlin/` | Gradle build: `shack-client` (store, merge, sync, pairing, discovery parsing, `ShackStation`; SQLite through `SqlOpener` so Android brings its own) and `shack-i18n` (`ShackFormat`). Kotlin/JVM, no runtime dependency, usable from Android (minSdk 28). |
 | `Package.swift`, `swift/` | Swift package: `ShackClient` (the same, on the system SQLite3, pairing in the Keychain) and `ShackFormat`. iOS 16, tvOS 16, macOS 13. |
 | `spec/schemas/` | JSON Schemas for the dataset, the vector files and the pad action and layout declarations. |
 | `spec/vectors/` | Language-neutral conformance vectors (bandplan, sync T1-T21, i18n formatting, captured AKP03E pad reports) that every implementation runs. |
-| `tools/` | `test.sh` (everything), `build.sh` (wheels), `extract_pot.py` (gettext templates), `export_ohscore.py` (the one-time conversion of the OpenHamShack modules). |
+| `tools/` | `test.sh` (everything, the Rust workspace included), `build.sh` (wheels), `build-sdr-wheels.sh` (the `shack-sdr` wheels, every platform), `check-encumbered.py` (nothing patent-encumbered linked or carried; denylist `spec/encumbered.json`), `extract_pot.py` (gettext templates), `export_ohscore.py` (the one-time conversion of the OpenHamShack modules). |
 
 Not here yet: the `shack-i18n.js` web loader, `release.sh`, and an Android
 SQLite adapter (Remote supplies it: `kotlin/shack-client` Sql.kt says how).

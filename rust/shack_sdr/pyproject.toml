@@ -11,6 +11,7 @@ name = "shack-sdr"
 # From Cargo.toml, so the wheel and shack_sdr.__version__ can never disagree.
 dynamic = ["version"]
 description = "OpenHamShack SDR decoders, decoder host, runtime codec loader and receive-only IQ sources"
+readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 # abi3-py311 (Cargo.toml): one wheel per platform serves 3.11 and later.
