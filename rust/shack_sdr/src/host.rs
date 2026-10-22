@@ -206,12 +206,13 @@ struct Inbox {
     dropped: u64,
 }
 
+/// What only the worker decoding the session touches. Its lock is held for
+/// a whole chunk of decoding, so nothing the engine calls ever takes it:
+/// the decoder's status is copied out to `Ctl` after each chunk, and a
+/// reset is asked for through `Session::reset`.
 struct Work {
     decoder: Box<dyn Decoder>,
     adapter: Option<AudioToIq>,
-    /// Reset the decoder before the next block (after a pause).
-    reset: bool,
-    status: Status,
 }
 
 struct Ctl {
@@ -224,6 +225,8 @@ struct Ctl {
     /// The share it used when it was paused, for deciding when it fits again.
     paused_share: f64,
     removed: bool,
+    /// The decoder's status after its last chunk.
+    status: Status,
 }
 
 struct Session {
@@ -237,6 +240,8 @@ struct Session {
     inbox: Mutex<Inbox>,
     work: Mutex<Work>,
     ctl: Mutex<Ctl>,
+    /// Reset the decoder before its next block (a retune, a pause ended).
+    reset: AtomicBool,
 }
 
 struct Shared {
@@ -366,7 +371,7 @@ impl Shared {
         if let Some(s) = oldest {
             let need = lock(&s.ctl).paused_share;
             if used + need < 0.9 * self.cfg.cpu_max {
-                lock(&s.work).reset = true;
+                s.reset.store(true, Ordering::SeqCst);
                 lock(&s.inbox).accepting = true;
                 self.set_state(s, State::Starting, None);
                 *last = now;
@@ -460,7 +465,7 @@ impl Host {
             params,
             pinned,
             inbox: Mutex::new(Inbox { blocks: VecDeque::new(), samples: 0, cap, accepting: true, fed: 0, dropped: 0 }),
-            work: Mutex::new(Work { decoder: dec, adapter, reset: false, status }),
+            work: Mutex::new(Work { decoder: dec, adapter }),
             ctl: Mutex::new(Ctl {
                 state: State::Starting,
                 why: None,
@@ -469,7 +474,9 @@ impl Host {
                 cpu: VecDeque::new(),
                 paused_share: 0.0,
                 removed: false,
+                status,
             }),
+            reset: AtomicBool::new(false),
         });
         sessions.insert(id.clone(), s);
         Ok(id)
@@ -534,10 +541,10 @@ impl Host {
             let ib = lock(&s.inbox);
             (ib.fed, ib.dropped)
         };
-        // The decoder's own status was copied after its last block, so this
+        // The decoder's own status as copied after its last chunk: this
         // never waits for a worker that is decoding.
-        let decoder_status = lock(&s.work).status.clone();
         let mut c = lock(&s.ctl);
+        let decoder_status = c.status.clone();
         let cpu = window_share(&mut c.cpu, Instant::now());
         Ok(SessionInfo {
             id: s.id.clone(),
@@ -583,7 +590,7 @@ impl Host {
             ib.blocks.clear();
             ib.samples = 0;
         }
-        lock(&s.work).reset = true;
+        s.reset.store(true, Ordering::SeqCst);
         Ok(())
     }
 
@@ -601,7 +608,7 @@ impl Host {
             }
             self.shared.set_state(&s, State::Outside, Some("outside_span".into()));
         } else if !outside && state == State::Outside {
-            lock(&s.work).reset = true;
+            s.reset.store(true, Ordering::SeqCst);
             lock(&s.inbox).accepting = true;
             self.shared.set_state(&s, State::Starting, None);
         }
@@ -717,8 +724,7 @@ fn decode(sh: &Shared, s: &Session, work: &mut Work, blocks: Vec<Block>) {
     for b in blocks {
         let w = &mut *work;
         let r = catch_unwind(AssertUnwindSafe(|| -> Result<(), DecodeError> {
-            if w.reset {
-                w.reset = false;
+            if s.reset.swap(false, Ordering::SeqCst) {
                 w.decoder.reset();
                 if let Some(a) = w.adapter.as_mut() {
                     a.reset();
@@ -758,12 +764,12 @@ fn decode(sh: &Shared, s: &Session, work: &mut Work, blocks: Vec<Block>) {
     } else {
         None
     };
-    if let Some(st) = status.clone() {
-        work.status = st;
-    }
     // Results, numbered.
     let items: Vec<Item> = {
         let mut c = lock(&s.ctl);
+        if let Some(st) = status.clone() {
+            c.status = st;
+        }
         c.cpu.push_back((Instant::now(), spent));
         if c.removed {
             Vec::new()
