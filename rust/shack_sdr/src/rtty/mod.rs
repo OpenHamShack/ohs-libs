@@ -620,9 +620,27 @@ impl Rtty {
         let n_eff = (self.spectra as f64).min(2.0 / alpha - 1.0) / 2.0;
         let bias = 1.0 + (1.0 / std::f64::consts::LN_2 - 1.0) / n_eff.max(1.0);
         let noise = (sorted[sorted.len() / 2] as f64 * bias).max(1e-30);
+        // The frames' energy floor takes the larger of that and the noise in
+        // this spectrum alone. The average lags by its second's time
+        // constant, and a receiver's AGC moves the noise faster than that:
+        // a strong over holds it down, and when the carrier drops it comes
+        // back up within half a second. Against the lagging average the
+        // noise frames there looked five times "noise", and with the
+        // squelch still open on the over's tones they printed: one to three
+        // characters after the over in three of five of openhamshack-nb's
+        // own-echo runs ("PSE KSWI"; tests/rtty.rs
+        // `nothing_after_the_carrier_drops_under_agc`). One spectrum's median
+        // over its few hundred bins is already a good estimate (its bins are
+        // chi-squared with two degrees of freedom: the median is ln 2 of the
+        // mean); only the tones' measure needs the average. The larger, not
+        // the latest alone: the floor rises at once but falls only with the
+        // average, so a moment of quieter noise never lowers it.
+        let mut now: Vec<f32> = (-span..=span).map(|k| buf[k.rem_euclid(FFT_N as i64) as usize].norm_sqr()).collect();
+        now.sort_by(|a, b| a.total_cmp(b));
+        let now = now[now.len() / 2] as f64 / std::f64::consts::LN_2;
         // Per working sample: a Hann-windowed FFT of white noise of variance
         // v has E|X|^2 = v * sum(w^2) = v * 0.375 N.
-        self.noise_var = noise / (0.375 * FFT_N as f64);
+        self.noise_var = noise.max(now) / (0.375 * FFT_N as f64);
         // Power within +-w of a frequency, w about half the baud (where a
         // keyed tone's energy is), in bins.
         let w = ((self.cfg.baud / 2.0) / bin_hz).round().max(1.0) as i64;

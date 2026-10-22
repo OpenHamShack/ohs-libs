@@ -79,6 +79,11 @@ The RTTY fixtures (`testdata/rtty/`) are recipes for `testsig` pinned by
 sha256, and `golden.json` is what openhamshack-nb's `rtty.py` printed on
 them (`tools/rtty_golden.py`). `tests/rtty.rs` holds the Rust decoder to
 never worse than it at any point of the sweep, and to §7.2's targets.
+Two more there have no rtty.py figure: an over through a receiver's AGC
+(the noise held down under it and coming back as the carrier drops, the
+shape captured from openhamshack-nb's own-echo test) must print nothing
+after the over, and 40 strong overs each followed by 8 s of noise may
+print at most 5 false characters between them.
 
 ## Packet's switch-over (for the Packet session; nothing here changes shack_packet)
 

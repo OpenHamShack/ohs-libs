@@ -272,3 +272,96 @@ fn unshift_on_space_can_be_turned_off() {
     assert_eq!(run(false), "1 2\n");
 }
 
+
+// ------------------------------------------------- after the carrier drops
+
+/// The noise after an over, as a receiver with AGC delivers it. Captured
+/// from openhamshack-nb's own-echo test (Radio M1, 22/10/2026): a strong
+/// over (+15 dB in 2.5 kHz) holds the AGC down, so the noise under it is
+/// about a third of its level before; when the carrier drops the noise
+/// comes back up over half a second or so. The decoder's averaged noise
+/// estimate lags that rise, and its squelch, held open by the averaged
+/// tones, printed one to three noise characters after the over in three
+/// runs of five ("PSE KSWI"). rtty.py printed none on the same audio.
+///
+/// `before` and `under` are the noise's level, as a fraction of the
+/// signal's amplitude, outside the over and under it; `recover_s` is the
+/// AGC's time constant after the over.
+fn over_then_noise(text: &str, seed: u64, before: f64, under: f64, recover_s: f64, tail_s: f64) -> Vec<f32> {
+    let rate = 12_000.0;
+    let tx = RttyTx::default();
+    let segs = shack_sdr::testsig::rtty_segments(&shack_sdr::testsig::rtty_codes(text, &tx), &tx);
+    let over = shack_sdr::testsig::fsk(&segs, rate, 1000.0, 0.0);
+    let lead = (4.0 * rate) as usize;
+    let end = lead + over.len();
+    let total = end + (tail_s * rate) as usize;
+    let mut noise = shack_sdr::testsig::Rng::new(seed);
+    let amp = 0.5;
+    (0..total)
+        .map(|i| {
+            let (sig, gain) = if i < lead {
+                (0.0, before)
+            } else if i < end {
+                (over[i - lead].re, under)
+            } else {
+                let t = (i - end) as f64 / rate;
+                // The AGC letting go: back to the old level, exponentially.
+                (0.0, before - (before - under) * (-t / recover_s).exp())
+            };
+            (amp * sig + amp * gain * noise.gauss()) as f32
+        })
+        .collect()
+}
+
+/// What the decoder prints on `audio`, fed as the engine feeds it.
+fn decode_plain(audio: &[f32]) -> String {
+    let case = RttyCase::default();
+    decode_audio(audio, &case, 1000.0, 1200)
+}
+
+#[test]
+fn nothing_after_the_carrier_drops_under_agc() {
+    // The echo test's shape: noise at 0.5 of the signal's amplitude, a
+    // third of that under the over, back within about a second. Every seed
+    // must copy the over exactly and print nothing after it: the
+    // transmitter's idle mark ends the last frame cleanly, so there is no
+    // partial character to allow for.
+    let text = "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K";
+    let truth = rtty_truth(text);
+    let mut junk = 0;
+    let mut bad = Vec::new();
+    for seed in 1..=20 {
+        let got = decode_plain(&over_then_noise(text, seed, 0.5, 0.17, 0.25, 4.0));
+        if got != truth {
+            junk += got.strip_prefix(truth.as_str()).map_or(usize::MAX, |t| t.chars().count());
+            bad.push(format!("seed {seed}: {got:?}"));
+        }
+    }
+    println!("after the carrier dropped: {junk} characters ({bad:?})");
+    assert!(bad.is_empty(), "{bad:?}");
+}
+
+#[test]
+fn noise_after_strong_overs_prints_almost_nothing() {
+    // Plain white noise, no AGC: a strong over, then eight seconds of the
+    // same noise. The averaged spectrum remembers the over for seconds; the
+    // squelch must not print the noise in that time. §7.2's budget for noise
+    // is one false character a minute: here 40 overs and 320 s of noise
+    // after them.
+    let text = "TEST DE GM4BRI K";
+    let truth = rtty_truth(text);
+    let mut junk = 0;
+    let mut missed = 0;
+    for seed in 100..140 {
+        let got = decode_plain(&over_then_noise(text, seed, 0.18, 0.18, 0.01, 8.0));
+        match got.strip_prefix(truth.as_str()) {
+            Some(tail) => junk += tail.chars().count(),
+            None => {
+                missed += 1;
+                junk += levenshtein(&got, &truth);
+            }
+        }
+    }
+    println!("noise after 40 strong overs: {junk} false characters ({missed} overs not copied exactly)");
+    assert!(junk <= 5, "{junk}");
+}
