@@ -12,8 +12,14 @@
 # - shack-bandplan.pot: its msgids are used by the dataset and
 #   messages.T, not by `_()` calls, so every entry would be reported as
 #   unused; tools/extract_pot.py --check keeps it complete instead.
+# - shack_packet/tools/twostation.py: the two-station on-air test harness,
+#   run by whoever is at the keyboard for the session (never shipped to
+#   an app user); its {"error": ...} dicts are read straight off stdout
+#   through LOG.info/LOG.error, like the rest of the file's logging, not
+#   served to anyone through shack_packet's own server.
 exclude = ["python/*/tests/**", "python/shack_client/src/shack_client/testing.py", "python/shack_i18n/**",
-           "python/shack_bandplan/src/shack_bandplan/locale/**"]
+           "python/shack_bandplan/src/shack_bandplan/locale/**",
+           "python/shack_packet/tools/twostation.py"]
 
 [python]
 # The libraries raise these with whole sentences that apps show as they
