@@ -360,6 +360,10 @@ msgid "area or BBS"
 msgstr ""
 
 #: python/shack_packet/src/shack_packet/b2f.py
+msgid "attachment shorter than its header"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/b2f.py
 msgid "bad Body size"
 msgstr ""
 

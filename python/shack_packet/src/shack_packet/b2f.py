@@ -238,7 +238,7 @@ class WinlinkMessage:
                 raise ValueError(_("bad File size")) from None
             chunk = data[at:at + n_bytes]
             if len(chunk) != n_bytes:
-                raise ValueError("attachment shorter than its header")
+                raise ValueError(_("attachment shorter than its header"))
             files.append(Attachment(_decode_word(name), chunk))
             at += n_bytes
         when = 0.0
