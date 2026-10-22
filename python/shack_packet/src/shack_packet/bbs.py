@@ -83,7 +83,7 @@ class Partner:
         (settings carry one line each, so this is the form they use)."""
         words = text.replace(",", " ").split()
         if not words:
-            raise ValueError("an empty partner")
+            raise ValueError(_("an empty partner"))
         call, via, routes, mode = words[0].upper(), [], [], None
         for w in words[1:]:
             lw = w.lower()

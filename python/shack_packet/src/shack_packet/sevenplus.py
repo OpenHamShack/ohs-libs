@@ -41,6 +41,8 @@ import re
 import time
 from dataclasses import dataclass, field
 
+from .i18n import _
+
 CODE = bytes([*range(0x21, 0x2A), *range(0x2B, 0x7F), *range(0x80, 0x91), 0x92, *range(0x94, 0xFD)])
 assert len(CODE) == 216
 DECODE = [255] * 256
@@ -164,16 +166,16 @@ def encode(data: bytes, name: str, *, lines_per_part: int = MAX_LINES, mtime: fl
     single part or NAME.P01... for several, as 7PLUS names them. Lines end
     in LF; a BBS message would carry them with CR, which decodes the same."""
     if not data:
-        raise ValueError("7PLUS cannot encode an empty file")
+        raise ValueError(_("7PLUS cannot encode an empty file"))
     if len(data) > 9_999_999:
-        raise ValueError("7PLUS's header holds sizes up to 9999999 bytes")
+        raise ValueError(_("7PLUS's header holds sizes up to 9999999 bytes"))
     lines_per_part = max(1, min(MAX_LINES, int(lines_per_part)))
     size = len(data)
     block = min(lines_per_part * BYTES_PER_LINE, size)
     blocklines = (block + 61) // 62
     parts = (size + block - 1) // block
     if parts > MAX_PARTS:
-        raise ValueError("more than 255 parts: choose more lines per part")
+        raise ValueError(_("more than 255 parts: choose more lines per part"))
     stem, ext = dos_name(name)
     hdrname = (stem + ("." if ext else "") + ext).upper()
     longname = name.replace("\\", "/").rsplit("/", 1)[-1][:60]

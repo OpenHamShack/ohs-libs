@@ -55,6 +55,7 @@ from pathlib import Path
 from typing import Callable
 
 from . import ohssession as oh
+from .i18n import _
 
 log = logging.getLogger(__name__)
 
@@ -457,7 +458,7 @@ class FileService:
             self.transfers.append(t)
             if protocol == "yapp":
                 if self.yapp is None:
-                    raise ValueError("YAPP is not loaded")
+                    raise ValueError(_("YAPP is not loaded"))
                 self.yapp.send(t, sess)
             else:
                 self._offer_out(t, sess)
@@ -656,9 +657,9 @@ class FileService:
         try:
             raw = t._z.decompress(body, CHUNK * 4) if flags & 1 else body
             if flags & 1 and t._z.unconsumed_tail:
-                raise ValueError("chunk inflates past its size")
+                raise ValueError(_("chunk inflates past its size"))
             if t.done + len(raw) > t.size:
-                raise ValueError("more data than the offer said")
+                raise ValueError(_("more data than the offer said"))
             t._src.write(raw)
         except (ValueError, zlib.error):
             self._fail_in(t, "protocol")

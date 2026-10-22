@@ -88,6 +88,14 @@ msgstr ""
 msgid "73, goodbye."
 msgstr ""
 
+#: python/shack_packet/src/shack_packet/sevenplus.py
+msgid "7PLUS cannot encode an empty file"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/sevenplus.py
+msgid "7PLUS's header holds sizes up to 9999999 bytes"
+msgstr ""
+
 #: python/shack_packet/src/shack_packet/bbs.py
 msgid "An OpenHamShack BBS."
 msgstr ""
@@ -339,6 +347,10 @@ msgstr ""
 msgid "Which {what}?"
 msgstr ""
 
+#: python/shack_packet/src/shack_packet/filexfer.py
+msgid "YAPP is not loaded"
+msgstr ""
+
 #: python/shack_packet/src/shack_packet/mailbox.py
 msgid "You have left as many messages as this mailbox keeps from one station."
 msgstr ""
@@ -353,6 +365,18 @@ msgstr ""
 
 #: python/shack_packet/src/shack_packet/bbs.py
 msgid "[End of Message #{n} from {sender}]"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/yapp.py
+msgid "a YAPP transfer is already running on this session"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/pathtest.py
+msgid "a step of 0.5-10 dB"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbs.py
+msgid "an empty partner"
 msgstr ""
 
 #: python/shack_packet/src/shack_packet/bbs.py
@@ -383,12 +407,44 @@ msgstr ""
 msgid "callsign or topic"
 msgstr ""
 
+#: python/shack_packet/src/shack_packet/filexfer.py
+msgid "chunk inflates past its size"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/ohssession.py
+msgid "frame payload longer than 65535 bytes"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/ohssession.py
+msgid "frame type out of range"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/ohssession.py
+msgid "inflated text longer than the limit"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/filexfer.py
+msgid "more data than the offer said"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/sevenplus.py
+msgid "more than 255 parts: choose more lines per part"
+msgstr ""
+
 #: python/shack_packet/src/shack_packet/b2f.py
 msgid "no Mid"
 msgstr ""
 
 #: python/shack_packet/src/shack_packet/b2f.py
 msgid "no end of headers"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/bbsstore.py
+msgid "not a user field: {fields}"
+msgstr ""
+
+#: python/shack_packet/src/shack_packet/radios/pluto.py
+msgid "the IQ rate must be a multiple of {rate} S/s"
 msgstr ""
 
 #: python/shack_packet/src/shack_packet/bbs.py

@@ -35,6 +35,8 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
+from .i18n import _
+
 DAY = 86_400.0
 BID_KEEP_DAYS = 365
 SCHEMA = 1
@@ -360,7 +362,7 @@ class BbsStore:
         allowed = {"name", "home", "qth", "barred", "last_listed"}
         bad = set(fields) - allowed
         if bad:
-            raise ValueError(f"not a user field: {sorted(bad)}")
+            raise ValueError(_("not a user field: {fields}").format(fields=sorted(bad)))
         call = base_call(call)
         with self._lock:
             self._db.execute("INSERT OR IGNORE INTO users(call, first_seen, last_seen) VALUES (?, NULL, NULL)",

@@ -46,6 +46,7 @@ import time
 from dataclasses import dataclass, field
 
 from . import adapt, modem
+from .i18n import _
 
 TAG = "OHSPT"
 COUNT = 50
@@ -179,7 +180,7 @@ def drive_steps(start_db: float = -30.0, step_db: float = 2.0, stop_db: float = 
     """The gains a drive-level helper steps through (module docstring):
     from `start_db` up by `step_db` to `stop_db`, never above `cap_db`."""
     if not 0.5 <= step_db <= 10.0:
-        raise ValueError("a step of 0.5-10 dB")
+        raise ValueError(_("a step of 0.5-10 dB"))
     top = stop_db if cap_db is None else min(stop_db, cap_db)
     n = int(math.floor((top - start_db) / step_db + 1e-9))
     return [round(start_db + i * step_db, 2) for i in range(n + 1)]

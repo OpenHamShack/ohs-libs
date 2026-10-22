@@ -48,6 +48,7 @@ import mimetypes
 import time
 
 from .filexfer import DECIDE_S, Transfer, file_hash
+from .i18n import _
 
 log = logging.getLogger(__name__)
 
@@ -475,7 +476,7 @@ class YappHandler:
 
     def send(self, t: Transfer, sess) -> None:
         if id(sess) in self.runs:
-            raise ValueError("a YAPP transfer is already running on this session")
+            raise ValueError(_("a YAPP transfer is already running on this session"))
         t.session = sess
         run = _Send(self, sess, t)
         self.runs[id(sess)] = run

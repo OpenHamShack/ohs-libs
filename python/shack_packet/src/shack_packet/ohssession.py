@@ -38,6 +38,8 @@ import logging
 import zlib
 from typing import Callable
 
+from .i18n import _
+
 log = logging.getLogger(__name__)
 
 MAGIC = b"\x01OHS"
@@ -74,9 +76,9 @@ ENQ_SI = b"\x05\x01"
 
 def frame(kind: int, payload: bytes = b"") -> bytes:
     if not 0 < kind < 256:
-        raise ValueError("frame type out of range")
+        raise ValueError(_("frame type out of range"))
     if len(payload) > MAX_PAYLOAD:
-        raise ValueError("frame payload longer than 65535 bytes")
+        raise ValueError(_("frame payload longer than 65535 bytes"))
     return MAGIC + bytes([kind]) + len(payload).to_bytes(2, "big") + payload
 
 
@@ -96,7 +98,7 @@ def inflate(data: bytes, limit: int = 1 << 20) -> bytes:
     d = zlib.decompressobj(-15)
     out = d.decompress(data, limit)
     if d.unconsumed_tail:
-        raise ValueError("inflated text longer than the limit")
+        raise ValueError(_("inflated text longer than the limit"))
     return out
 
 

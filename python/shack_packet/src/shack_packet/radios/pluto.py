@@ -223,6 +223,7 @@ import numpy as np
 
 from ..demod import _Fir
 from ..errors import PacketError
+from ..i18n import _
 from ..sdr.channeliser import _kaiser_lowpass
 from ..sdr.pluto import AD9363_RANGE, AD9363_REFUSAL, FULL_SCALE, NO_FIR_MIN, RESTORE, RX_WRITES, TX_ATTEN_MAX, \
     _number, import_iio
@@ -291,7 +292,7 @@ class FmModulator:
                  amplitude: float = IQ_AMPLITUDE):
         mid = AUDIO_RATE * self.UP1
         if rate_iq % mid:
-            raise ValueError(f"the IQ rate must be a multiple of {mid} S/s")
+            raise ValueError(_("the IQ rate must be a multiple of {rate} S/s").format(rate=mid))
         self.rate_iq = int(rate_iq)
         self.up2 = self.rate_iq // mid
         self.hz_per_unit = deviation_hz / NOMINAL_LEVEL
@@ -334,7 +335,7 @@ class FskModulator:
     def __init__(self, rate_iq: int, rate: int, deviation_hz: float, ifo_hz: float = 100_000.0,
                  amplitude: float = IQ_AMPLITUDE):
         if rate_iq % rate:
-            raise ValueError(f"the IQ rate must be a multiple of {rate} S/s")
+            raise ValueError(_("the IQ rate must be a multiple of {rate} S/s").format(rate=rate))
         self.rate_iq = int(rate_iq)
         self.up = self.rate_iq // int(rate)
         self.hz_per_unit = deviation_hz / NOMINAL_LEVEL
