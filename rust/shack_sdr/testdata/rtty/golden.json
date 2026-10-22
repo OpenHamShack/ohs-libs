@@ -1,0 +1,2572 @@
+{
+ "about": "What openhamshack-nb ohscore/modes/rtty.py's Decoder printed on each fixture in cases.json, captured before its removal (RADIO-SDR-PLAN \u00a77.1). The Rust decoder is held to never worse.",
+ "reference": {
+  "file": "openhamshack-nb ohscore/modes/rtty.py",
+  "commit": "74241d3",
+  "sha256": "4ad19bc03d52ad84093e53acdeb8ff939be6f6908e55d5791c14ab13cc0e0ddb"
+ },
+ "results": [
+  {
+   "id": "awgn-0000",
+   "text": "SBL EX J5",
+   "edits": 43,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0001",
+   "text": "Q",
+   "edits": 54,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0002",
+   "text": "UG DW",
+   "edits": 44,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0003",
+   "text": "RYN XTG)\n",
+   "edits": 33,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0004",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0005",
+   "text": "R KR UUHV",
+   "edits": 35,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0006",
+   "text": "RM478 DE GWABCU\nRS99 TOG N 012 GPQ KR\n",
+   "edits": 24,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0007",
+   "text": "UI452, FOFPSSON LHE LY G 12 JUOP",
+   "edits": 36,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0008",
+   "text": "W HERE IS IN 15$) I\nD SW 12807#1013\n.",
+   "edits": 22,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0009",
+   "text": "RYRYRYRYRYRYRY DE GRXX G4XYZ TEST\n",
+   "edits": 7,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0010",
+   "text": "T NE ALL D M PAVEIS48-! PTAORIOISURGHA",
+   "edits": 26,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0011",
+   "text": "KCQ -21  GMRBSI YM4R KXBRI PS K\n",
+   "edits": 17,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0012",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0013",
+   "text": "THE UICK BOWNFO JUS OVERTHE LWZY DOG 12-567890\n:",
+   "edits": 11,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0014",
+   "text": "WX HERE IS SUNNY 15 DEG C WINDRW Q KT QH 1,13\n",
+   "edits": 6,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0015",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0016",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBPFH\n",
+   "edits": 3,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0017",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0018",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0019",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0020",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0021",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0022",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0023",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0024",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0025",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0026",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0027",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0028",
+   "text": "APSMH",
+   "edits": 47,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0029",
+   "text": " 026",
+   "edits": 38,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0030",
+   "text": "YAYL\n 5;9  -0($?:",
+   "edits": 41,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0031",
+   "text": "EQUBN UPARODOH DWDJW\n",
+   "edits": 42,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0032",
+   "text": "EU S BILNQ CASP",
+   "edits": 41,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0033",
+   "text": "YRRXU D KRXZ /\" TEST",
+   "edits": 25,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0034",
+   "text": "ONXR CLD OMCEE R BWAN QH N OINBURGM",
+   "edits": 22,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0035",
+   "text": "VC Q 4?4/(4?\n8&BI EH\n",
+   "edits": 28,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0036",
+   "text": "GMRBR D BL1A UR RST 599\n59,,401-3 012 B\n",
+   "edits": 15,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0037",
+   "text": "TYE QWI-?492,'3,'7. OVER OE LAZY DOG256729\n",
+   "edits": 28,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0038",
+   "text": "WX HEE \nSU15 DEG C WID S YKT QNH P\n",
+   "edits": 17,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0039",
+   "text": "RYRYRYYRYRYJRYRY DE G4XYZ URXYZ TEST\n",
+   "edits": 5,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0040",
+   "text": "TX FER QALL D OM NAME IS BRIAN QTHNR E,?74&#\n",
+   "edits": 12,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0041",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI M4;?48 PSE K\n",
+   "edits": 5,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0042",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0043",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0044",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0045",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0046",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\nD",
+   "edits": 1,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0047",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0048",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0049",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0050",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0051",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0052",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0053",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0054",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0055",
+   "text": "ROZ",
+   "edits": 52,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0056",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0057",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0058",
+   "text": " EL  AMISIBRH URO",
+   "edits": 35,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0059",
+   "text": "AHDRBQGMCVIB?0\n",
+   "edits": 32,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0060",
+   "text": "BRI  DCKAC  STL5'999\"4#APWNKOX",
+   "edits": 32,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0061",
+   "text": "THE QUICBOOX \n0 GVER EZY DMG 1\n56780",
+   "edits": 24,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0062",
+   "text": "W \nX\nWS SNY 5 D CPID SFQ KT QHKPE\n",
+   "edits": 25,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0063",
+   "text": "YRRYRYRYYRRRY E G!/!&4/6 TE\n",
+   "edits": 17,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0064",
+   "text": "NYR CLL DC OMHCAELIS B\nIA QTH NR DIHBRGH\n",
+   "edits": 16,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0065",
+   "text": "CQSQ 33 G\nBRI GM4BLGM4BSIPSE K\n",
+   "edits": 14,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0066",
+   "text": "GM4BI RADL1ABC UR BT .9 599 NR PQC 3 BK\n",
+   "edits": 15,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0067",
+   "text": "THE QUICK BROWN FOX JUMPIOVER THE LAZY DOGLQWERTY\nOP\n",
+   "edits": 13,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0068",
+   "text": "\nEREISSUNN 15 DEG C WIN SW W KT QNH 1013\n",
+   "edits": 10,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0069",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0070",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0071",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0072",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0073",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0074",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0075",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0076",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0077",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0078",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0079",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0080",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0081",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0082",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0083",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0084",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0085",
+   "text": "EICK AF\nY\nEE TH A GTYGE",
+   "edits": 41,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0086",
+   "text": "C UF LWHUWE",
+   "edits": 44,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0087",
+   "text": "YYYRRYRRYRYGRXYZG:XZ T\n",
+   "edits": 18,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0088",
+   "text": "QALSO MEISSIEGTH NR DINBURH\n",
+   "edits": 27,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0089",
+   "text": "WVNCQ GFRGBR 48 P K",
+   "edits": 25,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0090",
+   "text": "GM4B DE L1-?: UJ ST OOO TOO NR 073 0123 BK\nS",
+   "edits": 17,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0091",
+   "text": "XTHE QUIK BROWN FOX JUMS OVER HELLNY OG 12341709\n",
+   "edits": 12,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0092",
+   "text": "VWLHRELS SUNNY 1-$3& C WNA WQW KT QNH 101\n",
+   "edits": 18,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0093",
+   "text": "RYRYRYRYRYRYRYRYR DE G4XYZ G4YZ TESO\n",
+   "edits": 3,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0094",
+   "text": "TNX FER CALW DR OM NAME IS BRIAN QTM NR EDINBARGH\n",
+   "edits": 3,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0095",
+   "text": "VCQ CQ CQ DE GM4BRI GMBRI GM4$488\n&\n'",
+   "edits": 12,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0096",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0097",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0098",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0099",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0100",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0101",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0102",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0103",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0104",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0105",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0106",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0107",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0108",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0109",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0110",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0111",
+   "text": "YG",
+   "edits": 37,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0112",
+   "text": "\n A INUGS",
+   "edits": 43,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0113",
+   "text": "CQ GRIYLM\"?84",
+   "edits": 31,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0114",
+   "text": "TO5 N PQW 1 KN",
+   "edits": 39,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0115",
+   "text": " OXHUMPSSOERHE L ZTUIOM",
+   "edits": 39,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0116",
+   "text": "H S SANR 1$ INSQTK QNHP\n",
+   "edits": 31,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0117",
+   "text": "RYRYYRYRRYR DE GXY //6 TDSTM",
+   "edits": 16,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0118",
+   "text": "TNFER QAL  O NM A QOIREIPBURHM",
+   "edits": 25,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0119",
+   "text": "CQ CQ Q EV?48 GMJRVBR G/?70-(",
+   "edits": 23,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0120",
+   "text": "XM4BRI DEIDLABC UR RST 599 599 NR 0123 0123 BKM",
+   "edits": 4,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0121",
+   "text": "THE QUI BROWN FOX JMP OVER THE PZY DOG 12345690",
+   "edits": 9,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0122",
+   "text": "WX HEREL SUNNY 1 DEG C WIND W 12 KT N 13\n",
+   "edits": 9,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0123",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0124",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0125",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0126",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0127",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0128",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0129",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0130",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0131",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0132",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0133",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0134",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0135",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0136",
+   "text": "OE",
+   "edits": 48,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0137",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0138",
+   "text": "PGT PQD ",
+   "edits": 45,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0139",
+   "text": "XUKKMJMET ZSISK",
+   "edits": 47,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0140",
+   "text": "J:$  UD",
+   "edits": 45,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0141",
+   "text": "YRQYYRX KFGRYZTET\n",
+   "edits": 26,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0142",
+   "text": "VNL BJNOHZ EDIBURGB",
+   "edits": 36,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0143",
+   "text": "Q DEGNUYZSG4?4&.4B SE UZ",
+   "edits": 26,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0144",
+   "text": "GMR\nE LABV URHRTT BO N 1230123 BK\n",
+   "edits": 20,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0145",
+   "text": "VTH WULK BROW FNJUMS OER THSLAZY DO1236780\n\"",
+   "edits": 19,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0146",
+   "text": " HERE IS SUNPY XT DEG  WIND W 1(5 QNM 1013",
+   "edits": 13,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0147",
+   "text": "RYRYRYR\nYYRYCY DE G4YZ G4XY TES\n",
+   "edits": 9,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0148",
+   "text": "TNX FER ALL DR OM NAME  S BIA QTH NRLEDINBRGH\nB",
+   "edits": 7,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0149",
+   "text": "CQ W QQ DE GM/4: GM4?4 GM4BRI PEE K\n",
+   "edits": 11,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0150",
+   "text": "XXGM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 2,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0151",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0152",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0153",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0154",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0155",
+   "text": "OCQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\nG",
+   "edits": 2,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0156",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0157",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0158",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0159",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\nC",
+   "edits": 1,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0160",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0161",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0162",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0163",
+   "text": "PT",
+   "edits": 53,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0164",
+   "text": "Y",
+   "edits": 48,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0165",
+   "text": "JZEFXRO",
+   "edits": 37,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0166",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0167",
+   "text": " QIGKI",
+   "edits": 34,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0168",
+   "text": "L1B FTOOI59:4 PAPQESKM",
+   "edits": 39,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0169",
+   "text": "THE QURO  FMX JP\nOTGEAZY DMGPOERTP\nL",
+   "edits": 32,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0170",
+   "text": " HERISSWNN KADECWZD FQWTGH103\"8",
+   "edits": 29,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0171",
+   "text": "RYJYJRYRYYSRQYYDE G/6\" G4XYZ OESTR\n",
+   "edits": 15,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0172",
+   "text": "NX F  CLW R  NAME IS IAN  N INCRH\n",
+   "edits": 19,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0173",
+   "text": "Q QCQ DLGRBW GM4?48 GM4ORI ED\n",
+   "edits": 17,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0174",
+   "text": "GM4?48$3 DL1ABC UR RST 599 599),4 01270123 BK\n",
+   "edits": 11,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0175",
+   "text": "THE QUICK BYOAN FOX JUMPS OVER THE LAZY DOGI12467890\n3",
+   "edits": 6,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0176",
+   "text": "WX HEE ISSUNNY 15 EG C WIND SW 12 KT QNH QPPE\nY",
+   "edits": 8,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0177",
+   "text": "RYRYRSRYRYRYRYRYRY E G4XYZ G4XYZ TEST\nO",
+   "edits": 3,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0178",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0179",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0180",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\nJ",
+   "edits": 1,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0181",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0182",
+   "text": "VWX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 1,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0183",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0184",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0185",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0186",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0187",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0188",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0189",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0190",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0191",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0192",
+   "text": "TOONW \n",
+   "edits": 44,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0193",
+   "text": "IKB PUWAAK",
+   "edits": 49,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0194",
+   "text": "PO\nAI KT\nWQ$",
+   "edits": 45,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0195",
+   "text": "GR\nYR\nYRRYNYYEUXIURXYZTTA",
+   "edits": 23,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0196",
+   "text": "KX ERIWL ROMLNA ISDIA QH\nREMUH\n",
+   "edits": 26,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0197",
+   "text": " QN  U GYGMUBYILPEKM",
+   "edits": 26,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0198",
+   "text": "GMB\n BE DW6ACLUR RT 59. 99-4 015 LWE BK\nC",
+   "edits": 21,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0199",
+   "text": "TAQUICK BROWN FOJUMSOR TH LZY DOGFQWZTYUIOSM",
+   "edits": 23,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0200",
+   "text": "WX HERE IF SUNNY 5 EGL WIND SW 12)(5 QNH 13\n",
+   "edits": 10,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0201",
+   "text": "RYRYRYRYRRRRYRY DEG4YZ GYZ TESM",
+   "edits": 9,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0202",
+   "text": "TNX FEC CII DR OM NAME IS BRIAN TH NR EDINBURGG\n",
+   "edits": 6,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0203",
+   "text": "CQWQCQ DE GM4BR GMBRI G4/?8 PSE K\n",
+   "edits": 9,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0204",
+   "text": "GM4BRI DE DL1ABC IR RST 5?9 599 NR 0123 0123 BK\n",
+   "edits": 2,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0205",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0206",
+   "text": "WX HERE IS SUNNY 15 DEG C 8,$ SW 12 KT QNH 1013\n",
+   "edits": 4,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0207",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0208",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\nR",
+   "edits": 1,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0209",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0210",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0211",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0212",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0213",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0214",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0215",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\nJ",
+   "edits": 1,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0216",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0217",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0218",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0219",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0220",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0221",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0222",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0223",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0224",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0225",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0226",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0227",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0228",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0229",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0230",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0231",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0232",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0233",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0234",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0235",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0236",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0237",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0238",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0239",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0240",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0241",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0242",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0243",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0244",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0245",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0246",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0247",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0248",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0249",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0250",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0251",
+   "text": "Z",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0252",
+   "text": "IJ5-08:3\n",
+   "edits": 43,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0253",
+   "text": "OU H ZOG1",
+   "edits": 46,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0254",
+   "text": "TAM 10.",
+   "edits": 45,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0255",
+   "text": "RYRIYRYRRY RAKXEGXYZIEST\n",
+   "edits": 20,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0256",
+   "text": "R DINCRGH\n",
+   "edits": 41,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0257",
+   "text": "IQ$3#.4R MMUB GM\nBRPSK\n",
+   "edits": 24,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0258",
+   "text": "GM8 DE DLABC UR RST 599:599), QWE PQWE BKM",
+   "edits": 18,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0259",
+   "text": "THE QUICK OWN FOX JUMPS I THE LAZY DOG 12345!80.1",
+   "edits": 11,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0260",
+   "text": "LIS SUNNY 1 DEGIC WIND W1051# 1013\n",
+   "edits": 20,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0261",
+   "text": "RYRYSRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 2,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0262",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0263",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0264",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\nF",
+   "edits": 1,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0265",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n6",
+   "edits": 1,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0266",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0267",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n\n",
+   "edits": 1,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0268",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0269",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0270",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0271",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0272",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0273",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0274",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0275",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0276",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0277",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0278",
+   "text": "EI NDPHS",
+   "edits": 43,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0279",
+   "text": "UY D LY",
+   "edits": 34,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0280",
+   "text": "LRO M ING  DGZ",
+   "edits": 38,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0281",
+   "text": "QRKIIM\nGVIC",
+   "edits": 34,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0282",
+   "text": "BL\nLABUR Y )9&9\"$ 0130123?(.",
+   "edits": 30,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0283",
+   "text": " KNBWNX UMPSIE HLACASOGQW NFOP",
+   "edits": 37,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0284",
+   "text": "HER  EN QTEX CWP W1 KFQE\n",
+   "edits": 31,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0285",
+   "text": "RYRYRRYRYRYRYYRY E G4XYZ 4XYZTST\n",
+   "edits": 6,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0286",
+   "text": "TNX FE\n CL D OMPAME S BRANQTH N EDINBURG\n",
+   "edits": 11,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0287",
+   "text": "CQ CQ -$&.4BS GMBI GMGRRI PSELK\n",
+   "edits": 15,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0288",
+   "text": "GM4BRI DE DL1ABC UR RT 99 599 NR 0123 0123 BK\n",
+   "edits": 2,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0289",
+   "text": "THE QUIC BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n8",
+   "edits": 2,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0290",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QN 1013\n",
+   "edits": 1,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0291",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0292",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\nY",
+   "edits": 1,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0293",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0294",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0295",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0296",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0297",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0298",
+   "text": "",
+   "edits": 50,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0299",
+   "text": "",
+   "edits": 39,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0300",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0301",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0302",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0303",
+   "text": "GYHQZHEYZ GBYTT",
+   "edits": 30,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0304",
+   "text": "BRPANBN",
+   "edits": 45,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0305",
+   "text": "Q QAM4?$6?/&#339",
+   "edits": 34,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0306",
+   "text": "VR  D1:)7 RT R UQQ BQ ",
+   "edits": 35,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0307",
+   "text": "FK OEA LEZYDOWDTYUO\n",
+   "edits": 44,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0308",
+   "text": " I NY1? Q IDRIAQT;\n1\n/",
+   "edits": 37,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0309",
+   "text": "RYYYYRYRY DRYZ CX NT",
+   "edits": 22,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0310",
+   "text": "ZX ER CALNDROMNNVS REN QTLRIDINCRGPA",
+   "edits": 24,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0311",
+   "text": "C CASE MRBRXM4BRITGMR PSEPEK",
+   "edits": 19,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0312",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 N 0123 13 BK\n",
+   "edits": 3,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0313",
+   "text": "THE 8)/ BOWNSFOX JUPS OVER THE LAZY DG 1: YUIP\nR",
+   "edits": 19,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0314",
+   "text": "WX HERE\n\n SUNNY 05 FG C WIND SW 12 KT QNH 1013\n",
+   "edits": 6,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0315",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\nVE",
+   "edits": 2,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0316",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0317",
+   "text": "VCQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 1,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0318",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "awgn-0319",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0320",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "awgn-0321",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n ",
+   "edits": 1,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0322",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "awgn-0323",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "offset-0324",
+   "text": "GM!?4\" QACDR FT 5? 59),4 0123 0123 B\nZ",
+   "edits": 23,
+   "chars": 48
+  },
+  {
+   "id": "offset-0325",
+   "text": "THE QUIK BRON OXIJMPSLGPERSTHE LAZY OG 234567890.",
+   "edits": 12,
+   "chars": 55
+  },
+  {
+   "id": "offset-0326",
+   "text": "WX HERE IS SUNNY15$& C WND W 11 KAQ1013\n",
+   "edits": 13,
+   "chars": 49
+  },
+  {
+   "id": "offset-0327",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "offset-0328",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "offset-0329",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "offset-0330",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "offset-0331",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "offset-0332",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n?",
+   "edits": 1,
+   "chars": 49
+  },
+  {
+   "id": "offset-0333",
+   "text": "RRYRQR\nYRY EGYXYZ V4Z EML",
+   "edits": 20,
+   "chars": 39
+  },
+  {
+   "id": "offset-0334",
+   "text": "LALL DR OMAAME IS BI TAN EDINKGH\n",
+   "edits": 21,
+   "chars": 50
+  },
+  {
+   "id": "offset-0335",
+   "text": "VQ C FE GMKBR M4?48 GMUWAPSEG\n",
+   "edits": 19,
+   "chars": 39
+  },
+  {
+   "id": "offset-0336",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "offset-0337",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "offset-0338",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "offset-0339",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "offset-0340",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "offset-0341",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "offset-0342",
+   "text": "",
+   "edits": 48,
+   "chars": 48
+  },
+  {
+   "id": "offset-0343",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "offset-0344",
+   "text": "",
+   "edits": 49,
+   "chars": 49
+  },
+  {
+   "id": "offset-0345",
+   "text": "RYXYYYYUYYN GZG4XVY",
+   "edits": 25,
+   "chars": 39
+  },
+  {
+   "id": "offset-0346",
+   "text": "PFRQLR \nAMLSSCAGPR FY7#.1",
+   "edits": 39,
+   "chars": 50
+  },
+  {
+   "id": "offset-0347",
+   "text": "CQCQGQDEMXBGV4BB\nGMRRP3,(.",
+   "edits": 23,
+   "chars": 39
+  },
+  {
+   "id": "offset-0348",
+   "text": "GM4BREDVQABC UR RST99 99\n40123012 BKM",
+   "edits": 16,
+   "chars": 48
+  },
+  {
+   "id": "offset-0349",
+   "text": "HEQUICKBROWNLFOX JUMPSOVERTH LAZYDOG124567890.2",
+   "edits": 12,
+   "chars": 55
+  },
+  {
+   "id": "offset-0350",
+   "text": "WX HR ISRVNNY1$3&0 WINDRW 12 KTGAH101.2",
+   "edits": 21,
+   "chars": 49
+  },
+  {
+   "id": "reverse-0351",
+   "text": "IRY DE  G46\" TES\n",
+   "edits": 25,
+   "chars": 39
+  },
+  {
+   "id": "reverse-0352",
+   "text": " ERNW.. ELRBIANTAI EDUNQD\n",
+   "edits": 35,
+   "chars": 50
+  },
+  {
+   "id": "reverse-0353",
+   "text": " G4 GM/?48$448 HSKZ",
+   "edits": 29,
+   "chars": 39
+  },
+  {
+   "id": "reverse-0354",
+   "text": "GM4BRI DE DL1ABC UR RST 99 TOO NR 0123 01-3 K\n",
+   "edits": 6,
+   "chars": 48
+  },
+  {
+   "id": "reverse-0355",
+   "text": "TH QUWCK BRBLN FOX JUMPS OVER TE LAZY MG 1234567890\n",
+   "edits": 7,
+   "chars": 55
+  },
+  {
+   "id": "reverse-0356",
+   "text": "WX HERE IS SUNNY 15 DEG C WINDS 12 KT QNH 10(39\n",
+   "edits": 4,
+   "chars": 49
+  },
+  {
+   "id": "reverse-0357",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\nF",
+   "edits": 1,
+   "chars": 39
+  },
+  {
+   "id": "reverse-0358",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "reverse-0359",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "reverse-0360",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "reverse-0361",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n;",
+   "edits": 1,
+   "chars": 55
+  },
+  {
+   "id": "reverse-0362",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 0,
+   "chars": 49
+  },
+  {
+   "id": "fading-0363",
+   "text": "USRYRYRYRYRYRYRY DE G4\" G!/6\" TEST\n",
+   "edits": 11,
+   "chars": 39
+  },
+  {
+   "id": "fading-0364",
+   "text": "TNX FERISR OM NAME IS BRIZ TR EDINBURGH\n",
+   "edits": 13,
+   "chars": 50
+  },
+  {
+   "id": "fading-0365",
+   "text": "CQ CQ DE GM4BRI GV4BRI GM4BRI PSE K\n",
+   "edits": 4,
+   "chars": 39
+  },
+  {
+   "id": "fading-0366",
+   "text": "GM4BRI DE DL?7445 599 599 E 03 BK\n",
+   "edits": 20,
+   "chars": 48
+  },
+  {
+   "id": "fading-0367",
+   "text": "WUIEWN AXS OVER THE LAZY DOG 123\n67\n5#\n.",
+   "edits": 24,
+   "chars": 55
+  },
+  {
+   "id": "fading-0368",
+   "text": "WX HETENNYPQT JEG C WWP T QNH 1013\n",
+   "edits": 20,
+   "chars": 49
+  },
+  {
+   "id": "fading-0369",
+   "text": "RYYRYRYRYRYRUDIKRXYZ G4XYT",
+   "edits": 17,
+   "chars": 39
+  },
+  {
+   "id": "fading-0370",
+   "text": "TXFER CALL DR OM NAME IS BRIAN QTH NR EDINSH\n",
+   "edits": 6,
+   "chars": 50
+  },
+  {
+   "id": "fading-0371",
+   "text": "CQ DE GM4BRI GM4BRI GM4BRI PSE K",
+   "edits": 7,
+   "chars": 39
+  },
+  {
+   "id": "fading-0372",
+   "text": "GM4BRI DE CUWABC KR RST 599 599 NR 0123 0123 BKE",
+   "edits": 5,
+   "chars": 48
+  },
+  {
+   "id": "fading-0373",
+   "text": "E QUICK BROWN FOXUMPS OVER TH Y DOG YUIOP\n",
+   "edits": 18,
+   "chars": 55
+  },
+  {
+   "id": "fading-0374",
+   "text": "WX HERSIU15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 9,
+   "chars": 49
+  },
+  {
+   "id": "fading-0375",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\nR",
+   "edits": 1,
+   "chars": 39
+  },
+  {
+   "id": "fading-0376",
+   "text": "ER CALL DR OM NAME S BRIAN QTH NR EDINBURGH\n",
+   "edits": 6,
+   "chars": 50
+  },
+  {
+   "id": "fading-0377",
+   "text": "CQ CQ CQ DE GM4?\" GM4BRI GM4BRI PSC",
+   "edits": 7,
+   "chars": 39
+  },
+  {
+   "id": "fading-0378",
+   "text": "GM4BRI DE DL1A UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 2,
+   "chars": 48
+  },
+  {
+   "id": "fading-0379",
+   "text": "HE QUICKROW FOX JUMPS OVER THE L 1234567890\n;",
+   "edits": 12,
+   "chars": 55
+  },
+  {
+   "id": "fading-0380",
+   "text": "WX HERE IS SUNY 15 DEG C WIND SW 12 KT QNH 1013\n",
+   "edits": 1,
+   "chars": 49
+  },
+  {
+   "id": "fading-0381",
+   "text": "YRYRRYRYRYRYRY DE G4XYZ G46\" TEST\n",
+   "edits": 7,
+   "chars": 39
+  },
+  {
+   "id": "fading-0382",
+   "text": "TNX FER CALL DR OMAME IS BRTH NR EDINBURGH",
+   "edits": 8,
+   "chars": 50
+  },
+  {
+   "id": "fading-0383",
+   "text": "CQ  GM4BGM!?48 GXBRI PSE K\n",
+   "edits": 17,
+   "chars": 39
+  },
+  {
+   "id": "fading-0384",
+   "text": "BRI DE DL1ABC UR RST 599 OO NRPKWE 0123 BK\n",
+   "edits": 11,
+   "chars": 48
+  },
+  {
+   "id": "fading-0385",
+   "text": "THE Q\n\nBABROWN FOXUM OVER E LAZY DOG 1234567890\n",
+   "edits": 11,
+   "chars": 55
+  },
+  {
+   "id": "fading-0386",
+   "text": "WX HERE IS SUNN15 DEG C WKWSW 12 KT  1013\n",
+   "edits": 9,
+   "chars": 49
+  },
+  {
+   "id": "fading-0387",
+   "text": "JRYRYDWUJADE G4XYIQRXSZ TV",
+   "edits": 24,
+   "chars": 39
+  },
+  {
+   "id": "fading-0388",
+   "text": "QTNX ER CSDWL I\nWPQHEDINBURP\n",
+   "edits": 30,
+   "chars": 50
+  },
+  {
+   "id": "fading-0389",
+   "text": " CQ QDE GM4I GM4BRI GM4BRP 3 ",
+   "edits": 12,
+   "chars": 39
+  },
+  {
+   "id": "fading-0390",
+   "text": "M4BRI DE L1ABC U RSTO NR2 0123 BO",
+   "edits": 17,
+   "chars": 48
+  },
+  {
+   "id": "fading-0391",
+   "text": "HE QUICK BROWOX JUMPS OVER E CNY DOPKWERTM",
+   "edits": 22,
+   "chars": 55
+  },
+  {
+   "id": "fading-0392",
+   "text": "WHEREIS R 15 \nAIND KQHE\n",
+   "edits": 29,
+   "chars": 49
+  },
+  {
+   "id": "fading-0393",
+   "text": "RYASSUYRYRY DG4XYZ GYXYTES",
+   "edits": 18,
+   "chars": 39
+  },
+  {
+   "id": "fading-0394",
+   "text": "TNX FELR OM NAME IS BZTH 3$8,?&#",
+   "edits": 26,
+   "chars": 50
+  },
+  {
+   "id": "fading-0395",
+   "text": "CQ CQ DE GM GM4BDM4BRI PSE ",
+   "edits": 13,
+   "chars": 39
+  },
+  {
+   "id": "fading-0396",
+   "text": "VB DPKQABC IWRST 599 9 NRC  BK\n",
+   "edits": 24,
+   "chars": 48
+  },
+  {
+   "id": "fading-0397",
+   "text": "THE QUIABROWN FOXUS OVEEZADOG 456790\n",
+   "edits": 20,
+   "chars": 55
+  },
+  {
+   "id": "fading-0398",
+   "text": "WX HERS SUNNYST DE WINDW ,7&W3",
+   "edits": 25,
+   "chars": 49
+  },
+  {
+   "id": "fading-0399",
+   "text": "RYRYRAUFRYRYRY DE G4XYGRXYTEST\n",
+   "edits": 12,
+   "chars": 39
+  },
+  {
+   "id": "fading-0400",
+   "text": "TCALM NAME IPN TH NR EDINBURGH\n",
+   "edits": 20,
+   "chars": 50
+  },
+  {
+   "id": "fading-0401",
+   "text": "CUI GM4BRGM\n83 ",
+   "edits": 28,
+   "chars": 39
+  },
+  {
+   "id": "fading-0402",
+   "text": "GMBR DE D1ABC URRT599 599 01230123(\n",
+   "edits": 13,
+   "chars": 48
+  },
+  {
+   "id": "fading-0403",
+   "text": "THE QBROWN FOXLSMPSVER THE DOG 23190\n",
+   "edits": 21,
+   "chars": 55
+  },
+  {
+   "id": "fading-0404",
+   "text": "WXHERE \nZY 15 DEGC WINSWT QNH 1\n",
+   "edits": 19,
+   "chars": 49
+  },
+  {
+   "id": "fading-0405",
+   "text": "AFUUXADE G4XYZ G4XZTEST\n",
+   "edits": 21,
+   "chars": 39
+  },
+  {
+   "id": "fading-0406",
+   "text": "TNXEALL OM NAME ISN QTH NR DINDH\n",
+   "edits": 18,
+   "chars": 50
+  },
+  {
+   "id": "fading-0407",
+   "text": "CQ CQ CQ DE GRM4BRIIM4BLK\nS",
+   "edits": 16,
+   "chars": 39
+  },
+  {
+   "id": "fading-0408",
+   "text": "GM4BRI DE DABC UR RST \n$ 030123:3",
+   "edits": 19,
+   "chars": 48
+  },
+  {
+   "id": "fading-0409",
+   "text": "THEQPI-92, FOX JUM\nOVERHE LAZYDOQWERTYUOP\n",
+   "edits": 28,
+   "chars": 55
+  },
+  {
+   "id": "fading-0410",
+   "text": "W HERISSAJ 3& WIND SW 12 KTPKW\n",
+   "edits": 25,
+   "chars": 49
+  },
+  {
+   "id": "drift-0411",
+   "text": "RYRYRYRYRYRYRYRYRY DE G4XYZ G4XYZ TEST\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "drift-0412",
+   "text": "TNX FER CALL DR OM NAME IS BRIAN QTH NR EDINBURGH\n",
+   "edits": 0,
+   "chars": 50
+  },
+  {
+   "id": "drift-0413",
+   "text": "CQ CQ CQ DE GM4BRI GM4BRI GM4BRI PSE K\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "drift-0414",
+   "text": "GM4BRI DE DL1ABC UR RST 599 599 NR 0123 0123 BK\n",
+   "edits": 0,
+   "chars": 48
+  },
+  {
+   "id": "drift-0415",
+   "text": "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 1234567890\n",
+   "edits": 0,
+   "chars": 55
+  },
+  {
+   "id": "drift-0416",
+   "text": "WX HERE IS SUNNY 15 DEG C WIND SW 12 KT QNH 1013\n$",
+   "edits": 1,
+   "chars": 49
+  },
+  {
+   "id": "noise-0417",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0418",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0419",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0420",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0421",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0422",
+   "text": "U",
+   "edits": 1,
+   "chars": 0
+  },
+  {
+   "id": "noise-0423",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0424",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0425",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0426",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  }
+ ]
+}
