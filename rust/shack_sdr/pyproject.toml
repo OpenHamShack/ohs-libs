@@ -1,0 +1,35 @@
+# The shack-sdr wheel: shack_sdr's Rust half (shack_sdr._native, built by
+# maturin from this crate) and its Python half (python/shack_sdr) in one
+# wheel, maturin's mixed layout (RADIO-SDR-PLAN §2.1). Built by
+# tools/build-sdr-wheels.sh; never committed.
+[build-system]
+requires = ["maturin==1.15.0"]
+build-backend = "maturin"
+
+[project]
+name = "shack-sdr"
+# From Cargo.toml, so the wheel and shack_sdr.__version__ can never disagree.
+dynamic = ["version"]
+description = "OpenHamShack SDR decoders, decoder host, runtime codec loader and receive-only IQ sources"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+# abi3-py311 (Cargo.toml): one wheel per platform serves 3.11 and later.
+requires-python = ">=3.11"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# numpy, as every ohs-libs package with samples: feed() reads arrays in place.
+dependencies = ["numpy>=1.24"]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Communications :: Ham Radio",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.maturin]
+bindings = "pyo3"
+python-source = "python"
+module-name = "shack_sdr._native"
+features = ["python"]
+locked = true
