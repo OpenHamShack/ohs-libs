@@ -89,12 +89,20 @@ msgstr ""
 msgid "no USB sound card is visible; the cards here are {others}. A radio's codec appears as a USB-Audio card when it is plugged in and switched on, and the device has to be assigned to this module - Dock360's module page, Devices."
 msgstr ""
 
+#: python/shack_rig/src/shack_rig/kenwood/rig.py
+msgid "no band {band}"
+msgstr ""
+
 #: python/shack_rig/src/shack_rig/icom/rig.py
 msgid "no external preamp on this frequency"
 msgstr ""
 
 #: python/shack_rig/src/shack_rig/icom/rig.py
 msgid "no such preamp setting: {mode}"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/icom/satdd.py
+msgid "no such satellite set-up: {how}"
 msgstr ""
 
 #: python/shack_rig/src/shack_rig/icom/rig.py
@@ -147,6 +155,10 @@ msgstr ""
 
 #: python/shack_rig/src/shack_rig/yaesu/datasetup.py
 msgid "switch the {radio}'s noise reduction, noise blanker, notch, VOX and monitor off on the radio"
+msgstr ""
+
+#: python/shack_rig/src/shack_rig/kenwood/datasetup.py
+msgid "the TM-V71's DATA jack runs at 1200 or 9600, not {speed}"
 msgstr ""
 
 #: python/shack_rig/src/shack_rig/icom/rig.py

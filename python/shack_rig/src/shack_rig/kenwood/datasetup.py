@@ -57,7 +57,7 @@ def settings(rig, *, frequency: int | None = None, speed: int = 1200) -> list[Se
     """The data set-up for `rig` (a KenwoodRig already on its chosen band),
     in order. `speed` is the modem's: 1200 or 9600."""
     if speed not in SPEED_CODES:
-        raise ValueError(f"the TM-V71's DATA jack runs at 1200 or 9600, not {speed!r}")
+        raise ValueError(_("the TM-V71's DATA jack runs at 1200 or 9600, not {speed}").format(speed=repr(speed)))
     band = rig.band
     name = "AB"[band]
     out: list[Setting] = []

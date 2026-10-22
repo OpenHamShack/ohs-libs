@@ -431,7 +431,7 @@ class KenwoodRig:
     def use_band(self, band: int) -> None:
         """Drive `band` from now on (the data set-up's choice)."""
         if band not in cat.BANDS:
-            raise ValueError(f"no band {band!r}")
+            raise ValueError(_("no band {band}").format(band=repr(band)))
         self.band = band
         self._set(band=band, vfo="VFOA" if band == 0 else "VFOB")
         self.read_vfo()

@@ -42,6 +42,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from ..datasetup import UNAVAILABLE, Setting
+from ..i18n import _
 from . import civ
 from .datasetup import ASK_S, NG_CONFIRM_S
 
@@ -93,7 +94,7 @@ def satellite_settings(rig, call: Callable[..., Any], how: str, *, rx_hz: int, t
     too, so the end of the pass puts it back on the channel rather than
     where the last Doppler step left it."""
     if how not in HOWS:
-        raise ValueError(f"no such satellite set-up: {how!r}")
+        raise ValueError(_("no such satellite set-up: {how}").format(how=repr(how)))
     ask, acked = _asker(rig, call)
     out: list[Setting] = []
     if how == SPLIT:
