@@ -1,0 +1,27 @@
+# The ohs-libs Cargo workspace (REPO-LAYOUT §2): the Rust half of the shared
+# libraries. shack_sdr is the first member; ohsdigi is meant to join it from
+# openhamshack-nb (REPO-LAYOUT §2.1), after which the two can share a small
+# common crate by path with no version skew.
+[workspace]
+resolver = "2"
+members = ["shack_sdr"]
+
+[profile.release]
+# Small and fast, and the same bytes from the same source, as ohsdigi: one
+# codegen unit and LTO make the output independent of build parallelism.
+opt-level = 3
+lto = true
+codegen-units = 1
+# "debuginfo", not "symbols": the dynamic symbol table survives either way
+# (it is how Python finds PyInit__native), but tools/check-encumbered.py
+# reads it, and keeping symbol stripping out of the picture means the check
+# sees exactly what the loader would.
+strip = "debuginfo"
+
+# The decoders' tests run whole synthetic sweeps; unoptimised they are tens
+# of times slower.
+[profile.test]
+opt-level = 3
+
+[profile.dev]
+opt-level = 1
