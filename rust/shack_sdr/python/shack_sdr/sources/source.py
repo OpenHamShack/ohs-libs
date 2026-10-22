@@ -67,6 +67,7 @@ REASONS = {
     "tx-not-quiet": "the transceiver's transmitter could not be confirmed off, so it was not used",
     "bad-file": "the recording cannot be played",
     "ended": "the recording has ended",
+    "bad-antenna": "that is not one of this receiver's inputs",
 }
 
 #: A live source more than this far behind the wall clock has lost samples
@@ -126,11 +127,19 @@ class IqSource:
     #: behind the wall clock and lose samples unseen). Files and the
     #: synthetic band can run faster than real time and lose nothing.
     live = True
+    #: This receiver's antenna/input names, in order; the first is the
+    #: default, and one entry means there is nothing to switch (a Pluto, an
+    #: RTL-SDR, or an RSP1/1A/1B: RtlSdrSource and SdrplaySource's single-
+    #: input models all keep this). A multi-input SDRplay model overrides
+    #: `antennas()` instead, because its list depends on the device found
+    #: at `open()`, not on the class.
+    ANTENNAS: tuple[str, ...] = ("RX",)
 
-    def __init__(self, centre: float, rate: float, gain: float | None = None):
+    def __init__(self, centre: float, rate: float, gain: float | None = None, *, antenna: str | None = None):
         self.centre = float(centre)
         self.rate = float(rate)
         self.gain = gain
+        self.antenna = antenna or self.ANTENNAS[0]
         self.stats = SourceStats()
         self.opened = False
         self._next = 0                 # the next sample's index
@@ -214,8 +223,28 @@ class IqSource:
         """The sample rates to offer for this kind of receiver."""
         return list(cls.RATES)
 
+    def antennas(self) -> list[str]:
+        """This receiver's input names, the first its default. Where the
+        model is one SoapySDRPlay3 also drives, these are its own strings
+        (Settings.cpp `listAntennas`, SoapySDRPlay3, MIT,
+        github.com/pothosware/SoapySDRPlay3), so a setting saved on either
+        path means the same input."""
+        return list(self.ANTENNAS)
+
+    def set_antenna(self, name: str) -> None:
+        """Switch the antenna/input, live where the receiver is open and
+        the model allows it (RtlSdrSource and a single-input SDRplay model
+        never do: there is only ever one name, and this just confirms it).
+        Refuses a name this receiver does not have: SdrError("bad-antenna"),
+        a REASONS key the app translates - never a sentence from here."""
+        names = self.antennas()
+        if name not in names:
+            raise SdrError("bad-antenna", f"{name!r} is not one of this receiver's inputs: {names}")
+        self.antenna = name
+
     def status(self) -> dict:
         return {"kind": self.kind, "centre": self.centre, "rate": self.rate, "gain": self.gain,
+                "antenna": self.antenna, "antennas": self.antennas(),
                 "open": self.opened, "blocks": self.stats.blocks, "samples": self.stats.samples,
                 "dropped": self.stats.dropped, "drops": self.stats.drops, "lagS": round(self.stats.lag_s, 3),
                 "notes": list(self.stats.notes)}

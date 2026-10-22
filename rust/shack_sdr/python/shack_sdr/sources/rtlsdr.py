@@ -50,6 +50,10 @@ Choices:
   socket, which is the operator's to decide, in the dongle's own tool.
 - librtlsdr says nothing of USB overflows; the wall-clock check in
   IqSource counts them.
+- **One input, "RX".** An RTL-SDR has one SMA socket, so `antennas()` is
+  `IqSource`'s default and `set_antenna` only ever confirms "RX" (any
+  other name is refused: SdrError "bad-antenna"). The method exists so Radio
+  can treat every source alike; there is nothing for this one to switch.
 """
 
 from __future__ import annotations

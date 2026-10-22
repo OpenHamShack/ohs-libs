@@ -95,11 +95,12 @@ STUB = r"""
 #include "sdrplay_api.h"
 
 static sdrplay_api_DevParamsT dev;
-static sdrplay_api_RxChannelParamsT chA;
-static sdrplay_api_DeviceParamsT params = {&dev, &chA, 0};
+static sdrplay_api_RxChannelParamsT chA, chB;
+static sdrplay_api_DeviceParamsT params = {&dev, &chA, &chB};
 static sdrplay_api_CallbackFnsT cbs;
 static short *iq_i, *iq_q; static long iqn, iqpos;
 static int running, opened, locked, selected, open_err, ndev = 1;
+static int hwver = SDRPLAY_RSPdx_ID, cur_tuner = sdrplay_api_Tuner_A, init_count, update_count;
 static pthread_t th;
 static int token = 5;
 
@@ -109,15 +110,26 @@ void stub_set_iq(const short *i, const short *q, long n) {
 }
 void stub_set_open_err(int e) { open_err = e; }
 void stub_set_ndev(int n) { ndev = n; }
-double stub_rf(void) { return chA.tunerParams.rfFreq.rfHz; }
+void stub_set_hwver(int v) { hwver = v; }
+/* The channel the API currently streams: A, unless an RSPduo swap moved it
+   to B (sdrplay_api_SwapRspDuoActiveTuner below). */
+static sdrplay_api_RxChannelParamsT *active_ch(void) { return cur_tuner == sdrplay_api_Tuner_B ? &chB : &chA; }
+double stub_rf(void) { return active_ch()->tunerParams.rfFreq.rfHz; }
 double stub_fs(void) { return dev.fsFreq.fsHz; }
-int stub_bw(void) { return chA.tunerParams.bwType; }
-int stub_if(void) { return chA.tunerParams.ifType; }
-int stub_agc(void) { return chA.ctrlParams.agc.enable; }
-int stub_grdb(void) { return chA.tunerParams.gain.gRdB; }
-int stub_lna(void) { return chA.tunerParams.gain.LNAstate; }
-int stub_dec(void) { return chA.ctrlParams.decimation.enable; }
+int stub_bw(void) { return active_ch()->tunerParams.bwType; }
+int stub_if(void) { return active_ch()->tunerParams.ifType; }
+int stub_agc(void) { return active_ch()->ctrlParams.agc.enable; }
+int stub_grdb(void) { return active_ch()->tunerParams.gain.gRdB; }
+int stub_lna(void) { return active_ch()->tunerParams.gain.LNAstate; }
+int stub_dec(void) { return active_ch()->ctrlParams.decimation.enable; }
 int stub_state(void) { return opened * 100 + selected * 10 + running; }
+int stub_init_count(void) { return init_count; }
+int stub_update_count(void) { return update_count; }
+int stub_rsp2_antsel(void) { return active_ch()->rsp2TunerParams.antennaSel; }
+int stub_rsp2_amport(void) { return active_ch()->rsp2TunerParams.amPortSel; }
+int stub_rspdx_antsel(void) { return dev.rspDxParams.antennaSel; }
+int stub_duo_amport(void) { return active_ch()->rspDuoTunerParams.tuner1AmPortSel; }
+int stub_duo_tuner(void) { return cur_tuner; }
 void stub_remove(void) { if (cbs.EventCbFn) cbs.EventCbFn(sdrplay_api_DeviceRemoved, sdrplay_api_Tuner_A, 0, 0); }
 
 static double now_s(void) { struct timespec t; clock_gettime(CLOCK_MONOTONIC, &t); return t.tv_sec + t.tv_nsec * 1e-9; }
@@ -133,7 +145,12 @@ static void *pump(void *a) {
     while (running) {
         while (running && sent < (now_s() - t0) * dev.fsFreq.fsHz) {
             for (int k = 0; k < N; k++) { bi[k] = iqn ? iq_i[iqpos] : 0; bq[k] = iqn ? iq_q[iqpos] : 0; if (iqn) iqpos = (iqpos + 1) % iqn; }
-            cbs.StreamACbFn(bi, bq, &p, N, 0, 0);
+            /* Whichever tuner is active now gets the samples - real enough
+               to prove an RSPduo tuner swap does not go deaf (both of
+               SdrplaySource's callbacks run the same code, sdrplay.py
+               docstring). */
+            if (cur_tuner == sdrplay_api_Tuner_B) cbs.StreamBCbFn(bi, bq, &p, N, 0, 0);
+            else cbs.StreamACbFn(bi, bq, &p, N, 0, 0);
             sent += N;
         }
         nanosleep(&ts, 0);
@@ -148,17 +165,35 @@ sdrplay_api_ErrT sdrplay_api_LockDeviceApi(void) { locked = 1; return sdrplay_ap
 sdrplay_api_ErrT sdrplay_api_UnlockDeviceApi(void) { locked = 0; return sdrplay_api_Success; }
 sdrplay_api_ErrT sdrplay_api_GetDevices(sdrplay_api_DeviceT *d, unsigned int *n, unsigned int max) {
     *n = ndev;
-    for (int k = 0; k < ndev; k++) { memset(&d[k], 0, sizeof d[k]); snprintf(d[k].SerNo, 64, "240309F0%d", k); d[k].hwVer = SDRPLAY_RSPdx_ID; d[k].valid = 1; d[k].dev = &token; }
+    for (int k = 0; k < ndev; k++) { memset(&d[k], 0, sizeof d[k]); snprintf(d[k].SerNo, 64, "240309F0%d", k); d[k].hwVer = hwver; d[k].valid = 1; d[k].dev = &token; }
     return sdrplay_api_Success;
 }
-sdrplay_api_ErrT sdrplay_api_SelectDevice(sdrplay_api_DeviceT *d) { if (!locked || d->tuner != sdrplay_api_Tuner_A) return sdrplay_api_Fail; selected = 1;
-    memset(&dev, 0, sizeof dev); memset(&chA, 0, sizeof chA); dev.fsFreq.fsHz = 2e6; chA.tunerParams.gain.gRdB = 50; chA.ctrlParams.agc.enable = sdrplay_api_AGC_50HZ; return sdrplay_api_Success; }
+sdrplay_api_ErrT sdrplay_api_SelectDevice(sdrplay_api_DeviceT *d) {
+    if (!locked || (d->tuner != sdrplay_api_Tuner_A && d->tuner != sdrplay_api_Tuner_B)) return sdrplay_api_Fail;
+    selected = 1; cur_tuner = d->tuner;
+    memset(&dev, 0, sizeof dev); memset(&chA, 0, sizeof chA); memset(&chB, 0, sizeof chB);
+    dev.fsFreq.fsHz = 2e6;
+    chA.tunerParams.gain.gRdB = chB.tunerParams.gain.gRdB = 50;
+    chA.ctrlParams.agc.enable = chB.ctrlParams.agc.enable = sdrplay_api_AGC_50HZ;
+    return sdrplay_api_Success;
+}
 sdrplay_api_ErrT sdrplay_api_ReleaseDevice(sdrplay_api_DeviceT *d) { selected = 0; return sdrplay_api_Success; }
 const char *sdrplay_api_GetErrorString(sdrplay_api_ErrT e) { return "stub error"; }
 sdrplay_api_ErrT sdrplay_api_GetDeviceParams(HANDLE h, sdrplay_api_DeviceParamsT **p) { *p = &params; return sdrplay_api_Success; }
-sdrplay_api_ErrT sdrplay_api_Init(HANDLE h, sdrplay_api_CallbackFnsT *c, void *ctx) { cbs = *c; running = 1; pthread_create(&th, 0, pump, 0); return sdrplay_api_Success; }
+sdrplay_api_ErrT sdrplay_api_Init(HANDLE h, sdrplay_api_CallbackFnsT *c, void *ctx) {
+    cbs = *c; running = 1; init_count++; pthread_create(&th, 0, pump, 0); return sdrplay_api_Success;
+}
 sdrplay_api_ErrT sdrplay_api_Uninit(HANDLE h) { if (running) { running = 0; pthread_join(th, 0); } return sdrplay_api_Success; }
-sdrplay_api_ErrT sdrplay_api_Update(HANDLE h, sdrplay_api_TunerSelectT t, sdrplay_api_ReasonForUpdateT r, sdrplay_api_ReasonForUpdateExtension1T e) { return sdrplay_api_Success; }
+sdrplay_api_ErrT sdrplay_api_Update(HANDLE h, sdrplay_api_TunerSelectT t, sdrplay_api_ReasonForUpdateT r, sdrplay_api_ReasonForUpdateExtension1T e) {
+    update_count++; return sdrplay_api_Success;
+}
+sdrplay_api_ErrT sdrplay_api_SwapRspDuoActiveTuner(HANDLE h, sdrplay_api_TunerSelectT *tuner,
+                                                    sdrplay_api_RspDuo_AmPortSelectT port) {
+    cur_tuner = (cur_tuner == sdrplay_api_Tuner_A) ? sdrplay_api_Tuner_B : sdrplay_api_Tuner_A;
+    *tuner = cur_tuner;
+    return sdrplay_api_Success;
+}
+void stub_reset(void) { hwver = SDRPLAY_RSPdx_ID; cur_tuner = sdrplay_api_Tuner_A; init_count = update_count = 0; }
 """
 
 
@@ -234,8 +269,18 @@ def rsp(tmp_path_factory):
     return lib, ctl
 
 
-def test_the_rsp_fields_written_are_the_fields_the_headers_name(rsp):
+@pytest.fixture
+def sdr(rsp):
+    """`rsp`'s compiled library, reset to a fresh RSPdx before each test:
+    the stub is built once (module-scoped, because compiling is slow) and
+    every test shares it, so state from one must not leak into the next."""
     lib, ctl = rsp
+    ctl.stub_reset()
+    return lib, ctl
+
+
+def test_the_rsp_fields_written_are_the_fields_the_headers_name(sdr):
+    lib, ctl = sdr
     src = SdrplaySource(144_700_000, 2_400_000, lib_path=lib, lna_state=4)
     with src:
         assert ctl.stub_state() == 111
@@ -249,8 +294,84 @@ def test_the_rsp_fields_written_are_the_fields_the_headers_name(rsp):
     assert SdrplaySource.rates() == [2_400_000.0]
 
 
-def test_an_unplugged_rsp_is_disconnected(rsp):
-    lib, ctl = rsp
+def test_a_single_input_rsp_reports_rx_and_refuses_to_switch(sdr):
+    lib, ctl = sdr
+    ctl.stub_set_hwver(sdrplay.HW_RSP1A)
+    src = SdrplaySource(lib_path=lib)
+    assert src.antennas() == []                       # the model is unknown before open()
+    with src:
+        assert src.antennas() == ["RX"] and src.antenna == "RX"
+        src.set_antenna("RX")                          # confirming the one input is not a refusal
+        assert src.antenna == "RX"
+        with pytest.raises(SdrError) as e:
+            src.set_antenna("Antenna A")
+        assert e.value.reason == "bad-antenna"
+        assert ctl.stub_init_count() == 1              # never reopened just to check a name
+
+
+def test_an_rspdx_switches_antennas_live_with_no_reopen(sdr):
+    lib, ctl = sdr                                     # stub_reset() leaves hwver at RSPdx
+    src = SdrplaySource(lib_path=lib, antenna="Antenna B")
+    with src:
+        assert src.antennas() == ["Antenna A", "Antenna B", "Antenna C"]
+        assert ctl.stub_rspdx_antsel() == 1 and ctl.stub_update_count() == 0   # set at open(), no Update needed
+        src.set_antenna("Antenna C")
+        assert ctl.stub_rspdx_antsel() == 2 and src.antenna == "Antenna C"
+        assert ctl.stub_update_count() == 1 and ctl.stub_init_count() == 1    # one Update, never a reopen
+        with pytest.raises(SdrError) as e:
+            src.set_antenna("Antenna D")
+        assert e.value.reason == "bad-antenna"
+        assert src.antenna == "Antenna C"              # a refusal never half-changes it
+        assert ctl.stub_init_count() == 1 and ctl.stub_update_count() == 1    # the refusal touched nothing
+
+
+def test_an_rsp2_leaving_hi_z_updates_the_port_then_the_antenna(sdr):
+    lib, ctl = sdr
+    ctl.stub_set_hwver(sdrplay.HW_RSP2)
+    src = SdrplaySource(lib_path=lib)
+    with src:
+        assert src.antennas() == ["Antenna A", "Antenna B", "Hi-Z"]
+        assert ctl.stub_rsp2_antsel() == 5 and ctl.stub_rsp2_amport() == 0     # Antenna A, 50 ohm (the default)
+        src.set_antenna("Hi-Z")
+        assert ctl.stub_rsp2_amport() == 1 and ctl.stub_update_count() == 1   # the port alone
+        before = ctl.stub_update_count()
+        src.set_antenna("Antenna B")                    # leaving Hi-Z: the port alone, which also
+        assert ctl.stub_rsp2_amport() == 0 and ctl.stub_rsp2_antsel() == 6   # engages the antenna already set
+        assert ctl.stub_update_count() == before + 1
+        before = ctl.stub_update_count()
+        src.set_antenna("Antenna A")                    # already off Hi-Z: the antenna alone
+        assert ctl.stub_rsp2_antsel() == 5 and ctl.stub_update_count() == before + 1
+        assert ctl.stub_init_count() == 1
+
+
+def test_an_rspduo_swaps_the_active_tuner_and_keeps_receiving(sdr):
+    lib, ctl = sdr
+    ctl.stub_set_hwver(sdrplay.HW_RSPDUO)
+    ctl.stub_set_iq.argtypes = (ctypes.POINTER(ctypes.c_short), ctypes.POINTER(ctypes.c_short), ctypes.c_long)
+    tone = np.exp(2j * np.pi * 0.01 * np.arange(4096)).astype(np.complex64) * 0.3
+    i = np.ascontiguousarray((tone.real * 32767).astype(np.int16))
+    q = np.ascontiguousarray((tone.imag * 32767).astype(np.int16))
+    ctl.stub_set_iq(i.ctypes.data_as(ctypes.POINTER(ctypes.c_short)), q.ctypes.data_as(ctypes.POINTER(ctypes.c_short)),
+                     len(tone))
+    src = SdrplaySource(lib_path=lib)
+    with src:
+        assert src.antennas() == ["Tuner 1 50 ohm", "Tuner 1 Hi-Z", "Tuner 2 50 ohm"]
+        assert ctl.stub_duo_tuner() == sdrplay.TUNER_A and src.device.tuner == sdrplay.TUNER_A
+        src.set_antenna("Tuner 1 Hi-Z")                 # no tuner change: one Update, no swap
+        assert ctl.stub_duo_amport() == 1 and ctl.stub_duo_tuner() == sdrplay.TUNER_A
+        src.set_antenna("Tuner 2 50 ohm")                # swaps the active tuner
+        assert ctl.stub_duo_tuner() == sdrplay.TUNER_B and src.device.tuner == sdrplay.TUNER_B
+        assert src.read().samples.dtype == np.complex64  # still receiving, on the other callback
+        src.set_antenna("Tuner 1 50 ohm")                 # swaps back
+        assert ctl.stub_duo_tuner() == sdrplay.TUNER_A and src.device.tuner == sdrplay.TUNER_A
+        with pytest.raises(SdrError) as e:
+            src.set_antenna("Tuner 3 50 ohm")
+        assert e.value.reason == "bad-antenna"
+        assert ctl.stub_init_count() == 1               # tuner swaps are never a reopen
+
+
+def test_an_unplugged_rsp_is_disconnected(sdr):
+    lib, ctl = sdr
     with SdrplaySource(lib_path=lib) as src:
         ctl.stub_remove()
         with pytest.raises(SdrError) as e:

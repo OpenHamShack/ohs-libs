@@ -67,6 +67,32 @@ status counters: `frames`, `chars`, `rejected`, `gaps`, `replays`.
 `sdrplay_api_missing`, `host` on a controller), `RtlSdrSource.rates()`,
 `SdrplaySource.rates()`. Moved from `shack_packet.sdr`, behaviour unchanged.
 
+**Antenna/input selection** (added for Radio, RADIO-SDR-PLAN §6):
+every source has `src.antennas()` (its input names, the first the
+default), `src.antenna` (the current one) and `src.set_antenna(name)`
+(switches live where the model allows it; refuses a name the receiver
+does not have with `SdrError("bad-antenna")`, a `REASONS` key, never a
+sentence). `RtlSdrSource` reports one input, `"RX"`, with nothing to
+switch. `SdrplaySource.antennas()` depends on the RSP model `open()`
+found ([] before that):
+
+| Model | Inputs |
+|---|---|
+| RSP1, RSP1A, RSP1B | `"RX"` (one input; never switches) |
+| RSP2 | `"Antenna A"`, `"Antenna B"`, `"Hi-Z"` |
+| RSPdx, RSPdxR2 | `"Antenna A"`, `"Antenna B"`, `"Antenna C"` |
+| RSPduo | `"Tuner 1 50 ohm"`, `"Tuner 1 Hi-Z"`, `"Tuner 2 50 ohm"` (Single Tuner mode; this module never asks for Dual Tuner or an API slave role) |
+
+These are SoapySDRPlay3's own names and model mapping
+(`Settings.cpp` `listAntennas`/`setAntenna`/`getAntenna`; MIT,
+github.com/pothosware/SoapySDRPlay3, read 22/10/2026), so a setting saved
+through either path means the same input. Switching never re-opens the
+stream: an RSPdx or RSP2 input is one `sdrplay_api_Update` call, and an
+RSPduo tuner change is `sdrplay_api_SwapRspDuoActiveTuner` (both of
+`SdrplaySource`'s stream callbacks run the same code, because which
+tuner the API now drives can change under that call). NOT YET RUN ON AN
+RSP of any kind: see `sources/sdrplay.py`'s module docstring.
+
 ## Building and testing
 
 `tools/test.sh` (repository root) runs `cargo test --release`, `cargo deny

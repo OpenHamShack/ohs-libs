@@ -51,7 +51,39 @@ thread; the callback copies them onto a queue and returns, and `_read`
 takes from it. A "device removed" event, or no samples for READ_TIMEOUT_S,
 is SdrError "disconnected" / "read-failed".
 
-NOT YET RUN ON AN RSP: shack's RSPdx belongs to the apps that use it.
+**Antenna/input selection** (added for Radio, RADIO-SDR-PLAN §6; task brief
+22/10/2026): an RSP1/RSP1A/RSP1B has one input and `antennas()` falls back
+to `IqSource`'s default ("RX"), unswitchable. The others switch live, with
+no re-open (`sdrplay_api_Update`, never Uninit/Init):
+
+- **RSPdx/RSPdxR2**: "Antenna A", "Antenna B", "Antenna C" -
+  `devParams.rspDxParams.antennaSel`, pushed with reason extension
+  `UPDATE_RSPDX_ANTENNA_CONTROL` (the selector is on the device, not the
+  channel: both tuners would see the same antenna on a dx, which has one).
+- **RSP2**: "Antenna A", "Antenna B", "Hi-Z" - the antenna select and the
+  AM port are two fields, but only ever one `Update` call: moving off
+  Hi-Z pushes the port alone (which also engages whichever antenna is
+  already selected), and moving onto it, or between A and B while already
+  off it, pushes the matching one field (SoapySDRPlay3's `setAntenna`,
+  "changeToAntennaA_B").
+- **RSPduo**: "Tuner 1 50 ohm", "Tuner 1 Hi-Z", "Tuner 2 50 ohm". Tuner 1
+  and Tuner 2 are the device's two SMA inputs; this module always asks for
+  Single Tuner mode (a duo running Dual Tuner or as an API slave is out of
+  scope: Radio opens one channel). Moving between the two tuners calls
+  `sdrplay_api_SwapRspDuoActiveTuner`, which is why both of the stream's
+  callbacks run the same code (`_on_stream`): after a swap, samples arrive
+  on whichever tuner's callback the API now drives, never the one asked
+  for at `open()`.
+
+The struct and reason-flag names and the three model's own antenna names
+are SoapySDRPlay3's (`Settings.cpp` `listAntennas`/`setAntenna`/
+`getAntenna`; MIT, github.com/pothosware/SoapySDRPlay3, read 22/10/2026),
+kept so a setting saved through either path means the same input. Unlike
+SoapySDRPlay3, nothing here is asked to drive a second (diversity) channel.
+
+NOT YET RUN ON AN RSP: shack's RSPdx belongs to the apps that use it. The
+RSP2 and RSPduo paths are checked only against the stand-in API below,
+never against real hardware of either kind.
 """
 
 from __future__ import annotations
@@ -73,10 +105,39 @@ BW_1_536 = 1536
 IF_ZERO = 0
 LO_AUTO = 1
 AGC_DISABLE, AGC_50HZ = 0, 2
-TUNER_A = 1
+TUNER_A, TUNER_B = 1, 2
 UPDATE_TUNER_GR, UPDATE_TUNER_FRF, UPDATE_DEV_FS, UPDATE_CTRL_AGC = 0x8000, 0x20000, 0x1, 0x1000000
 EVENT_DEVICE_REMOVED = 2
 GRDB_RANGE = (20, 59)
+
+# Hardware ids (sdrplay_api.h SDRPLAY_RSP*_ID; DeviceT.hwVer).
+HW_RSP1, HW_RSP1A, HW_RSP2, HW_RSPDUO, HW_RSPDX, HW_RSP1B, HW_RSPDXR2 = 1, 255, 2, 3, 4, 6, 7
+#: Single Tuner, the only RSPduo mode this module asks for (module docstring).
+RSPDUO_MODE_SINGLE_TUNER = 1
+
+# Antenna/AM-port update reasons (sdrplay_api.h ReasonForUpdateT/Ext1T).
+UPDATE_NONE = 0
+UPDATE_RSP2_AMPORT_SELECT = 0x100
+UPDATE_RSP2_ANTENNA_CONTROL = 0x200
+UPDATE_RSPDUO_AMPORT_SELECT = 0x10000000
+EXT1_NONE = 0
+EXT1_RSPDX_ANTENNA_CONTROL = 0x4
+
+# Antenna/AM-port selector values (sdrplay_api_rsp2.h, _rspDuo.h, _rspDx.h).
+RSP2_ANTENNA_A, RSP2_ANTENNA_B = 5, 6
+RSP2_AMPORT_2, RSP2_AMPORT_1 = 0, 1           # AMPORT_2 is the 50 ohm pair, AMPORT_1 is Hi-Z
+RSPDUO_AMPORT_2, RSPDUO_AMPORT_1 = 0, 1        # same two values, Tuner 1 only
+RSPDX_ANTENNA_A, RSPDX_ANTENNA_B, RSPDX_ANTENNA_C = 0, 1, 2
+
+#: Each switchable model's input names, in SoapySDRPlay3's own words and
+#: order (module docstring). A hwVer not here (RSP1/1A/1B) has one input:
+#: IqSource.ANTENNAS's default ("RX") applies unchanged.
+ANTENNAS = {
+    HW_RSP2: ("Antenna A", "Antenna B", "Hi-Z"),
+    HW_RSPDX: ("Antenna A", "Antenna B", "Antenna C"),
+    HW_RSPDXR2: ("Antenna A", "Antenna B", "Antenna C"),
+    HW_RSPDUO: ("Tuner 1 50 ohm", "Tuner 1 Hi-Z", "Tuner 2 50 ohm"),
+}
 
 LIB_PLACES = {
     "win32": [r"C:\Program Files\SDRplay\API\x64\sdrplay_api.dll", "sdrplay_api.dll"],
@@ -95,8 +156,45 @@ class FsFreqT(ctypes.Structure):
     _fields_ = [("fsHz", ctypes.c_double), ("syncUpdate", ctypes.c_ubyte), ("reCal", ctypes.c_ubyte)]
 
 
+class SyncUpdateT(ctypes.Structure):
+    _fields_ = [("sampleNum", ctypes.c_uint), ("period", ctypes.c_uint)]
+
+
+class ResetFlagsT(ctypes.Structure):
+    _fields_ = [("resetGainUpdate", ctypes.c_ubyte), ("resetRfUpdate", ctypes.c_ubyte),
+                ("resetFsUpdate", ctypes.c_ubyte)]
+
+
+class Rsp1aParamsT(ctypes.Structure):
+    _fields_ = [("rfNotchEnable", ctypes.c_ubyte), ("rfDabNotchEnable", ctypes.c_ubyte)]
+
+
+class Rsp2ParamsT(ctypes.Structure):
+    _fields_ = [("extRefOutputEn", ctypes.c_ubyte)]
+
+
+class RspDuoParamsT(ctypes.Structure):
+    _fields_ = [("extRefOutputEn", ctypes.c_int)]
+
+
+class RspDxParamsT(ctypes.Structure):
+    #: hdrEnable/biasTEnable/rfNotchEnable/rfDabNotchEnable are never
+    #: written here (left as SDRplay's own defaults, sdrplay.py docstring
+    #: "Bias-T and the RSPdx's antenna choice"); only antennaSel is ours.
+    _fields_ = [("hdrEnable", ctypes.c_ubyte), ("biasTEnable", ctypes.c_ubyte), ("antennaSel", ctypes.c_int),
+                ("rfNotchEnable", ctypes.c_ubyte), ("rfDabNotchEnable", ctypes.c_ubyte)]
+
+
 class DevParamsPrefix(ctypes.Structure):
-    _fields_ = [("ppm", ctypes.c_double), ("fsFreq", FsFreqT)]
+    #: Every field up to and including the per-model structs, in the
+    #: header's order (sdrplay_api_dev.h `sdrplay_api_DevParamsT`), so
+    #: `rspDxParams` lands where the real API expects it: ctypes computes
+    #: each field's offset from the ones before it, exactly as the C
+    #: compiler that built the real library did.
+    _fields_ = [("ppm", ctypes.c_double), ("fsFreq", FsFreqT), ("syncUpdate", SyncUpdateT),
+                ("resetFlags", ResetFlagsT), ("mode", ctypes.c_int), ("samplesPerPkt", ctypes.c_uint),
+                ("rsp1aParams", Rsp1aParamsT), ("rsp2Params", Rsp2ParamsT), ("rspDuoParams", RspDuoParamsT),
+                ("rspDxParams", RspDxParamsT)]
 
 
 class GainT(ctypes.Structure):
@@ -126,8 +224,36 @@ class ControlParamsT(ctypes.Structure):
                 ("decay_threshold_dB", ctypes.c_ushort), ("agcSyncUpdate", ctypes.c_int), ("adsbMode", ctypes.c_int)]
 
 
+class Rsp1aTunerParamsT(ctypes.Structure):
+    _fields_ = [("biasTEnable", ctypes.c_ubyte)]
+
+
+class Rsp2TunerParamsT(ctypes.Structure):
+    _fields_ = [("biasTEnable", ctypes.c_ubyte), ("amPortSel", ctypes.c_int), ("antennaSel", ctypes.c_int),
+                ("rfNotchEnable", ctypes.c_ubyte)]
+
+
+class RspDuoResetSlaveFlagsT(ctypes.Structure):
+    _fields_ = [("resetGainUpdate", ctypes.c_ubyte), ("resetRfUpdate", ctypes.c_ubyte)]
+
+
+class RspDuoTunerParamsT(ctypes.Structure):
+    _fields_ = [("biasTEnable", ctypes.c_ubyte), ("tuner1AmPortSel", ctypes.c_int),
+                ("tuner1AmNotchEnable", ctypes.c_ubyte), ("rfNotchEnable", ctypes.c_ubyte),
+                ("rfDabNotchEnable", ctypes.c_ubyte), ("resetSlaveFlags", RspDuoResetSlaveFlagsT)]
+
+
+class RspDxTunerParamsT(ctypes.Structure):
+    _fields_ = [("hdrBw", ctypes.c_int)]
+
+
 class RxChannelPrefix(ctypes.Structure):
-    _fields_ = [("tunerParams", TunerParamsT), ("ctrlParams", ControlParamsT)]
+    #: Same reasoning as DevParamsPrefix: every field up to rspDxTunerParams
+    #: in the header's order (sdrplay_api_rx_channel.h), so rsp2TunerParams
+    #: and rspDuoTunerParams land at the real offsets.
+    _fields_ = [("tunerParams", TunerParamsT), ("ctrlParams", ControlParamsT),
+                ("rsp1aTunerParams", Rsp1aTunerParamsT), ("rsp2TunerParams", Rsp2TunerParamsT),
+                ("rspDuoTunerParams", RspDuoTunerParamsT), ("rspDxTunerParams", RspDxTunerParamsT)]
 
 
 class DeviceParamsT(ctypes.Structure):
@@ -157,6 +283,7 @@ _SIGS = {
     "sdrplay_api_Init": ([ctypes.c_void_p, ctypes.POINTER(CallbackFnsT), ctypes.c_void_p], _E),
     "sdrplay_api_Uninit": ([ctypes.c_void_p], _E),
     "sdrplay_api_Update": ([ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.c_int], _E),
+    "sdrplay_api_SwapRspDuoActiveTuner": ([ctypes.c_void_p, ctypes.POINTER(ctypes.c_int), ctypes.c_int], _E),
 }
 
 
@@ -198,11 +325,15 @@ class SdrplaySource(IqSource):
     RATES = (2_400_000.0,)
 
     def __init__(self, centre: float = 145_312_500.0, rate: float = 2_400_000, gain: float | None = None, *,
-                 serial: str | None = None, lna_state: int = 3, lib_path=None):
+                 serial: str | None = None, lna_state: int = 3, lib_path=None, antenna: str | None = None):
         super().__init__(centre, rate, gain)
         self.serial = serial
         self.lna_state = int(lna_state)
         self.lib_path = lib_path
+        # The model (and so the input names) is only known once a device is
+        # found, so unlike IqSource.ANTENNAS this stays whatever was asked
+        # for (or None, for the model's default) until _open() resolves it.
+        self.antenna = antenna
         self.lib = None
         self.device: DeviceT | None = None
         self.params = None
@@ -211,7 +342,10 @@ class SdrplaySource(IqSource):
         self._gather: list = []
         self._gathered = 0
         self._removed = False
-        self._cbs = CallbackFnsT(STREAM_CB(self._on_stream), STREAM_CB(lambda *a: None), EVENT_CB(self._on_event))
+        # Both callbacks run the same code: in Single Tuner mode exactly one
+        # of them fires at a time, and which one can change under a Tuner
+        # 1/2 switch on an RSPduo (module docstring).
+        self._cbs = CallbackFnsT(STREAM_CB(self._on_stream), STREAM_CB(self._on_stream), EVENT_CB(self._on_event))
         self._opened_api = self._selected = self._running = False
 
     def _check(self, err: int, what: str, reason: str = "setup-failed") -> None:
@@ -241,7 +375,20 @@ class SdrplaySource(IqSource):
                     raise SdrError("no-device", "no SDRplay RSP found" if self.serial is None
                                    else f"no SDRplay RSP with serial {self.serial}")
                 self.device = pick[0]
-                if self.device.tuner == 0:
+                names = ANTENNAS.get(self.device.hwVer, IqSource.ANTENNAS)
+                if self.antenna is None:
+                    self.antenna = names[0]
+                elif self.antenna not in names:
+                    raise SdrError("bad-antenna",
+                                    f"{self.antenna!r} is not one of this receiver's inputs: {list(names)}")
+                if self.device.hwVer == HW_RSPDUO:
+                    # Single Tuner mode only (module docstring); GetDevices
+                    # reports rspDuoMode as a bitmask of what the device
+                    # offers, not a choice, so it must be set before
+                    # SelectDevice, same as the tuner the antenna wants.
+                    self.device.rspDuoMode = RSPDUO_MODE_SINGLE_TUNER
+                    self.device.tuner = TUNER_B if self.antenna == "Tuner 2 50 ohm" else TUNER_A
+                elif self.device.tuner == 0:
                     self.device.tuner = TUNER_A
                 self._check(lib.sdrplay_api_SelectDevice(ctypes.byref(self.device)), "SelectDevice", "busy")
                 self._selected = True
@@ -252,18 +399,24 @@ class SdrplaySource(IqSource):
             self.params = p.contents
             dev = self.params.devParams.contents
             dev.fsFreq.fsHz = float(self.rate)
-            ch = self.params.rxChannelA.contents
+            ch = self._ch()
             ch.tunerParams.bwType = BW_1_536
             ch.tunerParams.ifType = IF_ZERO
             ch.tunerParams.loMode = LO_AUTO
             ch.tunerParams.rfFreq.rfHz = float(self.centre)
             ch.ctrlParams.decEnable = 0
             self._set_gain_fields(ch)
+            self._apply_antenna(self.antenna, live=False)
             self._check(lib.sdrplay_api_Init(self.device.dev, ctypes.byref(self._cbs), None), "Init", "open-failed")
             self._running = True
         except Exception:
             self._close()
             raise
+
+    def _ch(self):
+        """The channel params for the tuner the API currently has active -
+        always A, except an RSPduo after a Tuner 1/2 swap moved it to B."""
+        return (self.params.rxChannelB if self.device.tuner == TUNER_B else self.params.rxChannelA).contents
 
     def _set_gain_fields(self, ch) -> None:
         ch.tunerParams.gain.LNAstate = self.lna_state
@@ -277,16 +430,89 @@ class SdrplaySource(IqSource):
     def set_gain(self, gain: float | None) -> None:
         self.gain = gain
         if self._running:
-            self._set_gain_fields(self.params.rxChannelA.contents)
-            self._check(self.lib.sdrplay_api_Update(self.device.dev, TUNER_A, UPDATE_TUNER_GR | UPDATE_CTRL_AGC, 0),
-                        "Update")
+            self._set_gain_fields(self._ch())
+            self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner,
+                        UPDATE_TUNER_GR | UPDATE_CTRL_AGC, 0), "Update")
 
     def set_centre(self, hz: float) -> None:
         self.centre = float(hz)
         if self._running:
-            self.params.rxChannelA.contents.tunerParams.rfFreq.rfHz = float(hz)
-            self._check(self.lib.sdrplay_api_Update(self.device.dev, TUNER_A, UPDATE_TUNER_FRF, 0), "Update",
-                        "out-of-range")
+            self._ch().tunerParams.rfFreq.rfHz = float(hz)
+            self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner, UPDATE_TUNER_FRF, 0),
+                        "Update", "out-of-range")
+
+    def antennas(self) -> list[str]:
+        """This receiver's input names for the model `open()` found, or []
+        before that (the model decides the list, not the class; module
+        docstring and IqSource.antennas)."""
+        if self.device is None:
+            return []
+        return list(ANTENNAS.get(self.device.hwVer, IqSource.ANTENNAS))
+
+    def set_antenna(self, name: str) -> None:
+        """Switch live, with no re-open: always exactly one
+        `sdrplay_api_Update` (RSPdx; RSP2 either field), or one
+        `sdrplay_api_SwapRspDuoActiveTuner` (RSPduo changing tuner) or
+        `Update` (RSPduo staying put). A single-input model (RSP1/1A/1B)
+        just confirms "RX". Refuses a name this model does not have:
+        SdrError("bad-antenna")."""
+        names = self.antennas()
+        if not names:
+            raise SdrError("bad-antenna", f"{name!r}: no device is open to say what its inputs are")
+        if name not in names:
+            raise SdrError("bad-antenna", f"{name!r} is not one of this receiver's inputs: {names}")
+        if self._running:
+            self._apply_antenna(name, live=True)
+        self.antenna = name
+
+    def _apply_antenna(self, name: str, *, live: bool) -> None:
+        """Write the struct fields for `name` (and, if `live`, push them)."""
+        hw = self.device.hwVer
+        if hw == HW_RSP2:
+            ch = self._ch()
+            hi_z = name == "Hi-Z"
+            was_hi_z = ch.rsp2TunerParams.amPortSel == RSP2_AMPORT_1
+            if hi_z:
+                ch.rsp2TunerParams.amPortSel = RSP2_AMPORT_1
+                if live:
+                    self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner,
+                                 UPDATE_RSP2_AMPORT_SELECT, EXT1_NONE), "Update")
+            else:
+                ch.rsp2TunerParams.antennaSel = RSP2_ANTENNA_A if name == "Antenna A" else RSP2_ANTENNA_B
+                if was_hi_z:
+                    # Leaving Hi-Z: switching the port off it is the only
+                    # update pushed - it also engages whichever antenna is
+                    # already selected, so a second AntennaControl update
+                    # is not sent (SoapySDRPlay3's setAntenna
+                    # "changeToAntennaA_B": the two branches are either/or).
+                    ch.rsp2TunerParams.amPortSel = RSP2_AMPORT_2
+                    if live:
+                        self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner,
+                                     UPDATE_RSP2_AMPORT_SELECT, EXT1_NONE), "Update")
+                elif live:
+                    self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner,
+                                 UPDATE_RSP2_ANTENNA_CONTROL, EXT1_NONE), "Update")
+        elif hw in (HW_RSPDX, HW_RSPDXR2):
+            # Device-level, not per-channel: a dx has one antenna port for
+            # both tuners (module docstring).
+            sel = {"Antenna A": RSPDX_ANTENNA_A, "Antenna B": RSPDX_ANTENNA_B, "Antenna C": RSPDX_ANTENNA_C}[name]
+            self.params.devParams.contents.rspDxParams.antennaSel = sel
+            if live:
+                self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner, UPDATE_NONE,
+                             EXT1_RSPDX_ANTENNA_CONTROL), "Update")
+        elif hw == HW_RSPDUO:
+            want_tuner = TUNER_B if name == "Tuner 2 50 ohm" else TUNER_A
+            port = RSPDUO_AMPORT_1 if name == "Tuner 1 Hi-Z" else RSPDUO_AMPORT_2
+            self._ch().rspDuoTunerParams.tuner1AmPortSel = port
+            if live and want_tuner != self.device.tuner:
+                tuner = ctypes.c_int(self.device.tuner)
+                self._check(self.lib.sdrplay_api_SwapRspDuoActiveTuner(self.device.dev, ctypes.byref(tuner), port),
+                             "SwapRspDuoActiveTuner")
+                self.device.tuner = tuner.value
+            elif live:
+                self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner,
+                             UPDATE_RSPDUO_AMPORT_SELECT, EXT1_NONE), "Update")
+        # RSP1/1A/1B: one input, "RX"; nothing in the struct to change.
 
     def _on_stream(self, xi, xq, params, n, reset, ctx) -> None:
         # The API calls back with a USB packet's worth (about 1300 samples
