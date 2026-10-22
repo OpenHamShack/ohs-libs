@@ -49,6 +49,7 @@ from pathlib import Path
 import numpy as np
 
 from ..decoder import FRAME_S, REF_OFFSETS, Decoder, amplitudes
+from ..i18n import _
 
 #: What the network prints. Index 0 is CTC's blank. Prosigns print as the
 #: classic engine prints them (Decoder._lookup: prosigns first).
@@ -255,7 +256,7 @@ class Net:
         self.front = m.get("front", "v1")
         if (m["symbols"] != SYMBOLS or self.front not in FRONTS or m["n_feat"] != n_feat(self.front)
                 or list(m["windows"]) != list(FRONTS[self.front]["windows"])):
-            raise ValueError("these weights were trained for another front end or alphabet")
+            raise ValueError(_("these weights were trained for another front end or alphabet"))
         self.n_feat = n_feat(self.front)
         self.stride, self.kd = int(m["stride"]), int(m["k_down"])
         self.dil = [int(d) for d in m["dilations"]]
@@ -333,7 +334,7 @@ class Ensemble:
     def __init__(self, nets: list[Net]):
         self.nets = nets
         if len({(n.stride, n.delay) for n in nets}) != 1:
-            raise ValueError("an ensemble's networks must share their stride and look-ahead")
+            raise ValueError(_("an ensemble's networks must share their stride and look-ahead"))
         top = max(nets, key=lambda n: n.n_feat)
         self.front, self.n_feat = top.front, top.n_feat
         self.stride, self.delay = nets[0].stride, nets[0].delay

@@ -18,6 +18,8 @@ from pathlib import Path
 
 import numpy as np
 
+from ..i18n import _
+
 TABLE = Path(__file__).with_name("spacelm.npz")
 
 
@@ -41,7 +43,7 @@ def code(hist, nxt: int) -> int:
 class SpaceModel:
     def __init__(self, path: Path | str | None = None):
         if N != _n():
-            raise ValueError("the space model's alphabet is not the network's")
+            raise ValueError(_("the space model's alphabet is not the network's"))
         z = np.load(Path(path) if path else TABLE)
         self.keys = [z[f"k{k}"] for k in range(4)]
         self.vals = [z[f"v{k}"] for k in range(4)]

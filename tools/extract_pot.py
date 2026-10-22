@@ -6,7 +6,7 @@ build hosts and the libraries are stdlib-only, so this does the same for
 the one pattern they use, a literal inside `_()`, plus the two catalogs
 that are not calls:
 
-- shack-client, shack-desktop, shack-packet, shack-pad, shack-rec, shack-rig: every `_("...")` in the package's
+- shack-client, shack-cw, shack-desktop, shack-packet, shack-pad, shack-rec, shack-rig: every `_("...")` in the package's
   source, subpackages included. Each package has its own domain (I18N.md
   §2, one domain per package), so a template lists only its own package's
   sentences.
@@ -83,7 +83,7 @@ def bandplan_entries() -> dict:
 TARGETS = [
     *[(ROOT / "python" / pkg / "src" / pkg / "locale" / f"{pkg.replace('_', '-')}.pot", pkg.replace("_", "-"),
        lambda pkg=pkg: underscore_entries(pkg))
-      for pkg in ("shack_client", "shack_desktop", "shack_packet", "shack_pad", "shack_rec", "shack_rig")],
+      for pkg in ("shack_client", "shack_cw", "shack_desktop", "shack_packet", "shack_pad", "shack_rec", "shack_rig")],
     (ROOT / "python" / "shack_bandplan" / "src" / "shack_bandplan" / "locale" / "shack-bandplan.pot",
      "shack-bandplan", bandplan_entries),
 ]

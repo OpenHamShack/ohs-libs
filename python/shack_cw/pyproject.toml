@@ -25,3 +25,4 @@ where = ["src"]
 # Frozen desktop builds collect package data the same way.
 [tool.setuptools.package-data]
 "shack_cw.nn" = ["*.npz"]
+shack_cw = ["locale/*.pot", "locale/*/LC_MESSAGES/*.mo"]

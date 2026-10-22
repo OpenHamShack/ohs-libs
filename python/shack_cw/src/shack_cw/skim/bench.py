@@ -36,6 +36,7 @@ from pathlib import Path
 
 import numpy as np
 
+from ..i18n import _
 from . import Skimmer, synth
 
 TARGET_HZ = 100.0
@@ -138,7 +139,7 @@ def load_sigmf(data_path: Path) -> tuple[np.ndarray, float, float, float]:
     elif dt == "ci16_le":
         z = np.fromfile(data_path, "<i2").astype(np.float32).reshape(-1, 2) @ np.array([1, 1j], np.complex64) / 32768
     else:
-        raise ValueError(f"cannot read {dt}")
+        raise ValueError(_("cannot read {dt}").format(dt=dt))
     start = cap.get("openhamshack:utc") or datetime.fromisoformat(cap["core:datetime"].replace("Z", "+00:00")).timestamp()
     return z.astype(np.complex64), float(g["core:sample_rate"]), float(cap["core:frequency"]), float(start)
 

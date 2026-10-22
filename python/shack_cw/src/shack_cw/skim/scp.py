@@ -41,6 +41,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
+from ..i18n import _
 from .calls import home_of
 
 URL = "https://supercheckpartial.com/downloads/MASTER.SCP"
@@ -165,7 +166,7 @@ def fetch(path, user_agent: str, *, url: str = URL, every_s: float = FETCH_EVERY
         raise
     text = body.decode("latin-1")
     if len(parse(text)) < MIN_CALLS:
-        raise ValueError(f"{url} gave {len(body)} bytes that are not a callsign list")
+        raise ValueError(_("{url} gave {n} bytes that are not a callsign list").format(url=url, n=len(body)))
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".part")
     tmp.write_bytes(body)

@@ -22,6 +22,7 @@ from typing import Callable
 
 import numpy as np
 
+from .i18n import _
 from .morse import CODE_TO_CHAR, CODE_TO_PROSIGN
 
 FRAME_S = 0.005
@@ -184,7 +185,8 @@ class Decoder:
         # call it makes; imported only when asked for, so the classic engine
         # never loads the weights.
         if engine not in cls.ENGINES:
-            raise ValueError(f"unknown CW engine {engine!r}: one of {', '.join(cls.ENGINES)}")
+            raise ValueError(_("unknown CW engine {engine!r}: one of {engines}").format(
+                engine=engine, engines=", ".join(cls.ENGINES)))
         if engine == "nn" and cls is Decoder:
             from .nn import NnDecoder
             return super().__new__(NnDecoder)

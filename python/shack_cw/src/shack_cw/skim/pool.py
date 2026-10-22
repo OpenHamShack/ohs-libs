@@ -43,6 +43,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from ..decoder import REF_OFFSETS, Decoder, amplitudes
+from ..i18n import _
 from .frontend import Gather, Stft
 
 SWAP_S = 5.0
@@ -101,7 +102,8 @@ class Channel:
 class Pool:
     def __init__(self, stft: Stft, max_channels: int = 64, squelch_db: float = 6.0, engine: str = "both"):
         if engine not in ENGINE_SETS:
-            raise ValueError(f"unknown CW engine {engine!r}: one of {', '.join(ENGINE_SETS)}")
+            raise ValueError(_("unknown CW engine {engine!r}: one of {engines}").format(
+                engine=engine, engines=", ".join(ENGINE_SETS)))
         self.stft = stft
         self.max_channels = int(max_channels)
         self.engine = engine

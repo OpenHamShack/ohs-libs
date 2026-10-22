@@ -42,6 +42,8 @@ from pathlib import Path
 
 import numpy as np
 
+from ..i18n import _
+
 TABLE = Path(__file__).with_name("cwlm.npz")
 
 #: Chosen on the realval dev set and the CW survey's held-out lines
@@ -79,7 +81,7 @@ class CharLM:
         z = np.load(Path(path) if path else TABLE, allow_pickle=False)
         self.meta = json.loads(str(z["meta"]))
         if self.meta["symbols"] != SYMBOLS:
-            raise ValueError("this language model was built for another alphabet")
+            raise ValueError(_("this language model was built for another alphabet"))
         self.order = int(self.meta["order"])
         self.rows = np.asarray(z["logp"], np.float32)
         self.index = {int(c): i for i, c in enumerate(z["codes"])}

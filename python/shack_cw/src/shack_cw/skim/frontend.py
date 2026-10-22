@@ -22,6 +22,7 @@ from __future__ import annotations
 import numpy as np
 
 from ..decoder import FRAME_S, REF_OFFSETS
+from ..i18n import _
 
 BIN_HZ = 23.4375      # the bins wanted: 96 kS/s / 4096, 12 kS/s / 512
 DET_HOPS = 4          # the detection transform's hop, in frames (20 ms)
@@ -44,7 +45,7 @@ class Stft:
         self.rate = float(rate)
         hop = self.rate * FRAME_S
         if abs(hop - round(hop)) > 1e-9:
-            raise ValueError(f"a 5 ms frame must be a whole number of samples at {rate} S/s")
+            raise ValueError(_("a 5 ms frame must be a whole number of samples at {rate} S/s").format(rate=rate))
         self.hop = int(round(hop))
         # Bins of about BIN_HZ, or finer where the 40 ms detection window
         # would not fit: Radio's 40 m segment comes at 60 kS/s, where the

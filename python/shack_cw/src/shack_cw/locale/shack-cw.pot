@@ -1,0 +1,38 @@
+# English template for the shack-cw domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-cw\n"
+
+#: python/shack_cw/src/shack_cw/skim/frontend.py
+msgid "a 5 ms frame must be a whole number of samples at {rate} S/s"
+msgstr ""
+
+#: python/shack_cw/src/shack_cw/nn/__init__.py
+msgid "an ensemble's networks must share their stride and look-ahead"
+msgstr ""
+
+#: python/shack_cw/src/shack_cw/skim/bench.py
+msgid "cannot read {dt}"
+msgstr ""
+
+#: python/shack_cw/src/shack_cw/nn/space.py
+msgid "the space model's alphabet is not the network's"
+msgstr ""
+
+#: python/shack_cw/src/shack_cw/nn/__init__.py
+msgid "these weights were trained for another front end or alphabet"
+msgstr ""
+
+#: python/shack_cw/src/shack_cw/nn/lm.py
+msgid "this language model was built for another alphabet"
+msgstr ""
+
+#: python/shack_cw/src/shack_cw/decoder.py
+#: python/shack_cw/src/shack_cw/skim/pool.py
+msgid "unknown CW engine {engine!r}: one of {engines}"
+msgstr ""
+
+#: python/shack_cw/src/shack_cw/skim/scp.py
+msgid "{url} gave {n} bytes that are not a callsign list"
+msgstr ""
