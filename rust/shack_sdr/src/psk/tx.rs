@@ -2,13 +2,15 @@
 //! decoder is measured on, and what psk.py's golden numbers were captured
 //! on (testdata/psk/, tools/psk_golden.py).
 //!
-//! The signal is what psk.py's Encoder sends, and what fldigi sends: a 0
-//! bit reverses the phase, a 1 leaves it, idle is reversals, and each
-//! symbol eases into the next along a half cosine, so idle is exactly two
-//! tones half the baud either side of the carrier. psk.py builds that by
-//! convolving the symbols with a one-symbol Hann window; here it is written
-//! directly as a cosine between symbol centres, so it can be evaluated at
-//! any time and so at any rate or sound-card clock error.
+//! The signal is PSK31 as G3PLX described it: a 0 bit reverses the
+//! phase, a 1 leaves it, idle is reversals, and the amplitude passes from
+//! one symbol to the next along a half cosine, so idle is exactly two tones
+//! half the baud either side of the carrier. Each symbol is thus a Hann
+//! pulse two symbols long, centred on its symbol, which the decoder's
+//! matched filter is. (psk.py's Encoder smooths the symbols with a
+//! one-symbol Hann window instead: nearly the same transition, not quite
+//! the same pulse.) It is written as a function of time, so it can be made
+//! at any rate and with any sound-card clock error.
 //!
 //! Like testsig (whose arithmetic it uses), it is bit-identical on every
 //! platform: the fixtures are pinned by the sha256 of what this makes.
@@ -91,8 +93,12 @@ impl Default for PskCase {
     }
 }
 
-/// The symbols (+1/-1) sent for `text`: preamble, the text's bits, postamble.
+/// The symbols (+1/-1) sent for `text`: preamble, the text's bits,
+/// postamble. No text is no transmission at all (a case of noise alone).
 pub fn symbols(text: &str, tx: &PskTx) -> Vec<f64> {
+    if varicode::bits(text).is_empty() {
+        return Vec::new();
+    }
     let even = |s: f64| ((s * tx.baud).round() as usize) / 2 * 2;
     let mut bits = vec![0u8; even(tx.preamble_s)];
     bits.extend(varicode::bits(text));
@@ -158,7 +164,9 @@ fn clean(case: &PskCase, rng: &mut Rng) -> (Vec<Complex64>, f64) {
     let syms = symbols(&case.text, &case.tx);
     let lead = (case.lead_s * case.rate).round() as usize;
     let sig = modulate(&syms, &case.tx, case.rate, case.centre, case.drift);
-    let mean = if sig.is_empty() { 0.0 } else { sig.iter().map(|z| z.norm_sqr()).sum::<f64>() / sig.len() as f64 };
+    // With nothing sent, the SNR is reckoned against idle's power (half the
+    // peak's), so noise alone is as loud as it is beside a signal.
+    let mean = if sig.is_empty() { 0.5 } else { sig.iter().map(|z| z.norm_sqr()).sum::<f64>() / sig.len() as f64 };
     let mut x = vec![Complex64::new(0.0, 0.0); lead];
     x.extend(sig);
     x.resize(x.len() + (case.tail_s * case.rate).round() as usize, Complex64::new(0.0, 0.0));
@@ -224,8 +232,8 @@ mod tests {
     #[test]
     fn idle_is_two_tones_half_the_baud_apart() {
         let tx = PskTx { preamble_s: 2.0, postamble_s: 0.0, ..Default::default() };
-        let syms = symbols("", &tx);
-        assert_eq!(syms.len(), 62);
+        assert!(symbols("", &tx).is_empty());
+        let syms: Vec<f64> = (0..62).map(|k| if k % 2 == 0 { -1.0 } else { 1.0 }).collect();
         assert!(syms.windows(2).all(|w| w[0] == -w[1]));
         let x = modulate(&syms, &tx, 12_000.0, 0.0, 0.0);
         // Away from the ends, the baseband is cos(pi t / T) up to sign: all
@@ -246,7 +254,8 @@ mod tests {
     #[test]
     fn the_imd_asked_for_is_the_imd_sent() {
         let tx = PskTx { preamble_s: 2.0, postamble_s: 0.0, imd_db: Some(-25.0), ..Default::default() };
-        let x = modulate(&symbols("", &tx), &tx, 12_000.0, 0.0, 0.0);
+        let syms: Vec<f64> = (0..62).map(|k| if k % 2 == 0 { -1.0 } else { 1.0 }).collect();
+        let x = modulate(&syms, &tx, 12_000.0, 0.0, 0.0);
         let mid = &x[3072..3072 + 768 * 20]; // whole cycles of both tones
         let tone = |f: f64| {
             let s: Complex64 = mid
