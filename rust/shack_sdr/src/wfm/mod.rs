@@ -9,8 +9,10 @@
 //! - `scan`: a wide capture to every station on the 100 kHz grid with its
 //!   level, stereo flag, PI, PS, PTY (and RadioText if time allows).
 //! - `tx`: the stereo and RDS test transmitter and channel models.
+//! - `decoder`: the `wfm` Host decoder (audio to the session's ring, RDS as meta).
 //! - `filt`: the few filters and the oscillator these need.
 
+pub mod decoder;
 pub mod filt;
 pub mod rds;
 pub mod rdsdemod;

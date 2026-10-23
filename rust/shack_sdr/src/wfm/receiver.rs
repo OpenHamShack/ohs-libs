@@ -217,7 +217,10 @@ pub struct WfmReceiver {
     rds: Option<(RdsDemod, RdsDecoder)>,
     bits: Vec<(bool, f32)>,
     samples: u64,
+    /// Ours rises on any RDS change, the stereo flag's, and a reset; the
+    /// decoder's (`dec_rev`, last seen) only on its own fields.
     rds_rev: u64,
+    dec_rev: u64,
     rds_ts: u64,
     mpx: Vec<f32>,
     sbuf: Vec<f32>,
@@ -300,6 +303,7 @@ impl WfmReceiver {
             bits: Vec::new(),
             samples: 0,
             rds_rev: 0,
+            dec_rev: 0,
             rds_ts: 0,
             mpx: Vec::new(),
             sbuf: Vec::new(),
@@ -498,9 +502,9 @@ impl WfmReceiver {
                 dec.push_soft(b, c);
             }
             let rev = dec.rev();
-            if rev != self.rds_rev {
-                // Both counters only rise; keep ours ahead of the decoder's.
-                self.rds_rev = self.rds_rev.max(rev) + 1;
+            if rev != self.dec_rev {
+                self.dec_rev = rev;
+                self.rds_rev += 1;
                 self.rds_ts = self.samples + mpx.len() as u64;
             }
         }

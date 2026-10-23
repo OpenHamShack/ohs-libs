@@ -353,6 +353,17 @@ fn a_retune_clears_rds_and_the_new_station_starts_clean() {
     assert_eq!(rx.rds().unwrap(), &Fields::default());
     assert!(!rx.status().stereo);
     assert!(rx.rds_rev().0 > rev);
+    // The revision moves only on a change: a steady station leaves it still.
+    let mut steady = WfmReceiver::new(RATE, Config::default()).unwrap();
+    let mut out = Vec::new();
+    for c in x.chunks(4800) {
+        steady.process_iq(c, &mut out);
+    }
+    let before = steady.rds_rev().0;
+    for c in iq(&t, 1.0, &Channel { cnr_db: Some(30.0), seed: 5, ..Default::default() }).chunks(4800) {
+        steady.process_iq(c, &mut out);
+    }
+    assert!(steady.rds_rev().0 - before <= 2, "{} {}", before, steady.rds_rev().0);
     let mut other = Station::new(0xC555, "OTHER   ", 1);
     other.rt = b"Another station".to_vec();
     let mut t2 = Tx::new(RATE);
@@ -422,4 +433,61 @@ fn deemphasis_75_us_and_the_lower_output_rates() {
     }
     let amp = 2.0 * (c * c + s * s).sqrt() / y.len() as f64;
     assert!((amp - 0.5 * 0.87 * 0.25).abs() < 0.002, "{amp}");
+}
+
+#[test]
+fn the_wfm_host_session_plays_stereo_into_its_ring_and_reports_rds() {
+    use shack_sdr::decoder::{InputKind, Output, Params, Value};
+    use shack_sdr::host::{Body, Host, HostConfig};
+    let h = Host::new(HostConfig::default());
+    let sid = h.start("wfm", Params::new(), InputKind::Iq, RATE, 0.0, false).unwrap();
+    let mut t = Tx::new(RATE);
+    t.left = Audio::Tone { hz: 1_000.0, amp: 0.5 };
+    t.rds = Some(station());
+    let x = iq(&t, 4.0, &Channel { cnr_db: Some(30.0), seed: 6, ..Default::default() });
+    let t0 = 1_792_663_200.0;
+    let mut items = Vec::new();
+    let mut pcm: Vec<f32> = Vec::new();
+    for (k, c) in x.chunks(24_000).enumerate() {
+        h.feed_iq(&sid, c, t0 + k as f64 * 0.1, (k * 24_000) as u64).unwrap();
+        // Pull as an app would, at its own pace: each 0.1 s block makes
+        // 4800 frames. (Fed faster than the 2 s input ring, it would drop.)
+        let end = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        while pcm.len() / 2 < (k + 1) * 4_800 && std::time::Instant::now() < end {
+            items.extend(h.poll(500));
+            for a in h.audio(&sid, 1.0, None, None).unwrap() {
+                assert_eq!((a.rate, a.channels), (48_000, 2));
+                pcm.extend(a.pcm);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
+    }
+    items.extend(h.poll(500));
+    assert_eq!(pcm.len(), 2 * 48_000 * 4);
+    let (l, r) = (tone(&chan(&pcm, 0, 2.0), 1_000.0), tone(&chan(&pcm, 1, 2.0), 1_000.0));
+    assert!(db(l / r) > 40.0, "{l} {r}");
+    // Never audio among the results: it has its ring.
+    assert!(!items.iter().any(|i| matches!(&i.body, Body::Output(Output::Audio { .. }))));
+    let metas: Vec<_> = items
+        .iter()
+        .filter_map(|i| match &i.body {
+            Body::Output(Output::Meta { fields }) => Some((i.t, fields.clone())),
+            _ => None,
+        })
+        .collect();
+    let (tm, last) = metas.last().expect("meta");
+    let get = |k: &str| last.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()).unwrap();
+    assert_eq!(get("stereo"), Value::Bool(true));
+    assert_eq!(get("pi"), Value::Text("C201".into()));
+    assert_eq!(get("ps"), Value::Text("TEST FM ".into()));
+    assert_eq!(get("pty"), Value::Num(10.0));
+    assert_eq!(get("ct"), Value::Text("2026-10-23T15:05:00+01:00".into()));
+    assert_eq!(get("af"), Value::List(vec![Value::Num(89.1e6), Value::Num(91.3e6), Value::Num(93.5e6)]));
+    // Times from the samples: within the 4 s fed, after t0.
+    assert!(*tm > t0 && *tm <= t0 + 4.0, "{tm}");
+    // Live: mono, and the next blocks say so.
+    let p = Params::new().with("stereo", Value::Bool(false));
+    h.configure(&sid, p).unwrap();
+    assert!(h.configure(&sid, Params::new().with("deemphasis", Value::Num(60.0))).is_err());
+    h.close();
 }
