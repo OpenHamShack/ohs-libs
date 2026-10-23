@@ -119,11 +119,16 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
                 {"sid": "C3A7", "label": "Shack DAB+ Data", "shortLabel": "ShackDAB", "bitrate": 64,
                  "kind": "dab+", "subchannel": 2, "protection": "3-A",
                  "why": "needs_codec:faad2", "needs": ["faad2"]}],
-   "playing": "C221", "why": null, "audio": {"codec": "mp2"}, "block": "11D"}
+   "playing": "C221", "why": null, "audio": {"codec": "mp2"}, "block": "11D",
+   "dls": "Shack MP2 Tone - now: 1 kHz left, 1.5 kHz right", "complete": true}
   ```
 
   `ensemble` is null and `services` empty until heard; `sync` is true
-  while FIBs pass their CRC. `audio.codec` is `mp2`, `he-aac`, `he-aac-v2`
+  while FIBs pass their CRC. `dls` is the playing service's programme text
+  (dynamic label), the latest complete one, null until one is and cleared
+  when the service changes; it needs no faad2, even for DAB+. `complete`
+  says the ensemble's label and every service's label and bit rate are
+  known. `audio.codec` is `mp2`, `he-aac`, `he-aac-v2`
   or `aac-lc`.
 - **Codes** (`why`, the feed's and a service's; the app words them, and
   these are the sentences suggested for Radio's catalogue):
@@ -146,6 +151,16 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
   only for want of faad2. Installed later, it is picked up by the playing
   session at its next super frame once `codecs.status(rescan=True)` has
   found it ("Look again").
+- **A band scan** asks each block "is there an ensemble here, and what is
+  in it?" without playing: a session with no `service` (only the FIC's
+  symbols are demodulated) until its meta says `complete`, or
+  `dab.survey(iq, rate, give_up_s=1.0)` on captured IQ, which returns
+  `{"meta", "syncS", "completeS", "listenedS"}` and stops as soon as it
+  knows. Measured with labels repeated once a second (EN 300 401's rate):
+  FIC read 0.15-0.2 s after the first frame begins (at most 0.21 s from 24
+  random starting points at 9 dB), list complete after 0.7-0.8 s, and
+  noise never syncs. Budget about 1.5 s per block that holds an ensemble
+  and `give_up_s` (1 s) for an empty one.
 - **Counters** (`stats`): `frames`, `misses`, `resyncs`, `fibsOk`,
   `fibsBad`, `audioFrames`, `audioErrors`, `superframes`, `rsCorrected`,
   `rsFailed`, `aus`, `auErrors`, `codecErrors`.
@@ -155,10 +170,11 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
 
   | Channel | FIC | MP2 (UEP 3, 128 kbit/s) | DAB+ (EEP 3-A, 64 kbit/s) |
   |---|---|---|---|
-  | AWGN 20, 12, 9, 7 dB | 100 % | 100 % | 100 % |
-  | AWGN 5 dB | 100 % | 10 % | 93 % |
-  | AWGN 4 dB | 98 % | 0 | 0 |
-  | AWGN 3 dB | 55 % | 0 | 0 |
+  | AWGN 20, 12, 9 dB | 100 % | 100 % | 100 % |
+  | AWGN 7 dB | 100 % | 97 % | 100 % |
+  | AWGN 5 dB | 100 % | 12 % | 93-100 % |
+  | AWGN 4 dB | 99 % | 0 | 0 |
+  | AWGN 3 dB | 55-69 % | 0 | 0 |
   | 12 dB, offset +1.2 / -17.3 / +35 kHz | 100 % | 100 % | 100 % |
   | 12 dB, echo 60 us at -3 dB; first path 6 dB weaker than its echo | 100 % | 100 % | 100 % |
   | 15 dB, 3 paths fading at 10 Hz | 98.6 % | 96 % | 100 % |
@@ -181,7 +197,7 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
   ours (its UEP table has one wrong entry); dablin's AudioSpecificConfig
   layout (GPL-3.0-or-later); FFmpeg's Layer II tables (LGPL-2.1-or-later).
   faad2's and fdk-aac's own sources were not read.
-- **Not done yet:** DLS and slideshow from PAD, FIG 2 (extended labels),
+- **Not done yet:** the slideshow (MOT) and DL Plus tags from PAD, FIG 2 (extended labels),
   data services, a multiplex reconfiguration's "next" configuration
   (applied only once it is current), MP2's scale-factor CRC concealment.
 
