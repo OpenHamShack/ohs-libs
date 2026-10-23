@@ -1,0 +1,1312 @@
+{
+ "about": "What openhamshack-nb ohscore/modes/psk.py's Decoder printed on each fixture in cases.json, captured before its removal (RADIO-SDR-PLAN \u00a77.1). The Rust decoder is held to never worse.",
+ "reference": {
+  "file": "openhamshack-nb ohscore/modes/psk.py",
+  "commit": "27d591b",
+  "sha256": "60927b1783be4896d96b725cf5cd94f42f9ad14555f99db1b9d818c5ae95705b"
+ },
+ "results": [
+  {
+   "id": "awgn-0000",
+   "text": "5oin K ",
+   "edits": 53,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0001",
+   "text": "",
+   "edits": 55,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0002",
+   "text": "\ne y",
+   "edits": 52,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0003",
+   "text": "Wer \u009crian, wd gABC0k\nAt",
+   "edits": 36,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0004",
+   "text": " here: runny, 15 C, wind SW 12 kt; QNH 10 ",
+   "edits": 10,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0005",
+   "text": "MaoBRI GM4BRI GMtBR ",
+   "edits": 23,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0006",
+   "text": "BRI deDL1n BC ur rst \"es9 599 name Hans qth Bere in btu\n1 ",
+   "edits": 13,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0007",
+   "text": "uick brown fox jumps over the lazy dog 1234567890\nfe",
+   "edits": 7,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0008",
+   "text": "g here is an IC-7300 at 30 W i<o a dipole at 10 m.\nn",
+   "edits": 5,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0009",
+   "text": "x fer the ne qso Brian, 73 and gl d\rDL1ABC sk\noto ",
+   "edits": 10,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0010",
+   "text": "e: sunny, 15  i, wind SW 12 kt; QNH 1013 hPa n\ne ",
+   "edits": 12,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0011",
+   "text": "Q CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n ",
+   "edits": 2,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0012",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\ne",
+   "edits": 1,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0013",
+   "text": "he quick brown fox jumps over the lazy dog 1234567890\n",
+   "edits": 1,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0014",
+   "text": "Rig here is an IC-7300 at 30 W into a dipoe e at 10 m.\not",
+   "edits": 4,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0015",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\n \u00cbu",
+   "edits": 3,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0016",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\no",
+   "edits": 1,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0017",
+   "text": "Q CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n It",
+   "edits": 4,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0018",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\ntee",
+   "edits": 3,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0019",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\no    ",
+   "edits": 5,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0020",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\na ",
+   "edits": 2,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0021",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\ne",
+   "edits": 1,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0022",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n\r",
+   "edits": 1,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0023",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\ns ",
+   "edits": 2,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0024",
+   "text": "in bt",
+   "edits": 52,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0025",
+   "text": "fot",
+   "edits": 52,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0026",
+   "text": "C-e\n3)",
+   "edits": 51,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0027",
+   "text": " fe the ni olqso Brian, and gFde ",
+   "edits": 22,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0028",
+   "text": ": sunny, 15 C, wind i 1+xH 10s 3 a.\n ",
+   "edits": 22,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0029",
+   "text": "Qr Q de GM4BRI G lXBRI GM4I pse k\n",
+   "edits": 10,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0030",
+   "text": "GM4BRI de DL1AeaC ur rst 599 59io name Haos qtHrlin btu\nt",
+   "edits": 10,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0031",
+   "text": "quick bro fox jumps over the lazy dog 34567890\nee",
+   "edits": 10,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0032",
+   "text": "is an -7300 at 30 K into a dipole at 10 m.\n",
+   "edits": 12,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0033",
+   "text": "tnx fer the nice qso nerian, 73 and gl de DL1ABC sk\n n",
+   "edits": 4,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0034",
+   "text": "WX here: sunny, 15 C, wind SW  kt; QNH 1013 hPa.\n ",
+   "edits": 3,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0035",
+   "text": " CQ CQ de GM4BRI GM4BRI GM4B nI pse k\n t ",
+   "edits": 7,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0036",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\no o",
+   "edits": 3,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0037",
+   "text": "The quink brown fox jumps over the la\ney dog 1234567890\n  ",
+   "edits": 5,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0038",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\nte",
+   "edits": 2,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0039",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\ni",
+   "edits": 1,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0040",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n  }",
+   "edits": 3,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0041",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\nh",
+   "edits": 1,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0042",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\n o ",
+   "edits": 3,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0043",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\n ta",
+   "edits": 3,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0044",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\nace",
+   "edits": 3,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0045",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\neo ",
+   "edits": 3,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0046",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n l",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0047",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\nehf",
+   "edits": 3,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0048",
+   "text": "",
+   "edits": 57,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0049",
+   "text": "k b",
+   "edits": 52,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0050",
+   "text": " ",
+   "edits": 53,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0051",
+   "text": "L1ABC ski f ",
+   "edits": 46,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0052",
+   "text": "WX here: sunny, 5 C, on6SW 12 kt; Ql H k013 hPa.\n     ",
+   "edits": 13,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0053",
+   "text": "CttQ CQ de GM4BRI GM sBRv poek\n  o t",
+   "edits": 17,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0054",
+   "text": "GM4BRI de DL1vBC -r rst 59io 5 name HaBerlin btu\nA",
+   "edits": 14,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0055",
+   "text": "The quick brown fox jumps over the \u00c3zy dog 34567890\nen",
+   "edits": 6,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0056",
+   "text": "here is an IC-7300 at 30 W into a dole _ 10 m.\n  e |",
+   "edits": 13,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0057",
+   "text": "tnx fer the nice qso Bri\b, 7\u00e3and gl de DL1ABC sk\n \u0002 ",
+   "edits": 7,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0058",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n r",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0059",
+   "text": " CQCQ CQ de GM4BRI GM4BRI GM4BRI pse k\nu",
+   "edits": 3,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0060",
+   "text": "GM4BRI de DL1AB\u0094ur rst 599 599 name Hans qth Berlin btu\n ",
+   "edits": 3,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0061",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\noi",
+   "edits": 2,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0062",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\nn",
+   "edits": 1,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0063",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\n  ",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0064",
+   "text": "WX here: sunny, 15 C, wind SW 1\u00cbkt; QNH 1013 hPa.\n 2",
+   "edits": 4,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0065",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\net",
+   "edits": 2,
+   "chars": 39
+  },
+  {
+   "id": "awgn-0066",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\ni,",
+   "edits": 2,
+   "chars": 57
+  },
+  {
+   "id": "awgn-0067",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\nr t ",
+   "edits": 4,
+   "chars": 55
+  },
+  {
+   "id": "awgn-0068",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\n",
+   "edits": 0,
+   "chars": 54
+  },
+  {
+   "id": "awgn-0069",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\ne\rtia",
+   "edits": 5,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0070",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n",
+   "edits": 0,
+   "chars": 51
+  },
+  {
+   "id": "awgn-0071",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n nvi",
+   "edits": 4,
+   "chars": 39
+  },
+  {
+   "id": "offset-0072",
+   "text": "4BRI de DL1ABC ur rs  599 599 name Hans qth Berlin btu\nlo",
+   "edits": 5,
+   "chars": 57
+  },
+  {
+   "id": "offset-0073",
+   "text": "quick brown fox jumps over the lazy dog 1234567890\ne",
+   "edits": 5,
+   "chars": 55
+  },
+  {
+   "id": "offset-0074",
+   "text": "here is an ICd7300 at 30 W into a dipole at 10 m.\nelt ",
+   "edits": 9,
+   "chars": 54
+  },
+  {
+   "id": "offset-0075",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\neo",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "offset-0076",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n v",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "offset-0077",
+   "text": "Q CQ CQ de GM4BRI GM4BRI GM4BRI pse k\ns",
+   "edits": 2,
+   "chars": 39
+  },
+  {
+   "id": "offset-0078",
+   "text": "\u0098FRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\net",
+   "edits": 6,
+   "chars": 57
+  },
+  {
+   "id": "offset-0079",
+   "text": "The quick brown fox jumps over the lazy dog 14567890\na",
+   "edits": 3,
+   "chars": 55
+  },
+  {
+   "id": "offset-0080",
+   "text": "g here is an IC-7300 at 30 W into a dipole at 10 m.\nta:e",
+   "edits": 6,
+   "chars": 54
+  },
+  {
+   "id": "offset-0081",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\n eee ",
+   "edits": 5,
+   "chars": 51
+  },
+  {
+   "id": "offset-0082",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n\n",
+   "edits": 1,
+   "chars": 51
+  },
+  {
+   "id": "offset-0083",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\ne t",
+   "edits": 3,
+   "chars": 39
+  },
+  {
+   "id": "drift-0084",
+   "text": "4BRI de DL1ABC4r rst 599 599 name Hans qth Beraio btu\nt   ",
+   "edits": 10,
+   "chars": 57
+  },
+  {
+   "id": "drift-0085",
+   "text": "quick brown fox jumps over the ly dog 1234567890\n",
+   "edits": 6,
+   "chars": 55
+  },
+  {
+   "id": "drift-0086",
+   "text": "here is avIC-7300 at 30 W into a dipole at 10 m.\n=",
+   "edits": 7,
+   "chars": 54
+  },
+  {
+   "id": "drift-0087",
+   "text": "nx fer the nice qso Brian, 73 and gl de DL1ABC sk\n\nt",
+   "edits": 3,
+   "chars": 51
+  },
+  {
+   "id": "drift-0088",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\ne  ",
+   "edits": 3,
+   "chars": 51
+  },
+  {
+   "id": "drift-0089",
+   "text": "Q CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n ei",
+   "edits": 4,
+   "chars": 39
+  },
+  {
+   "id": "clock-0090",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\n;",
+   "edits": 1,
+   "chars": 57
+  },
+  {
+   "id": "clock-0091",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\n\u00cf $i",
+   "edits": 4,
+   "chars": 55
+  },
+  {
+   "id": "clock-0092",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\n",
+   "edits": 0,
+   "chars": 54
+  },
+  {
+   "id": "fading-0093",
+   "text": "tne  fer t oe nice qso Brian, 73 and gl d\u00c8 L1ABC dIo t-",
+   "edits": 12,
+   "chars": 51
+  },
+  {
+   "id": "fading-0094",
+   "text": "WX here: sunny, 15 Cn  wind 1013 hPa.\n :t",
+   "edits": 19,
+   "chars": 51
+  },
+  {
+   "id": "fading-0095",
+   "text": "eQ CQ de 1M4BRJBRI GM4\u00c9e k\n",
+   "edits": 16,
+   "chars": 39
+  },
+  {
+   "id": "fading-0096",
+   "text": "DL1ABr rst 599 me Han\r \ne ",
+   "edits": 33,
+   "chars": 57
+  },
+  {
+   "id": "fading-0097",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\nanS ",
+   "edits": 4,
+   "chars": 55
+  },
+  {
+   "id": "fading-0098",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\n  n ",
+   "edits": 4,
+   "chars": 54
+  },
+  {
+   "id": "fading-0099",
+   "text": "tnx fer the nice qso Brian, 73 anu gl de DL1ABC s \r\ntp",
+   "edits": 5,
+   "chars": 51
+  },
+  {
+   "id": "fading-0100",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa., wnoe ",
+   "edits": 7,
+   "chars": 51
+  },
+  {
+   "id": "fading-0101",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n   ",
+   "edits": 3,
+   "chars": 39
+  },
+  {
+   "id": "fading-0102",
+   "text": "GM4BRI de DL1ABC u   rst 599 599 name Hans qth Berlin btu\noott",
+   "edits": 6,
+   "chars": 57
+  },
+  {
+   "id": "fading-0103",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\n   ",
+   "edits": 3,
+   "chars": 55
+  },
+  {
+   "id": "fading-0104",
+   "text": "Rig here is an IC-7300 at 30 R into a dipole at 10 m.\n]",
+   "edits": 2,
+   "chars": 54
+  },
+  {
+   "id": "fading-0105",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\n s ",
+   "edits": 3,
+   "chars": 51
+  },
+  {
+   "id": "fading-0106",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1a 13 hPa.\n t",
+   "edits": 4,
+   "chars": 51
+  },
+  {
+   "id": "fading-0107",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n    ",
+   "edits": 4,
+   "chars": 39
+  },
+  {
+   "id": "fading-0108",
+   "text": "G04BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\n\u0097",
+   "edits": 2,
+   "chars": 57
+  },
+  {
+   "id": "fading-0109",
+   "text": "The quick brown fox jums over the \u00bbzy dog\u0080567890\n",
+   "edits": 8,
+   "chars": 55
+  },
+  {
+   "id": "fading-0110",
+   "text": "Rig here is an IC-T p00 at 30 _ into t dipolo0 m.\n  ",
+   "edits": 13,
+   "chars": 54
+  },
+  {
+   "id": "fading-0111",
+   "text": "he ni te qso Brian,id3 and gl de 1AB\u0094s",
+   "edits": 19,
+   "chars": 51
+  },
+  {
+   "id": "fading-0112",
+   "text": "X here\resunny, 15 C, winaoW 12 ktu H 101I hPa.\n",
+   "edits": 10,
+   "chars": 51
+  },
+  {
+   "id": "fading-0113",
+   "text": "CQ CQ CQ deea M4BRI GM4BRI GM4BRI pse k\n- er",
+   "edits": 7,
+   "chars": 39
+  },
+  {
+   "id": "fading-0114",
+   "text": "GM4BRI de DL1 iBC ur rst 5FM599 name Hans qth Berlin btu\n u ",
+   "edits": 8,
+   "chars": 57
+  },
+  {
+   "id": "fading-0115",
+   "text": "The e\ruick brown \rox jumps ove e the lazy dog\u00802I456 i890\ni  oi",
+   "edits": 15,
+   "chars": 55
+  },
+  {
+   "id": "fading-0116",
+   "text": "Rig here is an IC-7300 at 30 W into a dipow at ei0 m.\n",
+   "edits": 4,
+   "chars": 54
+  },
+  {
+   "id": "fading-0117",
+   "text": "tnx fer the nice qso Brian, 73 and gl de 1ABC ak\netet ",
+   "edits": 8,
+   "chars": 51
+  },
+  {
+   "id": "fading-0118",
+   "text": "oWXhere: sunny, 15 C, hin t SW 12 kt; H 10 hota.\n\nae",
+   "edits": 14,
+   "chars": 51
+  },
+  {
+   "id": "fading-0119",
+   "text": "CQ CQ CQ de GM4BRp 4BRI GM4BRE pse k\no  .",
+   "edits": 8,
+   "chars": 39
+  },
+  {
+   "id": "fading-0120",
+   "text": "GM4BRI de DL1ABC ur rst 5 \r9\u00ff99 name Hans qth Berlin btuioe",
+   "edits": 7,
+   "chars": 57
+  },
+  {
+   "id": "fading-0121",
+   "text": "Thuick brown \u00d7x jumps over the lazy dog 1234567890\n  \n",
+   "edits": 8,
+   "chars": 55
+  },
+  {
+   "id": "fading-0122",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\n  ",
+   "edits": 2,
+   "chars": 54
+  },
+  {
+   "id": "fading-0123",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\n\ro",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "fading-0124",
+   "text": "WX here: sunny, 1 l C, wind SW 12 kt; QNH 1013 dPa.\n n",
+   "edits": 5,
+   "chars": 51
+  },
+  {
+   "id": "interferer-0125",
+   "text": " CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n  ",
+   "edits": 4,
+   "chars": 39
+  },
+  {
+   "id": "interferer-0126",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\nie",
+   "edits": 2,
+   "chars": 57
+  },
+  {
+   "id": "interferer-0127",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\n\u00d6",
+   "edits": 1,
+   "chars": 55
+  },
+  {
+   "id": "interferer-0128",
+   "text": "",
+   "edits": 54,
+   "chars": 54
+  },
+  {
+   "id": "interferer-0129",
+   "text": "due a",
+   "edits": 48,
+   "chars": 51
+  },
+  {
+   "id": "interferer-0130",
+   "text": "ita ne ",
+   "edits": 47,
+   "chars": 51
+  },
+  {
+   "id": "interferer-0131",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\nt oC\u001b",
+   "edits": 5,
+   "chars": 39
+  },
+  {
+   "id": "interferer-0132",
+   "text": "M4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\n  ",
+   "edits": 3,
+   "chars": 57
+  },
+  {
+   "id": "interferer-0133",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\nlo ",
+   "edits": 3,
+   "chars": 55
+  },
+  {
+   "id": "interferer-0134",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\ne ",
+   "edits": 2,
+   "chars": 54
+  },
+  {
+   "id": "interferer-0135",
+   "text": " fer the nice qso Brian, 73 and gl de DL1ABC sk\ne teo",
+   "edits": 8,
+   "chars": 51
+  },
+  {
+   "id": "interferer-0136",
+   "text": "nny, 15 C, wind SW 12 kt; QNH 1013 hPa.\nSt 1",
+   "edits": 15,
+   "chars": 51
+  },
+  {
+   "id": "offset-0137",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n ",
+   "edits": 1,
+   "chars": 39
+  },
+  {
+   "id": "offset-0138",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\n",
+   "edits": 0,
+   "chars": 57
+  },
+  {
+   "id": "offset-0139",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\na ",
+   "edits": 2,
+   "chars": 55
+  },
+  {
+   "id": "offset-0140",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\n t ",
+   "edits": 3,
+   "chars": 54
+  },
+  {
+   "id": "offset-0141",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\nm",
+   "edits": 1,
+   "chars": 51
+  },
+  {
+   "id": "offset-0142",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n em",
+   "edits": 3,
+   "chars": 51
+  },
+  {
+   "id": "offset-0143",
+   "text": "CQ CQ Coi de GM4BRI GM4BRI GM4BRI pse k\ni",
+   "edits": 3,
+   "chars": 39
+  },
+  {
+   "id": "offset-0144",
+   "text": "4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\nct",
+   "edits": 4,
+   "chars": 57
+  },
+  {
+   "id": "offset-0145",
+   "text": "quick brown fox jumps over the lazy dog 1234567890\n  e",
+   "edits": 7,
+   "chars": 55
+  },
+  {
+   "id": "offset-0146",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\n ",
+   "edits": 1,
+   "chars": 54
+  },
+  {
+   "id": "offset-0147",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\n\u0080i",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "offset-0148",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\na\n",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "drift-0149",
+   "text": " CQ de GF4BRI GM4BRI GM4BRI pse k\nda",
+   "edits": 8,
+   "chars": 39
+  },
+  {
+   "id": "drift-0150",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\ni",
+   "edits": 1,
+   "chars": 57
+  },
+  {
+   "id": "drift-0151",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\ni  e",
+   "edits": 4,
+   "chars": 55
+  },
+  {
+   "id": "drift-0152",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\na",
+   "edits": 1,
+   "chars": 54
+  },
+  {
+   "id": "drift-0153",
+   "text": "tnx fer the nice qso Brian, 73 and gl de DL1ABC sk\n  ",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "drift-0154",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\ngi",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "clock-0155",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n",
+   "edits": 0,
+   "chars": 39
+  },
+  {
+   "id": "clock-0156",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\n",
+   "edits": 0,
+   "chars": 57
+  },
+  {
+   "id": "clock-0157",
+   "text": "The quick brown fox jumps over the lazy dog 1234567890\ne  ",
+   "edits": 3,
+   "chars": 55
+  },
+  {
+   "id": "fading-0158",
+   "text": "Rig here is an IC-7300 at 30 W into a10 m.\ni ",
+   "edits": 13,
+   "chars": 54
+  },
+  {
+   "id": "fading-0159",
+   "text": "rBrian, 73 and gl de DL1ABC sk\n eo",
+   "edits": 23,
+   "chars": 51
+  },
+  {
+   "id": "fading-0160",
+   "text": "WX heree tnd SW 12 kt; EQa",
+   "edits": 29,
+   "chars": 51
+  },
+  {
+   "id": "fading-0161",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI IM4 eRI pse k\n\r  ",
+   "edits": 6,
+   "chars": 39
+  },
+  {
+   "id": "fading-0162",
+   "text": "4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\n te",
+   "edits": 5,
+   "chars": 57
+  },
+  {
+   "id": "fading-0163",
+   "text": "The quick brown fox jumps over the lazy dog 12345678",
+   "edits": 3,
+   "chars": 55
+  },
+  {
+   "id": "fading-0164",
+   "text": "Vi IC-7300 at 30 W into a dipole at 10 m.\nae",
+   "edits": 15,
+   "chars": 54
+  },
+  {
+   "id": "fading-0165",
+   "text": "tnx fer the nice qso Brian, 7de DL1ABC sk\nno",
+   "edits": 11,
+   "chars": 51
+  },
+  {
+   "id": "fading-0166",
+   "text": "bfX here: sanny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n en ",
+   "edits": 7,
+   "chars": 51
+  },
+  {
+   "id": "fading-0167",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\noe ",
+   "edits": 3,
+   "chars": 39
+  },
+  {
+   "id": "fading-0168",
+   "text": "GM4BRI d-oeL1ABC ur rst 599 599 name Hans qth Berlin btu\nte\ne",
+   "edits": 7,
+   "chars": 57
+  },
+  {
+   "id": "fading-0169",
+   "text": "The quick brown fox jumps over the lazy dog 12345678\n t ",
+   "edits": 4,
+   "chars": 55
+  },
+  {
+   "id": "fading-0170",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m.\ni a",
+   "edits": 3,
+   "chars": 54
+  },
+  {
+   "id": "fading-0171",
+   "text": "tnx ferthe nice qso Brian, 73 and gl de DL1ABC sk\noe=",
+   "edits": 4,
+   "chars": 51
+  },
+  {
+   "id": "fading-0172",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\ne o   e ",
+   "edits": 8,
+   "chars": 51
+  },
+  {
+   "id": "fading-0173",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRse k\ntl  ",
+   "edits": 7,
+   "chars": 39
+  },
+  {
+   "id": "fading-0174",
+   "text": "GM4I de DL1ABC ur rst 599 599 nao e Hans qth Berle \n erhe i-",
+   "edits": 14,
+   "chars": 57
+  },
+  {
+   "id": "fading-0175",
+   "text": "Th  qui ok n fos en er the la 1234567890\ne la",
+   "edits": 25,
+   "chars": 55
+  },
+  {
+   "id": "fading-0176",
+   "text": "Rig here is an IC-7300 at pu W into a dipole a tA0 m.\n2p",
+   "edits": 7,
+   "chars": 54
+  },
+  {
+   "id": "fading-0177",
+   "text": "atnx fer theSice qso Brian, 73 and gl de D\u001cfABC ski  ",
+   "edits": 8,
+   "chars": 51
+  },
+  {
+   "id": "fading-0178",
+   "text": "X here: sunny, 15 C, we T SW 12 kt; QNH s s@3 hPa.\nya",
+   "edits": 10,
+   "chars": 51
+  },
+  {
+   "id": "fading-0179",
+   "text": "CQ CQ CQ de GM4BRI GM4EOI G\u0016EBRI pse k\n ",
+   "edits": 5,
+   "chars": 39
+  },
+  {
+   "id": "fading-0180",
+   "text": "aGM4BRI de DL1ABC ur rst 599 59) name Hans qth Berlin btu\ne",
+   "edits": 3,
+   "chars": 57
+  },
+  {
+   "id": "fading-0181",
+   "text": "The quick brown fox ju eps over the lazy dog 1234567890\n Ea",
+   "edits": 5,
+   "chars": 55
+  },
+  {
+   "id": "fading-0182",
+   "text": "Rig here is an IC-7300 at 30 W into a dipole at 10 m. ea  S ",
+   "edits": 7,
+   "chars": 54
+  },
+  {
+   "id": "fading-0183",
+   "text": "tnx fer the \u0085ce qso Brian, 73 afi gl de DL1ABC sk\n t e",
+   "edits": 8,
+   "chars": 51
+  },
+  {
+   "id": "fading-0184",
+   "text": "WX here\rt ounny, 15 C, wind SW 12 kt; QNH 1013 hPa.\nee",
+   "edits": 5,
+   "chars": 51
+  },
+  {
+   "id": "fading-0185",
+   "text": "CQ C> CQ de GM4BRI GM4BRI GM4BRI pse k\n\r(",
+   "edits": 3,
+   "chars": 39
+  },
+  {
+   "id": "fading-0186",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\n c",
+   "edits": 2,
+   "chars": 57
+  },
+  {
+   "id": "fading-0187",
+   "text": "The quick brown fox jumps over th  lazy dog 1234567890\ne  e  ",
+   "edits": 7,
+   "chars": 55
+  },
+  {
+   "id": "fading-0188",
+   "text": "Rig here is an IC-7Ju0 at 30 W into a dipole at 10 m.\n l eeo ",
+   "edits": 9,
+   "chars": 54
+  },
+  {
+   "id": "fading-0189",
+   "text": "tnx fer thebice qso Brian, 73 and gl de DL1ABC sk\nt o  ",
+   "edits": 7,
+   "chars": 51
+  },
+  {
+   "id": "interferer-0190",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\na ",
+   "edits": 2,
+   "chars": 51
+  },
+  {
+   "id": "interferer-0191",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\nt  e",
+   "edits": 4,
+   "chars": 39
+  },
+  {
+   "id": "interferer-0192",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\nrt",
+   "edits": 2,
+   "chars": 57
+  },
+  {
+   "id": "interferer-0193",
+   "text": "g 1234567890\nefo ",
+   "edits": 46,
+   "chars": 55
+  },
+  {
+   "id": "interferer-0194",
+   "text": "is an IC-7300 at 30 W into a dipole at 10 m.\nK",
+   "edits": 10,
+   "chars": 54
+  },
+  {
+   "id": "interferer-0195",
+   "text": "qso Brian, 73 and gl de DL1ABC sk\n",
+   "edits": 17,
+   "chars": 51
+  },
+  {
+   "id": "interferer-0196",
+   "text": "WX here: sunny, 15 C, wind SW 12 kt; QNH 1013 hPa.\n eo",
+   "edits": 3,
+   "chars": 51
+  },
+  {
+   "id": "interferer-0197",
+   "text": "CQ CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n i  ",
+   "edits": 4,
+   "chars": 39
+  },
+  {
+   "id": "interferer-0198",
+   "text": "GM4BRI de DL1ABC ur rst 599 599 name Hans qth Berlin btu\ns.",
+   "edits": 2,
+   "chars": 57
+  },
+  {
+   "id": "interferer-0199",
+   "text": "quick brown fox jumps over the lazy dog 1234567890\n tl",
+   "edits": 7,
+   "chars": 55
+  },
+  {
+   "id": "interferer-0200",
+   "text": "g here is an IC-7300 at 30 W into a dipole at 10 m.\n",
+   "edits": 2,
+   "chars": 54
+  },
+  {
+   "id": "interferer-0201",
+   "text": " fer the nice qso Brian, 73 and gl de DL1ABC sk\n\rr",
+   "edits": 5,
+   "chars": 51
+  },
+  {
+   "id": "noise-0202",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0203",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0204",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0205",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0206",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0207",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0208",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0209",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0210",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0211",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0212",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0213",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0214",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0215",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  },
+  {
+   "id": "noise-0216",
+   "text": "",
+   "edits": 0,
+   "chars": 0
+  }
+ ]
+}
