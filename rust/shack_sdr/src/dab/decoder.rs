@@ -318,6 +318,7 @@ impl Dab {
             ("block".into(), if self.block.is_empty() { Value::Null } else { Value::Text(self.block.clone()) }),
             ("dls".into(), self.player.as_ref().and_then(|p| p.stream.dls()).map(|t| Value::Text(t.into())).unwrap_or(Value::Null)),
             ("complete".into(), Value::Bool(self.complete())),
+            ("tii".into(), super::tii::to_value(self.demod.tii.heard())),
         ]
     }
 

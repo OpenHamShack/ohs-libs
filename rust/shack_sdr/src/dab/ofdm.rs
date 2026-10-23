@@ -27,6 +27,7 @@
 //! its code is used.
 
 use super::coding::Soft;
+use super::tii;
 use super::tables::{self, CIF_SYMBOLS, GUARD, K, L, MSC_FIRST, RATE, SYMBOL_BITS, TF, TNULL, TS, TU};
 use rustfft::num_complex::{Complex32, Complex64};
 use rustfft::{Fft, FftPlanner};
@@ -104,6 +105,8 @@ pub struct Demod {
     scratch: Vec<Complex32>,
     pub frames: u64,
     pub resyncs: u64,
+    /// Which transmitters the nulls identify (TII), from every frame.
+    pub tii: tii::Detector,
 }
 
 fn bin(k: i32) -> usize {
@@ -136,6 +139,7 @@ impl Demod {
             scratch: vec![Complex32::new(0.0, 0.0); TU],
             frames: 0,
             resyncs: 0,
+            tii: tii::Detector::new(),
         }
     }
 
@@ -146,6 +150,7 @@ impl Demod {
         self.state = State::Search;
         self.offset_hz = 0.0;
         self.clock = 0.0;
+        self.tii.clear();
     }
 
     /// Search again from the samples now buffered (the decoder saw that a
@@ -355,6 +360,9 @@ impl Demod {
         let start = u - (GUARD + TNULL) as f64;
         self.state = State::Locked { start, misses: 0 };
         self.resyncs += 1;
+        // TII alternates frame by frame, and a new lock's first frame may
+        // be either kind.
+        self.tii.clear();
         None
     }
 
@@ -393,6 +401,7 @@ impl Demod {
         let mut cifs = vec![vec![0 as Soft; tables::CIF_BITS]; 4];
         let mut prev: Option<Vec<Complex32>> = None;
         let mut prs_ratio = 0.0;
+        let mut prs = Vec::new();
         let mut timing_err = 0.0;
         for l in 1..=L {
             if !need[l] {
@@ -404,6 +413,7 @@ impl Demod {
                 let (p, ratio) = self.response(&y, 0);
                 prs_ratio = ratio;
                 timing_err = (Self::first_path(&p) - ADVANCE as i32) as f64;
+                prs = y.clone();
             }
             if let Some(pv) = &prev {
                 let soft = self.dqpsk(&y, pv);
@@ -417,6 +427,12 @@ impl Demod {
             }
             prev = Some(y);
         }
+        // TII: the null's last TU samples are its useful part (its first
+        // TNULL - TU a cyclic prefix), cut ADVANCE early like every symbol,
+        // so the phase reference's start never enters it. One more FFT.
+        let null_at = start + ((TNULL - TU) as f64) * scale - ADVANCE as f64;
+        let nulls = self.carriers(null_at.round() as u64, null_at.round() - null_at);
+        self.tii.push(&nulls, &prs);
         // SNR from the null's power against the symbols'.
         let p_of = |a: u64, n: usize| -> f64 {
             self.at(a).map(|x| x[..n].iter().map(|v| v.norm_sqr() as f64).sum::<f64>() / n as f64).unwrap_or(0.0)
@@ -529,5 +545,33 @@ mod search_progress {
             }
         }
         assert!(stuck.is_empty(), "{} of 391 stuck: {:?}", stuck.len(), &stuck[..stuck.len().min(5)]);
+    }
+}
+
+#[cfg(test)]
+mod tii_cost {
+    use super::*;
+    use crate::dab::tx::{sfn_iq, Channel, Site, TxEnsemble};
+
+    // What TII adds to every frame, alone: the null's FFT (cut and
+    // de-rotated as every symbol is) and the detector's averaging, with a
+    // look every 32 frames as the decoder runs it. Printed (--nocapture)
+    // and held loosely, since hosts differ; the whole frame is
+    // tests/dab.rs cpu_per_frame_on_this_host.
+    #[test]
+    fn tii_costs_a_small_part_of_a_frame() {
+        let iq = sfn_iq(&TxEnsemble::standard(), &[Site { tii: Some((3, 4)), delay: 0, gain: 1.0 }], 2, &Channel { snr_db: Some(20.0), ..Default::default() });
+        let mut d = Demod::new();
+        d.push(&iq);
+        let prs = d.carriers(TNULL as u64 + 1000, 0.0);
+        let n = 3200;
+        let c0 = crate::cpu::thread_time();
+        for i in 0..n {
+            let y = d.carriers(1000 + (i % 7) as u64, 0.25);
+            d.tii.push(&y, &prs);
+        }
+        let us = (crate::cpu::thread_time() - c0).as_secs_f64() * 1e6 / n as f64;
+        eprintln!("TII: {us:.1} us CPU per 96 ms frame ({:.3} % of one core)", us / 96_000.0 * 100.0);
+        assert!(us < 500.0, "{us} us per frame");
     }
 }
