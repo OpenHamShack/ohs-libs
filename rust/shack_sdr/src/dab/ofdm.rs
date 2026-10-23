@@ -107,6 +107,8 @@ pub struct Demod {
     pub resyncs: u64,
     /// Which transmitters the nulls identify (TII), from every frame.
     pub tii: tii::Detector,
+    /// The last frame's null power, for the SNR (see `frame`).
+    last_null: Option<f64>,
 }
 
 fn bin(k: i32) -> usize {
@@ -140,6 +142,7 @@ impl Demod {
             frames: 0,
             resyncs: 0,
             tii: tii::Detector::new(),
+            last_null: None,
         }
     }
 
@@ -151,6 +154,7 @@ impl Demod {
         self.offset_hz = 0.0;
         self.clock = 0.0;
         self.tii.clear();
+        self.last_null = None;
     }
 
     /// Search again from the samples now buffered (the decoder saw that a
@@ -363,6 +367,7 @@ impl Demod {
         // TII alternates frame by frame, and a new lock's first frame may
         // be either kind.
         self.tii.clear();
+        self.last_null = None;
         None
     }
 
@@ -437,8 +442,14 @@ impl Demod {
         let p_of = |a: u64, n: usize| -> f64 {
             self.at(a).map(|x| x[..n].iter().map(|v| v.norm_sqr() as f64).sum::<f64>() / n as f64).unwrap_or(0.0)
         };
-        let null = p_of(start.round() as u64 + 300, TNULL - 600);
+        // Every other null carries TII (-16.8 dB of the signal when one
+        // transmitter is heard), which read as noise would cap the SNR at
+        // about 17 dB on those frames: the quieter of the last two nulls
+        // is always an empty one.
+        let this_null = p_of(start.round() as u64 + 300, TNULL - 600);
+        let null = self.last_null.map_or(this_null, |l| l.min(this_null));
         let sig = p_of(sym_at(2), TU);
+        self.last_null = Some(this_null);
         let snr_db = (10.0 * ((sig - null).max(1e-12) / (0.75 * null).max(1e-12)).log10()) as f32;
         // Track: frequency from the guards, timing (and the clock) from the
         // phase reference, while it is still clearly there.

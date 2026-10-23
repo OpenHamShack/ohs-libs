@@ -181,3 +181,27 @@ fn the_list_changes_at_a_modest_rate() {
     eprintln!("{} different lists in 10 s", lists.len());
     assert!(lists.len() <= 6, "{} lists: {lists:?}", lists.len());
 }
+
+#[test]
+fn tii_in_the_null_does_not_pull_the_snr_reading_down() {
+    // The SNR is read from the null's power against the symbols'; a null
+    // carrying TII is not empty (its 32 carriers are -16.8 dB of the
+    // signal), so read from TII nulls alone a 25 dB signal would read 17
+    // every other frame.
+    let ch = Channel { snr_db: Some(25.0), ..Default::default() };
+    let readings = |iq: &[Complex32]| -> Vec<f32> {
+        let mut d = Dab::new();
+        let block = 204_800;
+        let mut r = Vec::new();
+        for (i, chunk) in iq.chunks(block).enumerate() {
+            d.feed(Input::Iq { samples: chunk, rate: 2_048_000.0, t0: 0.0, index: (i * block) as u64 }, &mut Sink::new()).unwrap();
+            r.extend(d.status().snr_db);
+        }
+        r
+    };
+    let plain = readings(&dab_iq(&TxEnsemble::standard(), 30, &ch));
+    let tii = readings(&sfn_iq(&TxEnsemble::standard(), &[site((62, 7), 0, 0.0)], 30, &ch));
+    let lo = |r: &[f32]| r[5..].iter().cloned().fold(f32::INFINITY, f32::min);
+    eprintln!("lowest SNR reading: {:.1} dB without TII, {:.1} dB with", lo(&plain), lo(&tii));
+    assert!(lo(&tii) > lo(&plain) - 1.5, "{} against {}", lo(&tii), lo(&plain));
+}
