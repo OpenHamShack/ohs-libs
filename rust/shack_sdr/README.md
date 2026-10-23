@@ -201,6 +201,90 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
   data services, a multiplex reconfiguration's "next" configuration
   (applied only once it is current), MP2's scale-factor CRC concealment.
 
+### Broadcast FM (`wfm`): stereo, RDS and the band scan
+
+One station's channel IQ to 48 kHz stereo with RDS, all in Rust off the
+GIL (`src/wfm/`), replacing openhamshack-nb `ohscore/dsp/wfm.py`'s mono
+path; and the band scanner's many-carrier RDS on a wide capture.
+
+```python
+from shack_sdr import wfm
+rx = wfm.Receiver(rate=240_000, deemphasis_us=50)   # stereo=True, blend=True, rds=True,
+                                                    # audio_rate=48_000 (24_000, 12_000), channels=2 (1)
+pcm = rx.process(channel_iq, t0)      # complex64 in; float32 (n, channels) out; process_composite(mpx, t0)
+rx.rds()      # {"pi": "C201", "ps": "TEST FM ", "rt", "pty": 10, "ptyName": "Pop music", "ta", "tp",
+              #  "ct": "2026-10-23T15:05:00+01:00", "af": [89100000, ...], "stereo", "ts", "rev"}; None = not heard
+rx.status()   # {"stereo", "blend", "pilot", "snrDb", "levelDb", "offsetHz", "rdsSync", "rdsSnrDb",
+              #  "blocks", "corrected", "blockErrors", "groups"}
+rx.reset()    # every retune: RDS cleared, loops restarted
+rx.set_deemphasis(75); rx.set_stereo(False); rx.set_blend(False)   # live
+wfm.scan_band(iq, rate=8_000_000, center_hz=97_000_000, budget_s=3.0, threads=0, min_snr_db=10.0, rt=False)
+              # [{"hz", "levelDb", "stereo", "pi", "ps", "pty", "ptyName", "rt", "ta", "tp", "ct", "af",
+              #   "rdsSync", "complete"}]; report=True: {"stations", "usedS", "timedOut", "cpuS", "wallS", "noiseDb"}
+wfm.pty_name(10)                      # "Pop music": the European table, through the shack-sdr catalog
+sid = host.start("wfm", {"deemphasis": 50}, "iq", 240_000)    # the same receiver as a Host session:
+host.audio(sid, rate=12_000, channels=1)   # its sound from the ring; RDS as `meta` results (pty a number)
+```
+
+- **Input:** the channel IQ at a whole multiple of 48 kHz of at least
+  144 kS/s (Radio's bank gives 240 kS/s; anything else is
+  `DecoderError("bad_input", "rate")`), or the composite (75 kHz = 1.0).
+  IQ because Radio has it, the discriminator is one `atan2` a sample, and
+  the same pass gives the level and the tuning offset. Full deviation
+  comes out at 0.5 and a 20 Hz DC high-pass is kept, as wfm.py.
+- **Stereo:** a pilot PLL; the stereo flag on above 4 % of deviation for
+  150 ms, off below 3 % for 300 ms; L-R from the pilot's second harmonic;
+  50/75 µs de-emphasis; one decimator for sum and difference, flat to
+  15 kHz and 70 dB down from 19 kHz. **Blend** to mono on the stereo
+  channel's SNR, estimated from the composite's empty 64-84 kHz (within
+  1 dB of the measured from 8 to 40 dB CNR): mono at 26 dB, full stereo
+  at 40 (mono is 20 dB quieter than stereo on the same signal).
+- **RDS** (EN 62106): matched filter for the shaped biphase symbol,
+  Costas loop (works in mono and with the subcarrier in quadrature), bit
+  timing at the matched filter's energy peak, syndrome sync, 2-bit burst
+  correction only in sync, at a low recent error rate, and on the
+  demodulator's weakest bits. Groups 0A/0B (PS, TA, TP, AF), 2A/2B
+  (RadioText with its A/B flag), 4A (clock), PI and PTY from every group.
+  A field is published only when stable (each PS/RadioText segment twice
+  alike, never old and new halves together; PI/PTY/TP/TA twice; AFs
+  twice; the clock from a group with all four blocks clean), and cleared
+  on `reset` or a newly confirmed PI.
+- **Band scan:** one overlap-save channeliser for every carrier (each
+  segment transformed once; each carrier's bins inverse-transformed to
+  200-400 kS/s), memory about 0.1 s of spectra whatever the capture's
+  length; carriers on the 100 kHz grid in 87.5-108 MHz `min_snr_db` over
+  the 30th-percentile floor and no weaker than their neighbours; each
+  decoded (pilot and RDS, no audio) until it has PI, PS and PTY (and
+  RadioText with `rt`), the budget is spent or the capture ends.
+- **Measured** (tests/wfm.rs, tests/wfm_scan.rs, on the test transmitter;
+  CNR is over the sampled 240 kHz, about 1.2 dB worse than in 180 kHz):
+  separation 83-109 dB from 100 Hz to 15 kHz at 50 dB CNR; THD+N
+  -111 dB at full deviation; response flat to 0.2 dB. RDS block error
+  rate 0.6 % at 20 dB CNR, 1.3 % at 15, 5 % at 12, 52 % at 10 (the FM
+  threshold); PS within 1.2 s down to 10 dB, and in 7 s at 9; through a
+  25 kHz tuning error, ±100 ppm station clock, quadrature RDS, no pilot
+  and two echoes; no published field ever wrong, down to 6 dB. The scan
+  names twelve stations from -25 to -58 dBFS in 8 and 10 MHz captures.
+- **CPU** (thread time, one Ryzen 9 6900HX core): a station at 240 kS/s
+  is 2.7 % with stereo and RDS, 3.0 % at 12 kHz mono, 2.1 % RDS and pilot
+  only. The scan is about 35 ms of CPU per MHz per second of capture with
+  every carrier decoded to the end (the worst case); a typical scan stops
+  each station after about 1.1 s, and threads divide the wall time.
+- **Tests without a transmitter:** `wfm::tx` (`_native.testsig_wfm`,
+  `testsig_fm_band`) builds the BS.450 multiplex with pre-emphasis, the
+  pilot, L-R, RDS from real groups (`rds::Station`), FM at ±75 kHz, and a
+  channel with AWGN, offset, clock error and echoes; and a wide band of
+  such stations.
+- **Read, with credit:** EN 62106 is the source; redsea (MIT, Oona
+  Räisänen) for the G0 character table as it lays it out, and its overall
+  receiver shape and 2-bit correction limit. gr-rds was not needed.
+- **Not done yet:** RadioText+ and other ODA groups, EON (14A),
+  Enhanced RadioText, AF method B's pairs (each frequency is listed, the
+  pairing ignored), RBDS's PTY names (the number is there for an app that
+  wants them). The scan's levels and floor come from the capture's first
+  0.1 s, which is right for FM's constant envelope but would miss a
+  station that starts later in the capture.
+
 ## Sources
 
 `shack_sdr.sources`: `IqSource`, `IqBlock`, `SdrError`, `REASONS`,

@@ -1,8 +1,10 @@
 """Install a shack-sdr wheel into a fresh venv and prove it works there:
 it imports from the wheel (not a checkout), decodes RTTY from a synthetic
 signal through the Host, plays an old DAB (MP2) service from the DAB
-transmitter model through our own decoder, lists its catalogue (with DAB
-partly available: no faad2 here), and reports every encumbered codec
+transmitter model through our own decoder, plays a stereo FM station with
+RDS from the FM test transmitter and names a band of them, lists its
+catalogue (with DAB partly available: no faad2 here), and reports every
+encumbered codec
 missing - nothing is hidden inside the wheel (RADIO-SDR-PLAN §5.5).
 
     python wheel_smoke.py <wheel> <venv dir>
@@ -53,7 +55,19 @@ loader._system = lambda names: []
 codecs._loader = loader
 entry = next(e for e in shack_sdr.catalogue() if e["id"] == "dab")
 assert entry["available"] and entry["partial"] and entry["missing"] == ["faad2"], entry
-print("wheel ok:", shack_sdr.__version__, sys.version.split()[0], got.strip(), "| DAB:", meta["services"][0]["label"])
+from shack_sdr import wfm
+x = np.frombuffer(_native.testsig_wfm(seconds=3.0, cnr_db=30.0, left_hz=1000.0), np.complex64)
+rx = wfm.Receiver()
+pcm = np.concatenate([rx.process(x[k:k + 4800], k / 240_000) for k in range(0, len(x), 4800)])
+rds = rx.rds()
+assert pcm.shape == (144_000, 2) and rds["ps"] == "TEST FM " and rds["ptyName"] == "Pop music" and rds["stereo"], rds
+assert np.std(pcm[48_000:, 0]) > 10 * np.std(pcm[48_000:, 1])
+band = [(-1e6, -30.0, 0xC201, "RADIO 1 ", 10, True), (5e5, -40.0, 0xC202, "RADIO 2 ", 1, False)]
+x = np.frombuffer(_native.testsig_fm_band(band, rate=2_400_000.0, seconds=2.0), np.complex64)
+found = [(s["hz"], s["ps"]) for s in wfm.scan_band(x, 2_400_000, 98_000_000)]
+assert found == [(97_000_000, "RADIO 1 "), (98_500_000, "RADIO 2 ")], found
+print("wheel ok:", shack_sdr.__version__, sys.version.split()[0], got.strip(), "| DAB:", meta["services"][0]["label"],
+      "| FM:", rds["ps"], [ps for _, ps in found])
 """
 
 
