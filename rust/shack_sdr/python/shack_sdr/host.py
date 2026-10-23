@@ -10,7 +10,12 @@ numbered the same way.
 Every session's results carry `session`, `rev` (rising by one per result,
 per session, so a gap says something was missed) and `t` (UTC seconds,
 from the samples, never the clock), and a `type`: text, frame, image,
-audio, meta, or state for a session's state changes.
+meta, or state for a session's state changes.
+
+Sound is not a result. A decoder that makes it (DAB now; WFM, FreeDV and
+the digital voice modes later) fills the session's audio ring, and the app
+pulls it with `audio(sid, rate=12_000, channels=1)` at its own pace,
+converted to its own format: Radio routes it to its ordinary audio stream.
 """
 
 from __future__ import annotations
@@ -69,7 +74,37 @@ class Host:
         entry = _entry(decoder)
         if entry is not None and entry["engine"] != "shack_sdr":
             return self._start_python(entry, params, input, rate, center_hz, pinned)
+        if entry is not None and entry.get("needs"):
+            # The decoder opens its codec itself, from the file the loader's
+            # probe passed; tell the native side which file that is.
+            from . import codecs
+            codecs.publish()
         return self._native.start(decoder, params, input, float(rate), float(center_hz), pinned)
+
+    def configure(self, sid: str, params: dict) -> None:
+        """Change a running session's parameters, live (DAB's `service`).
+        Checked at once: a refusal raises DecoderError("bad_params", why)."""
+        s = self._py.get(sid)
+        if s is None:
+            self._native.configure(sid, dict(params))
+            return
+        raise DecoderError("bad_params", "not_live")
+
+    def audio(self, sid: str, max_s: float = 1.0, *, rate: int | None = None,
+              channels: int | None = None) -> list[dict]:
+        """The session's sound since the last pull: [{"t", "rate", "channels",
+        "pcm"}], `pcm` a float32 numpy array (interleaved when stereo), each
+        dict one run of one format; at most `max_s` seconds. `rate` and
+        `channels` convert it (Radio: 12_000, 1), keeping the converter's
+        state from one pull to the next so the sound is unbroken. [] when
+        there is none, or for a decoder that makes no sound; never waits."""
+        if sid in self._py:
+            return []
+        frames = max(1, int(max_s * (rate or 48_000)))
+        out = self._native.audio(sid, frames, rate, channels)
+        for c in out:
+            c["pcm"] = np.frombuffer(c["pcm"], dtype=np.float32)
+        return out
 
     def _start_python(self, entry: dict, params: dict, input_kind: str, rate: float, center_hz: float,
                       pinned: bool) -> str:

@@ -16,6 +16,18 @@ An app can give one a session runner with `register`.
 
 `available` and `why` say whether this install can decode it now: a code,
 `not_installed`, when the library is not there.
+
+**Partly available.** A decoder can need a codec for only part of what it
+does: DAB's MP2 services are our own decoder, and only its DAB+ services
+need faad2. Such an entry names the parts in `needsFor` (`{"faad2":
+["dab+"]}`). With the codec missing it stays `available` (its ensemble and
+service list, and every part not named, still work) and says so with
+`partial: true` and `missing: ["faad2"]`; a session started on it reports
+`needs_codec:faad2` only when asked to play a part that needs it. A codec
+in `needs` but not in `needsFor` is needed for everything, and its absence
+makes the entry unavailable, `why: "needs_codec"`, with `missing` naming it
+(the 409 `decoder_unavailable` the server answers). `partial` and
+`missing` are on every entry, false and [] when nothing is missing.
 """
 
 from __future__ import annotations
@@ -85,8 +97,16 @@ def catalogue() -> list[dict]:
     """Every decoder, Rust first, each with `available`, `why`, `version`
     and `fixed`."""
     out = []
-    for e in _native.catalogue():
-        e.update({"available": True, "why": None, "fixed": True})
+    native = _native.catalogue()
+    found: set[str] = set()
+    if any(e["needs"] for e in native):
+        from . import codecs
+        found = {s["id"] for s in codecs.status() if s["state"] == "found"}
+    for e in native:
+        missing = [c for c in e["needs"] if c not in found]
+        whole = [c for c in missing if c not in e["needsFor"]]
+        e.update({"available": not whole, "why": "needs_codec" if whole else None, "fixed": True,
+                  "partial": bool(missing) and not whole, "missing": missing})
         out.append(e)
     for e in _PYTHON:
         e = copy.deepcopy(e)
@@ -95,6 +115,8 @@ def catalogue() -> list[dict]:
         e["why"] = None if ok else "not_installed"
         e["version"] = version
         e["fixed"] = ok and runner(e["id"]) is not None
+        e.setdefault("needsFor", {})
+        e["partial"], e["missing"] = False, []
         out.append(e)
     return out
 

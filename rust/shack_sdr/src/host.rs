@@ -25,10 +25,23 @@
 //!   `skimBudget` and Radio's `cwSkimCpu` idea.
 //! - **`close()` joins within a second.** Workers check for it between
 //!   blocks, and a block is at most a quarter second of samples.
+//! - **Sound has a ring of its own.** A decoder's `Output::Audio` never
+//!   joins the results queue: 48 kHz stereo would crowd out every text
+//!   result, and a client that polls slowly would lose both. It goes to the
+//!   session's audio ring (`ring_s` seconds, the oldest dropped and counted),
+//!   which the app pulls with `audio()` at its own pace, converted to its
+//!   own rate and channels if it asks: Radio takes 12 kHz mono for its
+//!   ordinary audio stream. The same ring serves every decoder that makes
+//!   sound (DAB now; WFM, FreeDV and digital voice later).
+//! - **`configure()` is live.** New parameters are checked against the
+//!   decoder's catalogue entry at once (a refusal is the caller's), merged
+//!   into the session's, and handed to the decoder by its worker before its
+//!   next block, so the engine never waits for a block being decoded. DAB's
+//!   `service` changes this way without losing the ensemble.
 
 use crate::catalogue::{self, Kind};
-use crate::decoder::{DecodeError, Decoder, Input, InputKind, Output, Params, Sink, Status};
-use crate::dsp::AudioToIq;
+use crate::decoder::{check_params, DecodeError, Decoder, Fields, Input, InputKind, Output, Params, Sink, Status};
+use crate::dsp::{AudioToIq, Resampler};
 use rustfft::num_complex::Complex32;
 use std::collections::{BTreeMap, VecDeque};
 use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -145,6 +158,23 @@ pub enum Body {
     State { state: State, why: Option<String> },
 }
 
+/// A run of sound pulled from a session, all at one rate and channel count.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AudioChunk {
+    /// UTC seconds of the first frame, from the samples.
+    pub t: f64,
+    pub rate: u32,
+    pub channels: u8,
+    /// Interleaved when stereo.
+    pub pcm: Vec<f32>,
+}
+
+impl AudioChunk {
+    pub fn frames(&self) -> usize {
+        self.pcm.len() / self.channels.max(1) as usize
+    }
+}
+
 /// What `status` says about a session.
 #[derive(Clone, Debug)]
 pub struct SessionInfo {
@@ -164,6 +194,12 @@ pub struct SessionInfo {
     pub fed: u64,
     pub dropped: u64,
     pub decoder_status: Status,
+    /// The decoder's latest `meta` result (DAB's ensemble and services), so
+    /// a view opened late, or a client that missed it, has it at once.
+    pub meta: Option<Fields>,
+    /// Frames of sound waiting in the ring, and dropped from it unpulled.
+    pub audio_queued: usize,
+    pub audio_dropped: u64,
 }
 
 #[derive(Clone, Debug)]
@@ -197,6 +233,114 @@ struct Block {
     index: u64,
 }
 
+/// A session's sound, waiting to be pulled, and the converter that keeps
+/// its state across pulls.
+struct AudioRing {
+    chunks: VecDeque<AudioChunk>,
+    frames: usize,
+    cap_s: f64,
+    dropped: u64,
+    conv: Option<Convert>,
+}
+
+/// Rate and channel conversion for one stream: (from rate, from channels,
+/// to rate, to channels), one resampler per output channel.
+struct Convert {
+    key: (u32, u8, u32, u8),
+    rs: Vec<Resampler<f32>>,
+}
+
+impl AudioRing {
+    fn push(&mut self, t: f64, pcm: Vec<f32>, rate: u32, channels: u8) {
+        if rate == 0 || channels == 0 || pcm.is_empty() {
+            return;
+        }
+        let ch = channels as usize;
+        let frames = pcm.len() / ch;
+        // Join a run of the same format that ends where this one starts.
+        match self.chunks.back_mut() {
+            Some(last) if last.rate == rate && last.channels == channels => last.pcm.extend_from_slice(&pcm[..frames * ch]),
+            _ => self.chunks.push_back(AudioChunk { t, rate, channels, pcm: pcm[..frames * ch].to_vec() }),
+        }
+        self.frames += frames;
+        // Over the ring: the oldest go, counted in frames.
+        let cap = (self.cap_s * rate as f64) as usize;
+        while self.frames > cap {
+            let Some(front) = self.chunks.front_mut() else { break };
+            let fch = front.channels as usize;
+            let excess = self.frames - cap;
+            let have = front.frames();
+            if have <= excess {
+                self.frames -= have;
+                self.dropped += have as u64;
+                self.chunks.pop_front();
+            } else {
+                front.pcm.drain(..excess * fch);
+                front.t += excess as f64 / front.rate as f64;
+                self.frames -= excess;
+                self.dropped += excess as u64;
+            }
+        }
+    }
+
+    /// Up to `max` frames, oldest first, each run converted if asked.
+    fn pull(&mut self, max: usize, rate: Option<u32>, channels: Option<u8>) -> Vec<AudioChunk> {
+        let mut out = Vec::new();
+        let mut left = max;
+        while left > 0 {
+            let Some(front) = self.chunks.front_mut() else { break };
+            let ch = front.channels as usize;
+            let n = front.frames().min(left);
+            let pcm: Vec<f32> = front.pcm.drain(..n * ch).collect();
+            let chunk = AudioChunk { t: front.t, rate: front.rate, channels: front.channels, pcm };
+            front.t += n as f64 / front.rate as f64;
+            if front.pcm.is_empty() {
+                self.chunks.pop_front();
+            }
+            self.frames -= n;
+            left -= n;
+            out.push(self.convert(chunk, rate, channels));
+        }
+        out
+    }
+
+    fn convert(&mut self, c: AudioChunk, rate: Option<u32>, channels: Option<u8>) -> AudioChunk {
+        let to_rate = rate.unwrap_or(c.rate);
+        let to_ch = channels.unwrap_or(c.channels).clamp(1, 2);
+        if to_rate == c.rate && to_ch == c.channels {
+            return c;
+        }
+        let key = (c.rate, c.channels, to_rate, to_ch);
+        if self.conv.as_ref().map(|v| v.key) != Some(key) {
+            let rs = (0..to_ch).map(|_| Resampler::new(c.rate as f64, to_rate as f64, 0.9, 32)).collect();
+            self.conv = Some(Convert { key, rs });
+        }
+        let conv = self.conv.as_mut().unwrap();
+        let ch = c.channels as usize;
+        let frames = c.frames();
+        // Channels first: stereo to mono is the mean, mono to stereo a copy.
+        let planes: Vec<Vec<f32>> = match (ch, to_ch) {
+            (2, 1) => vec![(0..frames).map(|i| 0.5 * (c.pcm[2 * i] + c.pcm[2 * i + 1])).collect()],
+            (1, 2) => vec![c.pcm.clone(), c.pcm.clone()],
+            (2, 2) => vec![(0..frames).map(|i| c.pcm[2 * i]).collect(), (0..frames).map(|i| c.pcm[2 * i + 1]).collect()],
+            _ => vec![c.pcm.clone()],
+        };
+        let mut outs: Vec<Vec<f32>> = Vec::new();
+        for (plane, r) in planes.iter().zip(conv.rs.iter_mut()) {
+            let mut o = Vec::new();
+            if to_rate == c.rate {
+                o.extend_from_slice(plane);
+            } else {
+                r.process(plane, &mut o);
+            }
+            outs.push(o);
+        }
+        let n = outs.iter().map(|o| o.len()).min().unwrap_or(0);
+        let pcm = if to_ch == 2 { (0..n).flat_map(|i| [outs[0][i], outs[1][i]]).collect() } else { outs[0][..n].to_vec() };
+        AudioChunk { t: c.t, rate: to_rate, channels: to_ch, pcm }
+    }
+}
+
 struct Inbox {
     blocks: VecDeque<Block>,
     samples: usize,
@@ -227,6 +371,8 @@ struct Ctl {
     removed: bool,
     /// The decoder's status after its last chunk.
     status: Status,
+    /// Its latest `meta` result.
+    meta: Option<Fields>,
 }
 
 struct Session {
@@ -235,13 +381,16 @@ struct Session {
     kind: Kind,
     input: InputKind,
     rate: f64,
-    params: Params,
+    params: Mutex<Params>,
     pinned: bool,
     inbox: Mutex<Inbox>,
     work: Mutex<Work>,
     ctl: Mutex<Ctl>,
     /// Reset the decoder before its next block (a retune, a pause ended).
     reset: AtomicBool,
+    /// Parameters to hand the decoder before its next block (`configure`).
+    pending: Mutex<Option<Params>>,
+    audio: Mutex<AudioRing>,
 }
 
 struct Shared {
@@ -431,6 +580,9 @@ impl Host {
         if !(rate.is_finite() && rate > 0.0) {
             return Err(HostError::BadInput("rate"));
         }
+        if input == InputKind::Iq && rate < kind.info.min_rate_hz {
+            return Err(HostError::BadInput("rate"));
+        }
         let adapter = match (input, kind.info.inputs.contains(&input)) {
             (_, true) => None,
             (InputKind::Audio, false) if kind.info.inputs.contains(&InputKind::Iq) => {
@@ -462,7 +614,7 @@ impl Host {
             kind,
             input,
             rate,
-            params,
+            params: Mutex::new(params),
             pinned,
             inbox: Mutex::new(Inbox { blocks: VecDeque::new(), samples: 0, cap, accepting: true, fed: 0, dropped: 0 }),
             work: Mutex::new(Work { decoder: dec, adapter }),
@@ -475,8 +627,17 @@ impl Host {
                 paused_share: 0.0,
                 removed: false,
                 status,
+                meta: None,
             }),
             reset: AtomicBool::new(false),
+            pending: Mutex::new(None),
+            audio: Mutex::new(AudioRing {
+                chunks: VecDeque::new(),
+                frames: 0,
+                cap_s: self.shared.cfg.ring_s.max(0.5),
+                dropped: 0,
+                conv: None,
+            }),
         });
         sessions.insert(id.clone(), s);
         Ok(id)
@@ -543,6 +704,11 @@ impl Host {
         };
         // The decoder's own status as copied after its last chunk: this
         // never waits for a worker that is decoding.
+        let (audio_queued, audio_dropped) = {
+            let a = lock(&s.audio);
+            (a.frames, a.dropped)
+        };
+        let params = lock(&s.params).clone();
         let mut c = lock(&s.ctl);
         let decoder_status = c.status.clone();
         let cpu = window_share(&mut c.cpu, Instant::now());
@@ -551,7 +717,7 @@ impl Host {
             decoder: s.kind.info.id,
             input: s.input,
             rate: s.rate,
-            params: s.params.clone(),
+            params,
             pinned: s.pinned,
             state: c.state,
             why: c.why.clone(),
@@ -561,7 +727,41 @@ impl Host {
             fed,
             dropped,
             decoder_status,
+            meta: c.meta.clone(),
+            audio_queued,
+            audio_dropped,
         })
+    }
+
+    /// Change a running session's parameters: checked now against the
+    /// decoder's entry, applied by its worker before its next block.
+    /// Parameters not named keep their values.
+    pub fn configure(&self, id: &str, params: Params) -> Result<(), HostError> {
+        let s = self.session(id)?;
+        check_params(&params, s.kind.info.params).map_err(|e| HostError::BadParams(e.code()))?;
+        let merged = {
+            let mut p = lock(&s.params);
+            for (k, v) in params.0 {
+                p.0.insert(k, v);
+            }
+            p.clone()
+        };
+        *lock(&s.pending) = Some(merged);
+        self.shared.wake();
+        Ok(())
+    }
+
+    /// The session's sound: up to `max_frames` frames, oldest first, as runs
+    /// of one format each, converted to `rate` and `channels` when given
+    /// (the conversion keeps its state from one pull to the next). Empty
+    /// when there is none; never waits.
+    pub fn audio(&self, id: &str, max_frames: usize, rate: Option<u32>, channels: Option<u8>) -> Result<Vec<AudioChunk>, HostError> {
+        let s = self.session(id)?;
+        if rate == Some(0) || channels.is_some_and(|c| c == 0 || c > 2) {
+            return Err(HostError::BadInput("audio_format"));
+        }
+        let out = lock(&s.audio).pull(max_frames, rate, channels);
+        Ok(out)
     }
 
     pub fn sessions(&self) -> Vec<String> {
@@ -723,7 +923,13 @@ fn decode(sh: &Shared, s: &Session, work: &mut Work, blocks: Vec<Block>) {
     let mut needs: Option<String> = None;
     for b in blocks {
         let w = &mut *work;
+        let pending = lock(&s.pending).take();
         let r = catch_unwind(AssertUnwindSafe(|| -> Result<(), DecodeError> {
+            if let Some(p) = pending {
+                // Checked against the entry already; a decoder that still
+                // refuses keeps its old settings, as a bad start would.
+                let _ = w.decoder.configure(&p);
+            }
             if s.reset.swap(false, Ordering::SeqCst) {
                 w.decoder.reset();
                 if let Some(a) = w.adapter.as_mut() {
@@ -774,13 +980,21 @@ fn decode(sh: &Shared, s: &Session, work: &mut Work, blocks: Vec<Block>) {
         if c.removed {
             Vec::new()
         } else {
-            sink.take()
-                .into_iter()
-                .map(|(t, out)| {
-                    c.rev += 1;
-                    Item { session: s.id.clone(), rev: c.rev, t, body: Body::Output(out) }
-                })
-                .collect()
+            let mut items = Vec::new();
+            for (t, out) in sink.take() {
+                match out {
+                    // Sound goes to its own ring, not the results.
+                    Output::Audio { pcm, rate, channels } => lock(&s.audio).push(t, pcm, rate, channels),
+                    other => {
+                        if let Output::Meta { fields } = &other {
+                            c.meta = Some(fields.clone());
+                        }
+                        c.rev += 1;
+                        items.push(Item { session: s.id.clone(), rev: c.rev, t, body: Body::Output(other) });
+                    }
+                }
+            }
+            items
         }
     };
     sh.push(items);
@@ -817,6 +1031,8 @@ pub mod testing {
     const PARAMS: &[ParamSpec] = &[
         ParamSpec { key: "ms", kind: ParamKind::Range { min: 0.0, max: 1000.0 }, default: ParamDefault::Num(0.0) },
         ParamSpec { key: "after", kind: ParamKind::Range { min: 0.0, max: 1e9 }, default: ParamDefault::Num(0.0) },
+        ParamSpec { key: "level", kind: ParamKind::Range { min: 0.0, max: 1.0 }, default: ParamDefault::Num(0.5) },
+        ParamSpec { key: "name", kind: ParamKind::Text, default: ParamDefault::Text("") },
     ];
 
     macro_rules! info {
@@ -831,6 +1047,8 @@ pub mod testing {
                 panel: Panel::Text,
                 params: PARAMS,
                 needs: &[],
+                needs_for: &[],
+                min_rate_hz: 0.0,
             }
         };
     }
@@ -838,15 +1056,21 @@ pub mod testing {
     pub static BURN: Info = info!("test_burn");
     pub static SLEEP: Info = info!("test_sleep");
     pub static PANIC: Info = info!("test_panic");
+    pub static SOUND: Info = info!("test_sound");
 
     /// Says how many samples each block had and where it started; `ms` of
     /// CPU burnt (test_burn) or of sleep (test_sleep) per block; test_panic
-    /// panics on block `after`.
+    /// panics on block `after`; test_sound makes one stereo frame of a
+    /// 1 kHz tone at 48 kHz, at `level`, for each sample fed, and says
+    /// `name` and its block count as meta.
     pub struct Test {
         info: &'static Info,
         ms: f64,
         after: u64,
         blocks: u64,
+        level: f64,
+        name: String,
+        phase: u64,
     }
 
     impl Decoder for Test {
@@ -856,7 +1080,11 @@ pub mod testing {
         fn configure(&mut self, p: &Params) -> Result<(), DecodeError> {
             check_params(p, PARAMS)?;
             self.ms = p.num("ms").unwrap_or(0.0);
-            self.after = p.num("after").unwrap_or(0.0) as u64;
+            self.after = p.num("after").unwrap_or(self.after as f64) as u64;
+            self.level = p.num("level").unwrap_or(self.level);
+            if let Some(n) = p.text("name") {
+                self.name = n.to_string();
+            }
             Ok(())
         }
         fn feed(&mut self, input: Input<'_>, out: &mut Sink) -> Result<(), DecodeError> {
@@ -878,6 +1106,26 @@ pub mod testing {
                     std::hint::black_box(x);
                 }
                 "test_sleep" => std::thread::sleep(d),
+                "test_sound" => {
+                    let pcm: Vec<f32> = (0..input.len())
+                        .flat_map(|_| {
+                            let v = (self.level * (2.0 * std::f64::consts::PI * self.phase as f64 / 48.0).sin()) as f32;
+                            self.phase += 1;
+                            [v, v]
+                        })
+                        .collect();
+                    out.push(input.t0(), Output::Audio { pcm, rate: 48_000, channels: 2 });
+                    out.push(
+                        input.t0(),
+                        Output::Meta {
+                            fields: vec![
+                                ("name".into(), Value::Text(self.name.clone())),
+                                ("blocks".into(), Value::Num((self.blocks) as f64)),
+                                ("list".into(), Value::List(vec![Value::Map(vec![("k".into(), Value::Null)])])),
+                            ],
+                        },
+                    );
+                }
                 _ => {}
             }
             out.push(
@@ -893,7 +1141,7 @@ pub mod testing {
     }
 
     fn make(info: &'static Info) -> Box<dyn Decoder> {
-        Box::new(Test { info, ms: 0.0, after: 0, blocks: 0 })
+        Box::new(Test { info, ms: 0.0, after: 0, blocks: 0, level: 0.5, name: String::new(), phase: 0 })
     }
 
     pub fn kinds() -> Vec<Kind> {
@@ -902,6 +1150,7 @@ pub mod testing {
             Kind { info: &BURN, make: || make(&BURN) },
             Kind { info: &SLEEP, make: || make(&SLEEP) },
             Kind { info: &PANIC, make: || make(&PANIC) },
+            Kind { info: &SOUND, make: || make(&SOUND) },
         ]
     }
 }

@@ -49,8 +49,8 @@ pub struct Entry {
 
 pub static ENTRIES: [Entry; 4] = [
     Entry { id: CodecId::Codec2, used_for: &["freedv", "m17"], shippable: true, host_library: None },
-    Entry { id: CodecId::Faad2, used_for: &["dabplus", "drm"], shippable: false, host_library: Some("faad2") },
-    Entry { id: CodecId::FdkAac, used_for: &["dabplus", "drm"], shippable: false, host_library: Some("fdk-aac") },
+    Entry { id: CodecId::Faad2, used_for: &["dab", "drm"], shippable: false, host_library: Some("faad2") },
+    Entry { id: CodecId::FdkAac, used_for: &["dab", "drm"], shippable: false, host_library: Some("fdk-aac") },
     Entry {
         id: CodecId::Mbelib,
         used_for: &["dmr", "dstar", "ysf", "p25", "nxdn"],
@@ -58,6 +58,40 @@ pub static ENTRIES: [Entry; 4] = [
         host_library: Some("mbelib"),
     },
 ];
+
+/// The file each codec may be opened from in this process, as the Python
+/// half's loader decided (`use_path`): only ever a file that passed the
+/// child-process probe. None until it says, so a decoder used without the
+/// loader (a test, a bare `cargo test`) never searches for a codec itself.
+static USE: std::sync::Mutex<Vec<(CodecId, std::path::PathBuf, Option<std::sync::Arc<libloading::Library>>)>> =
+    std::sync::Mutex::new(Vec::new());
+
+/// Say which file `id` is (None: it is not there, or was refused). A new
+/// path is opened on next use; a library already opened stays loaded for
+/// the decoders holding it (unloading code a thread may be inside is not
+/// safe), and is dropped when the last of them is.
+pub fn use_path(id: CodecId, path: Option<std::path::PathBuf>) {
+    let mut u = USE.lock().unwrap_or_else(|e| e.into_inner());
+    let same = u.iter().any(|(c, p, _)| *c == id && Some(p) == path.as_ref());
+    if same {
+        return;
+    }
+    u.retain(|(c, _, _)| *c != id);
+    if let Some(p) = path {
+        u.push((id, p, None));
+    }
+}
+
+/// The library for `id`, opened in this process from the file `use_path`
+/// named; None when there is none or it will not open.
+pub fn library(id: CodecId) -> Option<std::sync::Arc<libloading::Library>> {
+    let mut u = USE.lock().unwrap_or_else(|e| e.into_inner());
+    let e = u.iter_mut().find(|(c, _, _)| *c == id)?;
+    if e.2.is_none() {
+        e.2 = open(&e.1).ok().map(std::sync::Arc::new);
+    }
+    e.2.clone()
+}
 
 /// The file names a codec is known by on this OS, in the order tried.
 pub fn names(id: CodecId) -> &'static [&'static str] {

@@ -163,13 +163,19 @@ impl CodecId {
     }
 }
 
-/// A parameter's value. Parameters are small and few, so one loose type
-/// serves every decoder.
+/// A parameter's or a field's value. Parameters are small and few, so one
+/// loose type serves every decoder. `List` and `Map` are for fields only
+/// (a DAB ensemble's service list, each service a map), so a decoder can
+/// say what it hears in the shape a client shows it; `Null` is a field
+/// not known yet (a service whose label has not arrived).
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Num(f64),
     Bool(bool),
     Text(String),
+    List(Vec<Value>),
+    Map(Vec<(String, Value)>),
+    Null,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -179,6 +185,9 @@ pub enum ParamKind {
     /// One of these numbers (RTTY's baud rates and shifts).
     Choice(&'static [f64]),
     Bool,
+    /// Any text, which the decoder checks in `configure` (DAB's service, a
+    /// SId in hex, which can name a service not heard yet).
+    Text,
 }
 
 /// One parameter. `key` doubles as the label's catalog key in the app
@@ -194,6 +203,7 @@ pub struct ParamSpec {
 pub enum ParamDefault {
     Num(f64),
     Bool(bool),
+    Text(&'static str),
 }
 
 /// The catalogue entry of one decoder kind: static, one per kind.
@@ -212,6 +222,15 @@ pub struct Info {
     pub panel: Panel,
     pub params: &'static [ParamSpec],
     pub needs: &'static [CodecId],
+    /// The codecs in `needs` that only part of the decoder's output needs,
+    /// with the parts that need them: DAB's `(Faad2, &["dab+"])`, because
+    /// old DAB's MP2 is our own decoder and plays with nothing installed.
+    /// Without the codec such a decoder is still available, partly; a codec
+    /// in `needs` and not here is needed for everything.
+    pub needs_for: &'static [(CodecId, &'static [&'static str])],
+    /// IQ below this rate is refused (`bad_input`, `rate`); 0 takes any.
+    /// DAB's OFDM needs its block's 1.536 MHz on a 2.048 MS/s grid.
+    pub min_rate_hz: f64,
 }
 
 /// Parameters as given, by key. Unknown keys are refused by the decoder's
@@ -231,6 +250,12 @@ impl Params {
         match self.0.get(key) {
             Some(Value::Num(x)) => Some(*x),
             Some(Value::Bool(b)) => Some(if *b { 1.0 } else { 0.0 }),
+            _ => None,
+        }
+    }
+    pub fn text(&self, key: &str) -> Option<&str> {
+        match self.0.get(key) {
+            Some(Value::Text(s)) => Some(s),
             _ => None,
         }
     }
@@ -255,6 +280,7 @@ pub fn check_params(params: &Params, specs: &[ParamSpec]) -> Result<(), DecodeEr
             (ParamKind::Choice(c), Value::Num(x)) => c.iter().any(|y| (y - x).abs() < 1e-6),
             (ParamKind::Bool, Value::Bool(_)) => true,
             (ParamKind::Bool, Value::Num(x)) => *x == 0.0 || *x == 1.0,
+            (ParamKind::Text, Value::Text(t)) => t.len() <= 64,
             _ => false,
         };
         if !ok {
@@ -281,7 +307,12 @@ pub enum Output {
     /// A POCSAG message, an RDS group, a DMR header.
     Frame { kind: &'static str, fields: Fields, raw: Option<Vec<u8>> },
     Image { event: ImageEvent },
-    /// WFM, DAB+, voice (M3-M4).
+    /// Sound to listen to: PCM, interleaved when `channels` is 2, at its own
+    /// rate (DAB's 48 or 32 kHz, voice's 8 kHz). The host does not queue it
+    /// with the results: it goes to the session's own audio ring, which the
+    /// app pulls (`Host::audio`) at its own pace and, if it asks, converted
+    /// to its own rate and channels. Every decoder that makes sound (WFM,
+    /// DAB, FreeDV, the digital voice modes) pushes the same thing.
     Audio { pcm: Vec<f32>, rate: u32, channels: u8 },
     /// RDS PS/RT, a DAB service list, a talkgroup.
     Meta { fields: Fields },

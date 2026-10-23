@@ -282,7 +282,23 @@ def loader() -> Loader:
 
 
 def status(rescan: bool = False) -> list[dict]:
-    return loader().status(rescan)
+    out = loader().status(rescan)
+    _publish(out)
+    return out
+
+
+def publish() -> None:
+    """Tell the native decoders which file each codec is (only one that
+    passed the probe), so a decoder that plays through one (DAB+ through
+    faad2) opens that file and no other. A rescan ("Look again") publishes
+    what it found, so a codec installed while the app runs is used from the
+    next service chosen."""
+    _publish(loader().status())
+
+
+def _publish(st: list[dict]) -> None:
+    for s in st:
+        _native.codec_use(s["id"], s["path"] if s["state"] == "found" else None)
 
 
 def path(codec: str) -> str | None:

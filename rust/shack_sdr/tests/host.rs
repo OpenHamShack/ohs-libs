@@ -210,3 +210,115 @@ fn rtty_decodes_iq_and_audio_alike_through_the_host() {
     let iq = RttyCase { centre: 0.0, ..audio };
     decode_through_host(InputKind::Iq, &iq);
 }
+
+/// Wait until the session has decoded `n` samples' worth of blocks.
+fn wait_blocks(h: &Host, sid: &str, n: u64) {
+    let end = Instant::now() + Duration::from_secs(5);
+    while Instant::now() < end {
+        let st = h.status(sid).unwrap();
+        if st.decoder_status.counters.iter().any(|(k, v)| *k == "blocks" && *v >= n) {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    panic!("the session never decoded {n} blocks");
+}
+
+#[test]
+fn sound_goes_to_its_own_ring_not_the_results() {
+    let h = host(HostConfig::default());
+    let sid = h.start("test_sound", Params::new(), InputKind::Iq, 48_000.0, 0.0, false).unwrap();
+    let block = vec![rustfft::num_complex::Complex32::new(0.0, 0.0); 4800];
+    for k in 0..10u64 {
+        h.feed_iq(&sid, &block, 100.0 + k as f64 * 0.1, k * 4800).unwrap();
+    }
+    wait_blocks(&h, &sid, 10);
+    // No result carries sound; the meta is there, and kept for status.
+    let items = poll_until(&h, 1.0, |_| false);
+    assert!(items.iter().all(|i| !matches!(i.body, Body::Output(Output::Audio { .. }))));
+    assert!(items.iter().any(|i| matches!(i.body, Body::Output(Output::Meta { .. }))));
+    let st = h.status(&sid).unwrap();
+    let meta = st.meta.expect("the last meta is kept");
+    assert!(meta.iter().any(|(k, v)| k == "blocks" && *v == Value::Num(10.0)));
+    assert_eq!(st.audio_queued, 48_000);
+    // One second of stereo 48 kHz, in one run, timed from the samples.
+    let a = h.audio(&sid, 1_000_000, None, None).unwrap();
+    assert_eq!(a.len(), 1);
+    assert_eq!((a[0].rate, a[0].channels, a[0].frames()), (48_000, 2, 48_000));
+    assert!((a[0].t - 100.0).abs() < 1e-9);
+    assert!(h.audio(&sid, 100, None, None).unwrap().is_empty());
+}
+
+#[test]
+fn sound_pulled_at_the_apps_rate_is_converted_and_continuous() {
+    let h = host(HostConfig::default());
+    let sid = h.start("test_sound", Params::new(), InputKind::Iq, 48_000.0, 0.0, false).unwrap();
+    let block = vec![rustfft::num_complex::Complex32::new(0.0, 0.0); 4800];
+    for k in 0..10u64 {
+        h.feed_iq(&sid, &block, k as f64 * 0.1, k * 4800).unwrap();
+    }
+    wait_blocks(&h, &sid, 10);
+    // Radio's ordinary audio: 12 kHz mono, pulled in small pieces.
+    let mut pcm = Vec::new();
+    loop {
+        let a = h.audio(&sid, 1234, Some(12_000), Some(1)).unwrap();
+        if a.is_empty() {
+            break;
+        }
+        for c in a {
+            assert_eq!((c.rate, c.channels), (12_000, 1));
+            pcm.extend(c.pcm);
+        }
+    }
+    assert!((pcm.len() as i64 - 12_000).abs() < 20, "{}", pcm.len());
+    // Still the 1 kHz tone at 0.5, unbroken across the pulls: compare with a
+    // fitted sine over the settled part.
+    let y = &pcm[200..];
+    let (mut c, mut s) = (0.0f64, 0.0f64);
+    for (i, v) in y.iter().enumerate() {
+        let p = 2.0 * std::f64::consts::PI * 1000.0 * i as f64 / 12_000.0;
+        c += *v as f64 * p.cos();
+        s += *v as f64 * p.sin();
+    }
+    let amp = 2.0 * (c * c + s * s).sqrt() / y.len() as f64;
+    assert!((amp - 0.5).abs() < 0.01, "{amp}");
+    assert!(h.audio(&sid, 10, Some(0), None).is_err());
+}
+
+#[test]
+fn a_full_sound_ring_drops_the_oldest_and_counts_them() {
+    let h = host(HostConfig { ring_s: 1.0, ..Default::default() });
+    let sid = h.start("test_sound", Params::new(), InputKind::Iq, 48_000.0, 0.0, false).unwrap();
+    let block = vec![rustfft::num_complex::Complex32::new(0.0, 0.0); 4800];
+    // 3 s of sound, nobody pulling, a 1 s ring (the inbox is fed slowly
+    // enough that it drops nothing itself).
+    for k in 0..30u64 {
+        h.feed_iq(&sid, &block, k as f64 * 0.1, k * 4800).unwrap();
+        wait_blocks(&h, &sid, k + 1);
+    }
+    let st = h.status(&sid).unwrap();
+    assert_eq!(st.audio_queued, 48_000);
+    assert_eq!(st.audio_dropped, 96_000);
+    let a = h.audio(&sid, 1_000_000, None, None).unwrap();
+    // What is left is the newest second, timed as such.
+    assert!((a[0].t - 2.0).abs() < 1e-6, "{}", a[0].t);
+}
+
+#[test]
+fn configure_is_checked_at_once_and_applied_live() {
+    let h = host(HostConfig::default());
+    let sid = h.start("test_sound", Params::new().with("name", Value::Text("a".into())), InputKind::Iq, 48_000.0, 0.0, false).unwrap();
+    assert_eq!(h.configure(&sid, Params::new().with("nope", Value::Num(1.0))), Err(HostError::BadParams("unknown_param")));
+    assert_eq!(h.configure(&sid, Params::new().with("level", Value::Num(3.0))), Err(HostError::BadParams("bad_param")));
+    assert_eq!(h.configure("ds_none", Params::new()), Err(HostError::UnknownSession));
+    h.configure(&sid, Params::new().with("name", Value::Text("b".into()))).unwrap();
+    // The session's parameters show it at once, merged with the rest.
+    let st = h.status(&sid).unwrap();
+    assert_eq!(st.params.text("name"), Some("b"));
+    let block = vec![rustfft::num_complex::Complex32::new(0.0, 0.0); 480];
+    h.feed_iq(&sid, &block, 0.0, 0).unwrap();
+    wait_blocks(&h, &sid, 1);
+    let meta = h.status(&sid).unwrap().meta.unwrap();
+    assert!(meta.iter().any(|(k, v)| k == "name" && *v == Value::Text("b".into())), "{meta:?}");
+}
+

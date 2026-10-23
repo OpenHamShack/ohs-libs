@@ -193,3 +193,70 @@ def test_nothing_here_transmits():
     code = "import sys, shack_sdr, shack_sdr.sources; print(chr(10).join(sys.modules))"
     out = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True).stdout.split()
     assert not [m for m in out if m.startswith(("shack_rig", "shack_packet", "serial"))]
+
+
+def _sound_session(host: Host, **params) -> str:
+    sid = host.start("test_sound", params, "iq", 48_000)
+    for k in range(10):
+        host.feed(sid, np.zeros(4800, np.complex64), 50.0 + k * 0.1, k * 4800)
+    end = time.monotonic() + 5
+    while host.status(sid)["stats"].get("blocks", 0) < 10 and time.monotonic() < end:
+        time.sleep(0.005)
+    return sid
+
+
+def test_sound_is_pulled_from_its_own_ring_in_the_apps_format():
+    with Host(testing=True) as host:
+        sid = _sound_session(host)
+        # Results carry no sound; the session's status keeps the last meta,
+        # nested lists and maps and nulls as Python has them.
+        items = host.poll()
+        assert "audio" not in {i["type"] for i in items} and any(i["type"] == "meta" for i in items)
+        st = host.status(sid)
+        assert st["meta"]["blocks"] == 10 and st["meta"]["list"] == [{"k": None}]
+        assert st["audio"] == {"queued": 48_000, "dropped": 0}
+        # Radio's ordinary audio: 12 kHz mono, in pieces, unbroken.
+        pcm = []
+        while chunks := host.audio(sid, 0.1, rate=12_000, channels=1):
+            for c in chunks:
+                assert (c["rate"], c["channels"]) == (12_000, 1) and c["pcm"].dtype == np.float32
+                pcm.append(c["pcm"])
+        y = np.concatenate(pcm)[200:]
+        assert abs(len(y) + 200 - 12_000) < 20
+        n = np.arange(len(y))
+        amp = 2 * abs(np.dot(y, np.exp(-2j * np.pi * 1000 * n / 12_000))) / len(y)
+        assert abs(amp - 0.5) < 0.01
+        assert host.audio(sid) == []
+
+
+def test_sound_as_it_came_is_stereo_interleaved_and_timed_from_the_samples():
+    with Host(testing=True) as host:
+        sid = _sound_session(host)
+        (c,) = host.audio(sid, 2.0)
+        assert (c["rate"], c["channels"], len(c["pcm"])) == (48_000, 2, 96_000)
+        assert c["t"] == pytest.approx(50.0)
+        assert np.array_equal(c["pcm"][0::2], c["pcm"][1::2])
+
+
+def test_configure_is_live_and_refusals_are_codes():
+    with Host(testing=True) as host:
+        sid = _sound_session(host, name="a")
+        with pytest.raises(DecoderError) as e:
+            host.configure(sid, {"level": 2.0})
+        assert e.value.args == ("bad_params", "bad_param")
+        with pytest.raises(DecoderError) as e:
+            host.configure(sid, {"nope": 1})
+        assert e.value.args == ("bad_params", "unknown_param")
+        host.configure(sid, {"name": "b"})
+        assert host.status(sid)["params"] == {"name": "b"}
+        host.feed(sid, np.zeros(480, np.complex64), 60.0, 48_000)
+        end = time.monotonic() + 5
+        while (host.status(sid)["meta"] or {}).get("name") != "b" and time.monotonic() < end:
+            time.sleep(0.005)
+        assert host.status(sid)["meta"]["name"] == "b"
+
+
+def test_every_catalogue_entry_says_whether_it_is_partly_available():
+    for e in shack_sdr.catalogue():
+        assert isinstance(e["partial"], bool) and isinstance(e["missing"], list) and isinstance(e["needsFor"], dict)
+        assert e["available"] or e["why"]

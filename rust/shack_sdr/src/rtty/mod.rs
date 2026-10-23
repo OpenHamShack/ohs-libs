@@ -77,6 +77,8 @@ pub static INFO: Info = Info {
     panel: Panel::Text,
     params: PARAMS,
     needs: &[],
+    needs_for: &[],
+    min_rate_hz: 0.0,
 };
 
 /// The squelch's default, dB of tone over noise in the tone's own band.

@@ -55,6 +55,15 @@ fn value_py<'py>(py: Python<'py>, v: &Value) -> PyResult<Bound<'py, PyAny>> {
         Value::Num(x) => x.into_pyobject(py)?.into_any(),
         Value::Bool(b) => PyBool::new(py, *b).to_owned().into_any(),
         Value::Text(s) => PyString::new(py, s).into_any(),
+        Value::List(items) => {
+            let l = PyList::empty(py);
+            for it in items {
+                l.append(value_py(py, it)?)?;
+            }
+            l.into_any()
+        }
+        Value::Map(fields) => fields_py(py, fields)?.into_any(),
+        Value::Null => py.None().into_bound(py),
     })
 }
 
@@ -155,6 +164,11 @@ fn status_py<'py>(py: Python<'py>, s: &SessionInfo) -> PyResult<Bound<'py, PyDic
         st.set_item(*k, *v)?;
     }
     d.set_item("stats", st)?;
+    d.set_item("meta", s.meta.as_ref().map(|m| fields_py(py, m)).transpose()?)?;
+    let a = PyDict::new(py);
+    a.set_item("queued", s.audio_queued)?;
+    a.set_item("dropped", s.audio_dropped)?;
+    d.set_item("audio", a)?;
     Ok(d)
 }
 
@@ -185,15 +199,23 @@ fn info_py<'py>(py: Python<'py>, i: &Info) -> PyResult<Bound<'py, PyDict>> {
                 pd.set_item("choices", c.to_vec())?;
             }
             ParamKind::Bool => pd.set_item("type", "bool")?,
+            ParamKind::Text => pd.set_item("type", "text")?,
         }
         match p.default {
             ParamDefault::Num(x) => pd.set_item("default", x)?,
             ParamDefault::Bool(b) => pd.set_item("default", b)?,
+            ParamDefault::Text(t) => pd.set_item("default", t)?,
         }
         params.append(pd)?;
     }
     d.set_item("params", params)?;
     d.set_item("needs", i.needs.iter().map(|c| c.code()).collect::<Vec<_>>())?;
+    let nf = PyDict::new(py);
+    for (c, parts) in i.needs_for {
+        nf.set_item(c.code(), parts.to_vec())?;
+    }
+    d.set_item("needsFor", nf)?;
+    d.set_item("minRateHz", i.min_rate_hz)?;
     d.set_item("engine", "shack_sdr")?;
     d.set_item("version", crate::VERSION)?;
     Ok(d)
@@ -292,6 +314,40 @@ impl PyHost {
         d.set_item("queued", s.queued)?;
         d.set_item("lost", s.lost)?;
         Ok(d)
+    }
+
+    /// New parameters for a running session (checked now, applied live).
+    #[pyo3(signature = (sid, params))]
+    fn configure(&self, sid: &str, params: &Bound<'_, PyDict>) -> PyResult<()> {
+        let p = params_from(Some(params))?;
+        self.inner.configure(sid, p).map_err(err)
+    }
+
+    /// The session's sound: [{"t", "rate", "channels", "pcm"}], pcm as
+    /// float32 bytes (interleaved when stereo), at most `max_frames`
+    /// frames, converted to `rate`/`channels` when given.
+    #[pyo3(signature = (sid, max_frames=48_000, rate=None, channels=None))]
+    fn audio<'py>(
+        &self,
+        py: Python<'py>,
+        sid: &str,
+        max_frames: usize,
+        rate: Option<u32>,
+        channels: Option<u8>,
+    ) -> PyResult<Vec<Bound<'py, PyDict>>> {
+        let chunks = py.detach(|| self.inner.audio(sid, max_frames, rate, channels)).map_err(err)?;
+        chunks
+            .iter()
+            .map(|c| {
+                let d = PyDict::new(py);
+                d.set_item("t", c.t)?;
+                d.set_item("rate", c.rate)?;
+                d.set_item("channels", c.channels)?;
+                let bytes: Vec<u8> = c.pcm.iter().flat_map(|x| x.to_le_bytes()).collect();
+                d.set_item("pcm", PyBytes::new(py, &bytes))?;
+                Ok(d)
+            })
+            .collect()
     }
 
     fn sessions(&self) -> Vec<String> {
@@ -427,6 +483,16 @@ fn codec_probe<'py>(py: Python<'py>, id: &str, path: &str) -> PyResult<Bound<'py
     Ok(d)
 }
 
+/// The file the loader chose for codec `id` (one that passed the probe),
+/// or None; the decoders that play through it open that file and no other.
+#[pyfunction]
+#[pyo3(signature = (id, path=None))]
+fn codec_use(id: &str, path: Option<String>) -> PyResult<()> {
+    let cid = crate::decoder::CodecId::parse(id).ok_or_else(|| PyValueError::new_err("unknown codec"))?;
+    codecs::use_path(cid, path.map(std::path::PathBuf::from));
+    Ok(())
+}
+
 #[pymodule]
 fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", crate::VERSION)?;
@@ -438,5 +504,6 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(levenshtein, m)?)?;
     m.add_function(wrap_pyfunction!(codec_entries, m)?)?;
     m.add_function(wrap_pyfunction!(codec_probe, m)?)?;
+    m.add_function(wrap_pyfunction!(codec_use, m)?)?;
     Ok(())
 }
