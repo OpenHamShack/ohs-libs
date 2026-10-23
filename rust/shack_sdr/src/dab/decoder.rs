@@ -430,7 +430,15 @@ impl Decoder for Dab {
             }
             if (rate - self.rate).abs() > 1e-6 || self.resampler.is_none() && (rate - RATE).abs() > 1.0 {
                 self.rate = rate;
-                self.resampler = ((rate - RATE).abs() > 1.0).then(|| Resampler::new(rate, RATE, 0.8, 32));
+                // Up to 2.56 MS/s nothing in the input can fold back into
+                // the block's +-768 kHz at 2.048 MS/s (its Nyquist is at most
+                // 1.28 MHz = 2.048 - 0.768), so the filter need only keep
+                // the block flat enough for DQPSK: a 16-tap span, half the
+                // cost of 32 at 2.4 MS/s and as clean over the sweep. Faster
+                // inputs can carry the next block's edge, which a longer
+                // filter must stop.
+                let taps = if rate <= 2_560_000.0 { 16 } else { 48 };
+                self.resampler = ((rate - RATE).abs() > 1.0).then(|| Resampler::new(rate, RATE, 0.75, taps));
             }
             // Our 2.048 MS/s sample n is input sample n x rate / RATE.
             let ours = self.demod.end() as f64;

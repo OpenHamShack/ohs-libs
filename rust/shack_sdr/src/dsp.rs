@@ -214,8 +214,16 @@ impl<T: Sample> Resampler<T> {
             let start = base as usize + 1 - n / 2;
             let w = &self.hist[start..start + n];
             let mut acc = T::default();
-            for k in 0..n {
-                acc = acc + w[k] * (t0[k] + a * (t1[k] - t0[k]));
+            if a < 1e-6 {
+                // On a phase of the table (always, for a ratio such as 2.4
+                // to 2.048 MS/s, 75/64): no interpolation between phases.
+                for (x, t) in w.iter().zip(t0) {
+                    acc = acc + *x * *t;
+                }
+            } else {
+                for k in 0..n {
+                    acc = acc + w[k] * (t0[k] + a * (t1[k] - t0[k]));
+                }
             }
             out.push(acc);
             self.pos += self.step;
