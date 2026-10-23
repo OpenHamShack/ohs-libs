@@ -122,6 +122,8 @@ const DEPTH: usize = 32;
 /// Time constants, in symbols: symbol timing, and the amplitude and noise
 /// estimates.
 const TIMING_TAU: f64 = 16.0;
+/// Symbols the timing estimate runs ahead of the symbol it places.
+const TIMING_AHEAD: f64 = 4.0;
 const STATS_TAU: f64 = 16.0;
 /// The Costas loop's noise bandwidth, Hz (the same in seconds at every
 /// speed: a drift of 0.5 Hz/s lags it by an eighth of a radian), and its
@@ -189,6 +191,9 @@ struct Geometry {
     /// The decimating filter, and its delay in input samples.
     taps: Vec<f32>,
     decim_delay: f64,
+    /// The channel filter at the working rate, and its delay in working samples.
+    chan: Vec<f32>,
+    chan_delay: f64,
     /// Matched filter with its zero-forcing correction, and its delay in
     /// working samples.
     mf: Vec<f32>,
@@ -209,16 +214,28 @@ impl Geometry {
         if work < 8.0 * baud {
             return Err(DecodeError::BadInput("rate_too_low"));
         }
-        // Pass the signal wherever the AFC may take it; anything that folds
-        // into that band on decimation is stopped.
+        // Two filters choose the channel. The decimating one passes the
+        // signal wherever the AFC may take it and stops what would fold
+        // into the channel filter's band; the channel filter, at the working
+        // rate (89 taps at any speed, so cheap), then stops everything from
+        // a baud beyond that band. A busy waterfall's neighbours, 270 Hz
+        // either side, sat in the decimator's transition band without it:
+        // at PSK63 they reached the matched filter where its zero-forcing
+        // correction lifts them, and at a strong neighbour's key-up the
+        // squelch heard a signal in the noise before an over and printed it;
+        // at PSK31 they folded to 40 Hz apart, where squaring for the coarse
+        // AFC put a tone it took for the carrier.
         let pass = cfg.afc_range + 2.0 * baud;
         if cfg.channels.iter().any(|c| c.abs() + pass > 0.45 * rate) {
             return Err(DecodeError::BadInput("channel_outside"));
         }
-        let tw = (work - 2.0 * pass).max(0.1 * work);
+        let stop = pass + baud;
+        let tw = (work - pass - stop).max(0.05 * work);
         let n = ((5.5 * rate / tw).ceil() as usize).clamp(15, 4001) | 1;
-        let taps = if d == 1 { vec![1.0] } else { lowpass(n, work / 2.0, rate) };
+        let taps = if d == 1 { vec![1.0] } else { lowpass(n, (pass + work - stop) / 2.0, rate) };
         let decim_delay = (taps.len() - 1) as f64 / 2.0;
+        let chan = lowpass(((5.5 * work / baud).ceil() as usize) | 1, (pass + stop) / 2.0, work);
+        let chan_delay = (chan.len() - 1) as f64 / 2.0;
         let sps = work / baud;
         // The pulse is a Hann two symbols long (tx.rs). Its autocorrelation
         // is 3T/4 at 0 and T/8 a symbol away, nothing beyond, so the matched
@@ -259,6 +276,8 @@ impl Geometry {
             sps,
             taps,
             decim_delay,
+            chan,
+            chan_delay,
             mf: mf.into_iter().map(|h| h as f32).collect(),
             mf_delay: mid,
             mf_power,
@@ -290,8 +309,10 @@ fn solve(mut g: Vec<Vec<f64>>, k: usize) -> Vec<f64> {
     x
 }
 
-/// A character to print: its first symbol's working sample, the character,
-/// its SNR (dB in 2.5 kHz) and the channel's frequency then.
+/// A character to print: its first symbol's working sample (an input
+/// sample once the session has it), the character, its SNR (dB in 2.5 kHz)
+/// and the channel's frequency then (from its nominal, then from the
+/// session's centre).
 #[derive(Clone, Copy, Debug)]
 struct Emit {
     at: f64,
@@ -320,14 +341,28 @@ struct Bit {
 /// make a strong case before it is believed (fifteen minutes of noise print
 /// nothing), and a real over makes it within a few bits.
 const SWITCH: f64 = 1e-6;
+/// Bits before and after a character that must be the signal's too.
+const MARGIN_BEFORE: u64 = 8;
+const MARGIN_AFTER: u64 = 4;
 /// The most one bit can say for "a signal".
 const ELL_CAP: f64 = 3.0;
 /// The log-odds of "on" before anything is heard.
 const PRIOR_ON: f64 = -5.0;
+/// Time constant of the over's power, bits; and how long after the squelch
+/// closes it is forgotten (the next over may be another, weaker station).
+const OVER_TAU: f64 = 32.0;
+/// The amplitude, as a fraction of the over's, that a bit within it is
+/// judged against. 0.3 (10.5 dB under): a fade deeper than that is judged
+/// as the squelch judges a new signal. 0.5 ended overs more sharply still,
+/// but lost good characters in every fade of Watterson "moderate".
+const OVER_FRACTION: f64 = 0.3;
+const OVER_FORGET: u32 = 32;
 /// Time constant of the noise estimate, bits.
 const NOISE_TAU: f64 = 32.0;
 
-/// The log-odds of a state after one step of the on/off chain.
+/// One step of the on/off chain on log-odds: the forward odds of "on" at
+/// the next bit from those at this one, and (the chain being symmetric) the
+/// backward message to this bit from the next one's.
 fn hop(x: f64) -> f64 {
     let p = 1.0 / (1.0 + (-x).exp());
     let q = p * (1.0 - SWITCH) + (1.0 - p) * SWITCH;
@@ -379,6 +414,10 @@ struct Demod {
     noise: f64,
     noise_n: u64,
     on: f64,
+    /// The over's power (its amplitude squared), while the squelch is open;
+    /// bits since it closed.
+    over_a2: f64,
+    off_bits: u32,
     // -- IMD, from the derotated input on idle
     z2: VecDeque<Complex32>,
     z20: u64,
@@ -422,6 +461,8 @@ impl Demod {
             noise: noise.unwrap_or(0.0),
             noise_n: if noise.is_some() { NOISE_TAU as u64 } else { 0 },
             on: PRIOR_ON,
+            over_a2: 0.0,
+            off_bits: 0,
             z2: VecDeque::new(),
             z20: m0,
             idle_run: 0,
@@ -486,7 +527,11 @@ impl Demod {
         }
         self.y.push_back(y);
         let mut produced = false;
-        while self.strobe + 1.0 <= m as f64 {
+        // Each symbol is read a few symbols late, by timing that has heard
+        // the symbols after it: at an over's start the estimate is still
+        // the noise's for the first symbols, and a symbol read at the
+        // zero crossing between two reversals spelt a character there.
+        while self.strobe + 1.0 + TIMING_AHEAD * g.sps <= m as f64 {
             let i = self.strobe.floor();
             let f = (self.strobe - i) as f32;
             let k = (i as u64).saturating_sub(self.y0) as usize;
@@ -580,13 +625,20 @@ impl Demod {
             d += PI;
         }
         self.delta = (d + PI).rem_euclid(2.0 * PI) - PI;
+        let near_power: f64 = [n - 2, n - 1, n + 1, n + 2].iter().map(|&j| self.win[j].0.norm_sqr()).sum::<f64>() / 4.0;
         self.win.pop_front();
         let x = sc * Complex64::from_polar(1.0, -d);
         // How steady the carrier's phase was across the window, noise
         // allowed for: 1 when every symbol agrees, less when the phase
         // turned within it, as it does through a fast fade's null.
         let coherence = (acc.norm() / (power - 2.0 * self.noise * wsum).max(1e-30)).min(1.0);
-        self.decide(x, acc.norm() / wsum, coherence, at, cx, printed, out);
+        // The channel's power at this symbol, for the bit's confidence: the
+        // window's, but never more than its four nearest symbols carry. At
+        // an over's start the window reaches into the over a fifth of a
+        // second ahead, and the noise just before it, read at the over's
+        // power, was trusted as if it were the over: the trellis spelt
+        // characters from it with full confidence.
+        self.decide(x, (acc.norm() / wsum).min(near_power), coherence, at, cx, printed, out);
     }
 
     /// One symbol read against its reference: `local` is the channel's
@@ -643,7 +695,24 @@ impl Demod {
         self.noise += k * (im * im - self.noise);
         self.noise_n += 1;
         let var = self.noise.max(1e-30);
-        let amp = (2.0 * var * 10f64.powf(cx.squelch_db() / 10.0)).sqrt();
+        // The signal looked for: the squelch's strength, or within an over,
+        // a fraction of the over's own amplitude, whichever is more.
+        // Only once the squelch is open can a bit be judged against the
+        // over it belongs to, and that is what ends an over sharply: noise
+        // after a strong carrier is plainly not that carrier, though a bit
+        // of it may pass for a signal at the squelch's strength - and
+        // staying open costs nothing, so a second of such noise after an
+        // over printed one to three characters in one over of ten.
+        let amp = (2.0 * var * 10f64.powf(cx.squelch_db() / 10.0)).sqrt().max(OVER_FRACTION * self.over_a2.sqrt());
+        if self.on > 0.0 {
+            self.off_bits = 0;
+            self.over_a2 += ((local - var).max(0.0) - self.over_a2) / OVER_TAU;
+        } else {
+            self.off_bits += 1;
+            if self.off_bits > OVER_FORGET {
+                self.over_a2 = 0.0;
+            }
+        }
         // No verdict until the noise is known: the first bits after a start
         // are measured against an estimate of a few bits, and the filters
         // and loops are still filling.
@@ -678,7 +747,7 @@ impl Demod {
         let len = varicode::TABLE[dc.ch as usize].len() as u64;
         let end = dc.first_bit + len + 2;
         let top = self.bits0 + self.bits.len() as u64;
-        if dc.first_bit < self.bits0 || end > top {
+        if dc.first_bit < self.bits0 || end + MARGIN_AFTER > top {
             return;
         }
         let at = |b: u64| self.bits[(b - self.bits0) as usize];
@@ -691,12 +760,20 @@ impl Demod {
             // rather than judged on its own few bits.
             let mut back = 0.0f64;
             let mut worst = f64::INFINITY;
-            // From the separator before it: a character's first bit is the
-            // phase change from the symbol before, so that symbol must be
-            // the signal's too, and every character follows a separator.
-            let from = dc.first_bit.saturating_sub(2).max(self.bits0);
+            // From eight bits before it to four after. Where an over starts
+            // or ends is known only to the bit or two that noise lets it be
+            // (there, the odds of "on" come down to each bit's own evidence),
+            // and the matched filter's correction rings a strong carrier's
+            // first symbol into the two before it: so a character spelt
+            // from the noise just before an over, or just after, must not
+            // print on its strong neighbours' account. A real character has
+            // the over around it: the sender's idle before the first (fldigi
+            // sends a second of it) and after the last, and other
+            // characters between.
+            let from = dc.first_bit.saturating_sub(MARGIN_BEFORE).max(self.bits0);
+            let until = end + MARGIN_AFTER;
             for b in (from..top).rev() {
-                if b < end {
+                if b < until {
                     worst = worst.min(if at(b).settled { at(b).fwd as f64 + back } else { f64::NEG_INFINITY });
                 }
                 back = hop(at(b).ell as f64 + back);
@@ -773,6 +850,7 @@ struct Channel {
     mix_step: Complex64,
     mixed: u64,
     decim: Decimator,
+    chan: Decimator,
     /// Decimated samples (nominal frame) from working sample `ring0`.
     ring: VecDeque<Complex32>,
     ring0: u64,
@@ -797,6 +875,7 @@ impl Channel {
             mix_step: Complex64::from_polar(1.0, -2.0 * PI * nominal / g.rate),
             mixed: 0,
             decim: Decimator::new(g.taps.clone(), g.d),
+            chan: Decimator::new(g.chan.clone(), 1),
             ring: VecDeque::new(),
             ring0: 0,
             n: 0,
@@ -816,6 +895,7 @@ impl Channel {
         self.mix = Complex64::new(1.0, 0.0);
         self.mixed = 0;
         self.decim.reset();
+        self.chan.reset();
         self.ring.clear();
         self.ring0 = 0;
         self.n = 0;
@@ -836,8 +916,10 @@ impl Channel {
                 self.mix /= self.mix.norm();
             }
         }
-        let mut work = Vec::with_capacity(x.len() / g.d + 1);
-        self.decim.process(&mixed, &mut work);
+        let mut decimated = Vec::with_capacity(x.len() / g.d + 1);
+        self.decim.process(&mixed, &mut decimated);
+        let mut work = Vec::with_capacity(decimated.len());
+        self.chan.process(&decimated, &mut work);
         let keep = (REPLAY_S * g.work).max(2.0 * ACQ_SYMS as f64 * g.sps) as usize;
         for z in work {
             self.ring.push_back(z);
@@ -905,7 +987,10 @@ impl Channel {
         self.locked = true;
         self.lost = 0;
         self.acquisitions += 1;
-        if (offset - self.demod.afc_hz).abs() > cfg.baud / 10.0 {
+        // Anything the loop would take more than a moment to pull in: the
+        // Costas loop alone follows a few hertz, but only once the squelch
+        // believes there is a signal, which it cannot while off-tune.
+        if (offset - self.demod.afc_hz).abs() > cfg.baud / 50.0 {
             self.replay(offset, g, cfg, out);
         }
     }
@@ -1089,7 +1174,8 @@ impl Decoder for Psk {
                 // Working sample to input sample: every D-th, delayed by half
                 // the decimating filter, from where the channel joined. Time
                 // is the samples', never the clock's.
-                e.at = c.origin as f64 + e.at * g.d as f64 - g.decim_delay;
+                e.at = c.origin as f64 + (e.at - g.chan_delay) * g.d as f64 - g.decim_delay;
+                e.freq += c.nominal as f32;
             }
         }
         self.fed += samples.len() as u64;
