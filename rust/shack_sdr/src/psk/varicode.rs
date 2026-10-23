@@ -257,6 +257,41 @@ impl Viterbi {
         }
         None
     }
+
+    /// The characters the best path so far completes that `push` has not
+    /// yet decided: what the trellis would say if no more bits came. For
+    /// an over that has just ended - the bits after it are noise, which can
+    /// only add characters of noise after its own - so its last character
+    /// need not wait `depth` bits of that noise to be decided. The paths
+    /// have not merged, so a later `push` may decide these again (or,
+    /// rarely, otherwise): the caller prints each first bit once.
+    pub fn pending(&self) -> Vec<Decided> {
+        let m = machine();
+        let ns = m.next.len();
+        let mut out = Vec::new();
+        if self.n == 0 {
+            return out;
+        }
+        // `push` has decided every step up to n - depth.
+        let oldest = (self.n + 1).saturating_sub(self.depth as u64);
+        let mut state = self.metric.iter().position(|x| *x == 0.0).unwrap() as u16;
+        let mut step = self.n - 1;
+        loop {
+            let prev = self.back[(step % self.depth as u64) as usize * ns + state as usize];
+            if state == IDLE && prev != IDLE {
+                let ch = m.done[prev as usize].unwrap();
+                let len = TABLE[ch as usize].len() as u64;
+                out.push(Decided { ch, first_bit: step.saturating_sub(len + 1) });
+            }
+            if step == oldest {
+                break;
+            }
+            state = prev;
+            step -= 1;
+        }
+        out.reverse();
+        out
+    }
 }
 
 #[cfg(test)]
@@ -297,6 +332,25 @@ mod tests {
         // 'C' starts after the ten idle bits; 'Q' after C's code and "00".
         assert_eq!(got[0].first_bit, 10);
         assert_eq!(got[1].first_bit, 10 + code('C').unwrap().len() as u64 + 2);
+    }
+
+    #[test]
+    fn pending_is_what_push_has_still_to_decide() {
+        // Bits that stop on a character's "00": push decides nothing of the
+        // last characters for `depth` bits; pending has them now, with the
+        // first bits push will give them, and nothing push already gave.
+        let mut b = vec![0u8; 10];
+        b.extend(bits("CQ de"));
+        let mut v = Viterbi::new(32);
+        let decided: Vec<Decided> = llrs(&b, 4.0).iter().filter_map(|x| v.push(*x)).collect();
+        let pending = v.pending();
+        let all: String = decided.iter().chain(&pending).map(|d| d.ch as char).collect();
+        assert_eq!(all, "CQ de");
+        assert!(!pending.is_empty() && pending.last().unwrap().ch == b'e');
+        // Then idle: push decides the same characters at the same bits.
+        let later: Vec<Decided> = llrs(&[0u8; 40], 4.0).iter().filter_map(|x| v.push(*x)).collect();
+        assert_eq!(later, pending);
+        assert!(v.pending().is_empty());
     }
 
     #[test]

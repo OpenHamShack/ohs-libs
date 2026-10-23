@@ -532,3 +532,117 @@ fn cpu_per_channel_on_this_host() {
 const PSK31_SHARE: f64 = 0.00035;
 const PSK63_SHARE: f64 = 0.00045;
 const PSK125_SHARE: f64 = 0.00075;
+
+// ------------------------------------------------------ the end of an over
+
+/// Feed in 0.1 s blocks, noting after which input sample each character
+/// came out (not its time stamp, which is its first symbol's).
+fn feed_timed(d: &mut Psk, iq: &[Complex32]) -> Vec<(char, usize)> {
+    let mut out = Vec::new();
+    for (k, c) in iq.chunks(1200).enumerate() {
+        let mut sink = Sink::new();
+        d.feed(Input::Iq { samples: c, rate: 12_000.0, t0: k as f64 * 0.1, index: (k * 1200) as u64 }, &mut sink).unwrap();
+        for (_, o) in sink.items {
+            if let Output::Text { text, .. } = o {
+                out.extend(text.chars().map(|ch| (ch, k * 1200 + c.len())));
+            }
+        }
+    }
+    out
+}
+
+/// An over of `syms` (the transmitter's symbols, cut wherever the caller
+/// likes) after `lead_s` of noise and before three seconds more of it.
+fn over_iq(syms: &[f64], baud: f64, offset_hz: f64, snr_db: f64, seed: u64) -> (Vec<Complex32>, usize) {
+    let tx = PskTx { baud, ..Default::default() };
+    let sig = shack_sdr::psk::tx::modulate(syms, &tx, 12_000.0, offset_hz, 0.0);
+    let lead = 24_000;
+    let end = lead + sig.len();
+    let n = end + 36_000;
+    // psk_iq's noise for the SNR in 2.5 kHz of idle's power.
+    let sigma = (0.25 * 0.5 / 10f64.powf(snr_db / 10.0) * 12_000.0 / 2_500.0).sqrt();
+    let mut rng = Rng::new(seed);
+    let iq = (0..n)
+        .map(|i| {
+            let s = if (lead..end).contains(&i) { sig[i - lead] * 0.5 } else { Default::default() };
+            let z = s + rng.cgauss() * sigma;
+            Complex32::new(z.re as f32, z.im as f32)
+        })
+        .collect();
+    (iq, end)
+}
+
+#[test]
+fn an_over_that_stops_dead_prints_its_last_character_at_once() {
+    // A transmitter that unkeys on the last character's "00", with no idle
+    // after it (Radio's drain test, our own echo through NB's simulator):
+    // psk.py printed the "k" as its "00" came in. The squelch here asks for
+    // the over around a character, the four bits after it as well, and
+    // refused it; and the trellis decides a second late. Now the squelch
+    // closing settles what the trellis holds, and a character whose own
+    // bits and "00" are plainly the over's prints without the bits after.
+    for b in BAUDS {
+        for (snr, seed) in [(5.0, 1), (0.0, 2), (-3.0, 3), (5.0, 4), (0.0, 5)] {
+            let tx = PskTx { baud: *b, postamble_s: 0.0, ..Default::default() };
+            let syms = shack_sdr::psk::tx::symbols(OVER, &tx);
+            let (iq, end) = over_iq(&syms, *b, 3.0, snr, seed);
+            let mut d = Psk::new();
+            d.configure(&baud(*b)).unwrap();
+            let got = feed_timed(&mut d, &iq);
+            let text: String = got.iter().map(|(c, _)| *c).collect();
+            assert_eq!(text, truth(OVER), "{b} Bd, {snr} dB, seed {seed}");
+            // And promptly, not after the trellis's 32 bits of noise: within
+            // the smoother's 0.2 s, the matched filter's and the timing's
+            // look-ahead (7 symbols), the few bits of noise the squelch
+            // needs to close, and the block it was fed in. Measured: 0.61 to
+            // 0.71 s at PSK31, 0.38 to 0.48 at PSK125; without the early
+            // release, 1.4 s and 0.6 s at the least.
+            let late = (got.last().unwrap().1 as f64 - end as f64) / 12_000.0;
+            println!("{b} Bd, {snr:+} dB: the last character {late:.2} s after the carrier");
+            assert!(late < 0.4 + 16.0 / b, "{b} Bd, {snr} dB: the last character {late:.2} s after the carrier");
+        }
+    }
+}
+
+#[test]
+fn an_over_cut_off_mid_character_prints_nothing_false() {
+    // An emergency unkey stops the carrier wherever it is, a character
+    // half sent. What printed must be the over's text up to a whole
+    // character - never a character spelt from its first bits and the
+    // noise after them.
+    let text = "CQ de GM4BRI pse kn";
+    let mut bad = Vec::new();
+    for b in BAUDS {
+        let tx = PskTx { baud: *b, postamble_s: 0.0, ..Default::default() };
+        let full = shack_sdr::psk::tx::symbols(text, &tx);
+        // Every cut in the last two characters and their separators.
+        let tail = shack_sdr::psk::varicode::bits("kn").len();
+        for cut in 1..=tail {
+            for snr in [5.0, -3.0] {
+                let (iq, _) = over_iq(&full[..full.len() - cut], *b, 0.0, snr, cut as u64);
+                let mut d = Psk::new();
+                d.configure(&baud(*b)).unwrap();
+                let got: String = feed_timed(&mut d, &iq).iter().map(|(c, _)| *c).collect();
+                // The whole characters sent before the cut.
+                let sent = full.len() - cut - (full.len() - shack_sdr::psk::varicode::bits(text).len());
+                let mut whole = String::new();
+                let mut n = 0;
+                for c in text.chars() {
+                    n += shack_sdr::psk::varicode::bits(&c.to_string()).len();
+                    if n > sent {
+                        break;
+                    }
+                    whole.push(c);
+                }
+                // On a strong signal every whole character prints, the last
+                // too; on a weaker one the last may wait for bits after it
+                // that never come. Nothing else may print.
+                let short = if snr > 0.0 { whole.as_str() } else { &whole[..whole.len() - 1] };
+                if got != whole && got != short {
+                    bad.push(format!("{b} Bd, {snr} dB, cut {cut}: {got:?} for {whole:?}"));
+                }
+            }
+        }
+    }
+    assert!(bad.is_empty(), "{bad:#?}");
+}

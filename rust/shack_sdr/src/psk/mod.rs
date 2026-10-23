@@ -332,6 +332,9 @@ struct Bit {
     im2: f32,
     ell: f32,
     fwd: f32,
+    /// The log-likelihood ratio of "the over's own signal" (at its
+    /// amplitude then) against noise: 0 while there is no over.
+    over: f32,
     /// The noise was known when it was decided.
     settled: bool,
 }
@@ -344,6 +347,9 @@ const SWITCH: f64 = 1e-6;
 /// Bits before and after a character that must be the signal's too.
 const MARGIN_BEFORE: u64 = 8;
 const MARGIN_AFTER: u64 = 4;
+/// What each of a character's own bits must say for "the over" against
+/// noise (nats) for it to print without the margin after it.
+const OWN_MIN: f64 = 1.0;
 /// The most one bit can say for "a signal".
 const ELL_CAP: f64 = 3.0;
 /// The log-odds of "on" before anything is heard.
@@ -718,6 +724,9 @@ impl Demod {
         // and loops are still filling.
         let settled = self.noise_n as f64 > NOISE_TAU;
         let ell = if settled { (log_cosh(amp * re / var) - amp * amp / (2.0 * var)).min(ELL_CAP) } else { 0.0 };
+        let a = self.over_a2.sqrt();
+        let over = if settled && a > 0.0 { log_cosh(a * re / var) - a * a / (2.0 * var) } else { 0.0 };
+        let was_on = self.on > 0.0;
         self.on = (ell + hop(self.on)).clamp(-40.0, 40.0);
         self.bits.push_back(Bit {
             at,
@@ -725,6 +734,7 @@ impl Demod {
             im2: (im * im) as f32,
             ell: ell as f32,
             fwd: self.on as f32,
+            over: over as f32,
             settled,
         });
         let keep = DEPTH + 2 * SNR_W as usize + 64;
@@ -737,20 +747,41 @@ impl Demod {
             self.measure_imd(cx.g, cx.cfg.baud);
         }
         if let Some(dc) = self.vit.push(llr as f32) {
-            self.release(dc, cx, printed, out);
+            self.release(dc, false, cx, printed, out);
+        }
+        // The squelch has just closed: the over ended (or faded) a few bits
+        // ago. What the trellis holds of it is all there will be, so it is
+        // released now rather than after a second of noise has pushed it
+        // through - psk.py printed each character on its "00", and the last
+        // one of an over came a second late here. Each is still judged by
+        // the squelch; the trellis decides them again later and `printed`
+        // keeps them from printing twice. Only up to the first it refuses:
+        // `printed` moves on with each, so one printed after a refused one
+        // would keep that one from printing when the trellis decides it
+        // with the bits after it heard (a "k" lost before an over's last
+        // line feed, in a fade).
+        if was_on && self.on <= 0.0 {
+            for dc in self.vit.pending() {
+                if !self.release(dc, true, cx, printed, out) {
+                    break;
+                }
+            }
         }
     }
 
     /// A character the trellis decided: print it if the signal around it
-    /// clears the squelch.
-    fn release(&mut self, dc: varicode::Decided, cx: &Ctx, printed: &mut f64, out: &mut Vec<Emit>) {
+    /// clears the squelch. `early`: released from the trellis's pending
+    /// path as the squelch closes. Returns whether it is printed (now or
+    /// before).
+    fn release(&mut self, dc: varicode::Decided, early: bool, cx: &Ctx, printed: &mut f64, out: &mut Vec<Emit>) -> bool {
         let len = varicode::TABLE[dc.ch as usize].len() as u64;
         let end = dc.first_bit + len + 2;
         let top = self.bits0 + self.bits.len() as u64;
-        if dc.first_bit < self.bits0 || end + MARGIN_AFTER > top {
-            return;
+        if dc.first_bit < self.bits0 || end > top {
+            return false;
         }
         let at = |b: u64| self.bits[(b - self.bits0) as usize];
+        let mut plain_only = false;
         if cx.cfg.squelch_db > 0.0 {
             // Whether a signal was there, on every bit of the character:
             // the forward odds (everything before) with the backward message
@@ -759,7 +790,7 @@ impl Demod {
             // one in the middle of a weak over is carried by the whole over
             // rather than judged on its own few bits.
             let mut back = 0.0f64;
-            let mut worst = f64::INFINITY;
+            let (mut worst, mut worst_after) = (f64::INFINITY, f64::INFINITY);
             // From eight bits before it to four after. Where an over starts
             // or ends is known only to the bit or two that noise lets it be
             // (there, the odds of "on" come down to each bit's own evidence),
@@ -773,14 +804,38 @@ impl Demod {
             let from = dc.first_bit.saturating_sub(MARGIN_BEFORE).max(self.bits0);
             let until = end + MARGIN_AFTER;
             for b in (from..top).rev() {
-                if b < until {
-                    worst = worst.min(if at(b).settled { at(b).fwd as f64 + back } else { f64::NEG_INFINITY });
+                let post = if at(b).settled { at(b).fwd as f64 + back } else { f64::NEG_INFINITY };
+                if b < end {
+                    worst = worst.min(post);
+                } else if b < until {
+                    worst_after = worst_after.min(post);
                 }
                 back = hop(at(b).ell as f64 + back);
             }
             if worst <= 0.0 {
-                return;
+                return false;
             }
+            // Except a transmitter that unkeys on a character's "00" (a
+            // drain that sends no idle tail, our own echo's last "k"): its
+            // bits after are noise. Then the character prints if every one
+            // of its own bits, "00" and all, is plainly the over's - likelier
+            // a symbol at the over's own amplitude than noise, by OWN_MIN -
+            // which noise after a carrier cut mid-character, spelling the
+            // end of a character with what was sent, is not: at 16 dB in
+            // the symbol's bandwidth (our own echo) a few noise bits in a
+            // million pass; at 10 dB, one in a hundred, and one real
+            // character's bit in thirty fails (it then waits for the
+            // margin, as before).
+            plain_only = worst_after <= 0.0 || until > top;
+        }
+        // And a character released early, as the squelch closes, is held to
+        // the same, squelch or none: with only a few bits after it, the
+        // backward message has not yet heard enough of the noise to refuse a
+        // character spelt from it at the over's edge (two spaces after one
+        // over in the drift sweep), nor has the trellis settled its path
+        // there. Anything less plain waits for the trellis, and the margin.
+        if (early || plain_only) && (dc.first_bit..end).any(|b| (at(b).over as f64) < OWN_MIN) {
+            return false;
         }
         // The SNR shown: the bits around it.
         let (from, to) = (dc.first_bit.saturating_sub(SNR_W).max(self.bits0), (end + SNR_W).min(top));
@@ -789,11 +844,12 @@ impl Demod {
         let first = at(dc.first_bit);
         // Not twice: a replay decodes again what may already be printed.
         if first.at <= *printed + 0.5 * cx.g.sps {
-            return;
+            return true;
         }
         *printed = first.at;
         let snr = db + 10.0 * (cx.cfg.baud / crate::testsig::SNR_BANDWIDTH).log10();
         out.push(Emit { at: first.at, ch: dc.ch, snr_db: snr as f32, freq: self.freq(cx.cfg.baud) as f32 });
+        true
     }
 
     /// Third-order IMD on a run of idle: the tones at +-1.5 baud against
