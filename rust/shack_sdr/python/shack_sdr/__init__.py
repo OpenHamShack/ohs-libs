@@ -29,8 +29,8 @@ app words them from its catalog.
 from __future__ import annotations
 
 from ._native import DecoderError, __version__
-from . import codecs
+from . import codecs, dab
 from .catalogue import catalogue, register
 from .host import Host
 
-__all__ = ["DecoderError", "Host", "__version__", "catalogue", "codecs", "register"]
+__all__ = ["DecoderError", "Host", "__version__", "catalogue", "codecs", "dab", "register"]

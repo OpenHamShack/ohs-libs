@@ -242,11 +242,11 @@ fn sound_goes_to_its_own_ring_not_the_results() {
     assert!(meta.iter().any(|(k, v)| k == "blocks" && *v == Value::Num(10.0)));
     assert_eq!(st.audio_queued, 48_000);
     // One second of stereo 48 kHz, in one run, timed from the samples.
-    let a = h.audio(&sid, 1_000_000, None, None).unwrap();
+    let a = h.audio(&sid, 100.0, None, None).unwrap();
     assert_eq!(a.len(), 1);
     assert_eq!((a[0].rate, a[0].channels, a[0].frames()), (48_000, 2, 48_000));
     assert!((a[0].t - 100.0).abs() < 1e-9);
-    assert!(h.audio(&sid, 100, None, None).unwrap().is_empty());
+    assert!(h.audio(&sid, 1.0, None, None).unwrap().is_empty());
 }
 
 #[test]
@@ -261,7 +261,7 @@ fn sound_pulled_at_the_apps_rate_is_converted_and_continuous() {
     // Radio's ordinary audio: 12 kHz mono, pulled in small pieces.
     let mut pcm = Vec::new();
     loop {
-        let a = h.audio(&sid, 1234, Some(12_000), Some(1)).unwrap();
+        let a = h.audio(&sid, 0.0257, Some(12_000), Some(1)).unwrap();
         if a.is_empty() {
             break;
         }
@@ -282,7 +282,7 @@ fn sound_pulled_at_the_apps_rate_is_converted_and_continuous() {
     }
     let amp = 2.0 * (c * c + s * s).sqrt() / y.len() as f64;
     assert!((amp - 0.5).abs() < 0.01, "{amp}");
-    assert!(h.audio(&sid, 10, Some(0), None).is_err());
+    assert!(h.audio(&sid, 1.0, Some(0), None).is_err());
 }
 
 #[test]
@@ -299,7 +299,7 @@ fn a_full_sound_ring_drops_the_oldest_and_counts_them() {
     let st = h.status(&sid).unwrap();
     assert_eq!(st.audio_queued, 48_000);
     assert_eq!(st.audio_dropped, 96_000);
-    let a = h.audio(&sid, 1_000_000, None, None).unwrap();
+    let a = h.audio(&sid, 100.0, None, None).unwrap();
     // What is left is the newest second, timed as such.
     assert!((a[0].t - 2.0).abs() < 1e-6, "{}", a[0].t);
 }

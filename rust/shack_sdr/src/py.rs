@@ -324,18 +324,18 @@ impl PyHost {
     }
 
     /// The session's sound: [{"t", "rate", "channels", "pcm"}], pcm as
-    /// float32 bytes (interleaved when stereo), at most `max_frames`
-    /// frames, converted to `rate`/`channels` when given.
-    #[pyo3(signature = (sid, max_frames=48_000, rate=None, channels=None))]
+    /// float32 bytes (interleaved when stereo), at most `max_s` seconds,
+    /// converted to `rate`/`channels` when given.
+    #[pyo3(signature = (sid, max_s=1.0, rate=None, channels=None))]
     fn audio<'py>(
         &self,
         py: Python<'py>,
         sid: &str,
-        max_frames: usize,
+        max_s: f64,
         rate: Option<u32>,
         channels: Option<u8>,
     ) -> PyResult<Vec<Bound<'py, PyDict>>> {
-        let chunks = py.detach(|| self.inner.audio(sid, max_frames, rate, channels)).map_err(err)?;
+        let chunks = py.detach(|| self.inner.audio(sid, max_s, rate, channels)).map_err(err)?;
         chunks
             .iter()
             .map(|c| {
@@ -431,6 +431,52 @@ fn testsig_rtty<'py>(
     Ok(PyBytes::new(py, &bytes))
 }
 
+/// The DAB transmitter model's IQ (dab::tx): `frames` 96 ms frames of the
+/// test ensemble (an MP2 service C221 and a DAB+ service C3A7) as complex64
+/// bytes at `rate`, through a channel of `snr_db` (None: clean),
+/// `offset_hz`, `clock_ppm` and an echo of `echo_db` at `echo_us`.
+#[pyfunction]
+#[pyo3(signature = (frames=10, snr_db=None, offset_hz=0.0, rate=2_048_000.0, clock_ppm=0.0, echo_us=0.0, echo_db=-6.0, seed=1))]
+#[allow(clippy::too_many_arguments)]
+fn testsig_dab<'py>(
+    py: Python<'py>,
+    frames: usize,
+    snr_db: Option<f64>,
+    offset_hz: f64,
+    rate: f64,
+    clock_ppm: f64,
+    echo_us: f64,
+    echo_db: f64,
+    seed: u64,
+) -> PyResult<Bound<'py, PyBytes>> {
+    use crate::dab::tx::{dab_iq, Channel, Path, TxEnsemble};
+    if !(rate >= 2_048_000.0 && rate <= 10_000_000.0) || frames > 400 {
+        return Err(PyValueError::new_err("rate 2.048-10 MS/s, at most 400 frames"));
+    }
+    let paths = if echo_us > 0.0 {
+        vec![
+            Path { delay: 0, gain: 1.0, doppler_hz: 0.0 },
+            Path { delay: (echo_us * 2.048).round() as usize, gain: 10f64.powf(echo_db / 20.0), doppler_hz: 0.0 },
+        ]
+    } else {
+        vec![]
+    };
+    let ch = Channel { snr_db, offset_hz, rate, clock_ppm, paths, seed, ..Default::default() };
+    let bytes: Vec<u8> = py.detach(|| {
+        dab_iq(&TxEnsemble::standard(), frames, &ch)
+            .iter()
+            .flat_map(|z| z.re.to_le_bytes().into_iter().chain(z.im.to_le_bytes()))
+            .collect()
+    });
+    Ok(PyBytes::new(py, &bytes))
+}
+
+/// The Band III blocks: [(name, centre Hz)].
+#[pyfunction]
+fn dab_blocks() -> Vec<(&'static str, u32)> {
+    crate::dab::tables::BAND_III.to_vec()
+}
+
 /// What a decoder should print for `text` (the printer's own rules).
 #[pyfunction]
 fn rtty_truth(text: &str) -> String {
@@ -505,5 +551,7 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(codec_entries, m)?)?;
     m.add_function(wrap_pyfunction!(codec_probe, m)?)?;
     m.add_function(wrap_pyfunction!(codec_use, m)?)?;
+    m.add_function(wrap_pyfunction!(testsig_dab, m)?)?;
+    m.add_function(wrap_pyfunction!(dab_blocks, m)?)?;
     Ok(())
 }

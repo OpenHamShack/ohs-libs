@@ -100,8 +100,7 @@ class Host:
         there is none, or for a decoder that makes no sound; never waits."""
         if sid in self._py:
             return []
-        frames = max(1, int(max_s * (rate or 48_000)))
-        out = self._native.audio(sid, frames, rate, channels)
+        out = self._native.audio(sid, float(max_s), rate, channels)
         for c in out:
             c["pcm"] = np.frombuffer(c["pcm"], dtype=np.float32)
         return out

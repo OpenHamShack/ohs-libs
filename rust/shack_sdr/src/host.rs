@@ -283,14 +283,18 @@ impl AudioRing {
         }
     }
 
-    /// Up to `max` frames, oldest first, each run converted if asked.
-    fn pull(&mut self, max: usize, rate: Option<u32>, channels: Option<u8>) -> Vec<AudioChunk> {
+    /// Up to `max_s` seconds, oldest first, each run converted if asked.
+    fn pull(&mut self, max_s: f64, rate: Option<u32>, channels: Option<u8>) -> Vec<AudioChunk> {
         let mut out = Vec::new();
-        let mut left = max;
-        while left > 0 {
+        let mut left = max_s;
+        while left > 0.0 {
             let Some(front) = self.chunks.front_mut() else { break };
             let ch = front.channels as usize;
-            let n = front.frames().min(left);
+            let src_rate = front.rate as f64;
+            let n = front.frames().min((left * src_rate).round() as usize);
+            if n == 0 {
+                break;
+            }
             let pcm: Vec<f32> = front.pcm.drain(..n * ch).collect();
             let chunk = AudioChunk { t: front.t, rate: front.rate, channels: front.channels, pcm };
             front.t += n as f64 / front.rate as f64;
@@ -298,7 +302,7 @@ impl AudioRing {
                 self.chunks.pop_front();
             }
             self.frames -= n;
-            left -= n;
+            left -= n as f64 / src_rate;
             out.push(self.convert(chunk, rate, channels));
         }
         out
@@ -757,16 +761,16 @@ impl Host {
         Ok(())
     }
 
-    /// The session's sound: up to `max_frames` frames, oldest first, as runs
+    /// The session's sound: up to `max_s` seconds of it, oldest first, as runs
     /// of one format each, converted to `rate` and `channels` when given
     /// (the conversion keeps its state from one pull to the next). Empty
     /// when there is none; never waits.
-    pub fn audio(&self, id: &str, max_frames: usize, rate: Option<u32>, channels: Option<u8>) -> Result<Vec<AudioChunk>, HostError> {
+    pub fn audio(&self, id: &str, max_s: f64, rate: Option<u32>, channels: Option<u8>) -> Result<Vec<AudioChunk>, HostError> {
         let s = self.session(id)?;
         if rate == Some(0) || channels.is_some_and(|c| c == 0 || c > 2) {
             return Err(HostError::BadInput("audio_format"));
         }
-        let out = lock(&s.audio).pull(max_frames, rate, channels);
+        let out = lock(&s.audio).pull(max_s, rate, channels);
         Ok(out)
     }
 
