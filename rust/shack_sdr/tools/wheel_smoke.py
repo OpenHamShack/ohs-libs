@@ -62,10 +62,11 @@ pcm = np.concatenate([rx.process(x[k:k + 4800], k / 240_000) for k in range(0, l
 rds = rx.rds()
 assert pcm.shape == (144_000, 2) and rds["ps"] == "TEST FM " and rds["ptyName"] == "Pop music" and rds["stereo"], rds
 assert np.std(pcm[48_000:, 0]) > 10 * np.std(pcm[48_000:, 1])
-band = [(-1e6, -30.0, 0xC201, "RADIO 1 ", 10, True), (5e5, -40.0, 0xC202, "RADIO 2 ", 1, False)]
+# Within the scan's span at 2.4 MS/s: +-(0.45 x rate - 100 kHz).
+band = [(-8e5, -30.0, 0xC201, "RADIO 1 ", 10, True), (5e5, -40.0, 0xC202, "RADIO 2 ", 1, False)]
 x = np.frombuffer(_native.testsig_fm_band(band, rate=2_400_000.0, seconds=2.0), np.complex64)
 found = [(s["hz"], s["ps"]) for s in wfm.scan_band(x, 2_400_000, 98_000_000)]
-assert found == [(97_000_000, "RADIO 1 "), (98_500_000, "RADIO 2 ")], found
+assert found == [(97_200_000, "RADIO 1 "), (98_500_000, "RADIO 2 ")], found
 print("wheel ok:", shack_sdr.__version__, sys.version.split()[0], got.strip(), "| DAB:", meta["services"][0]["label"],
       "| FM:", rds["ps"], [ps for _, ps in found])
 """
