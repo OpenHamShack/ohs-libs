@@ -20,7 +20,28 @@
 //! "subchannel", "protection", "why", "needs"}], "playing": sid | null,
 //! "why": code | null, "audio": {"codec", "rate", "channels"} | null}`;
 //! and the playing service's sound as `Output::Audio`, which the host puts
-//! in the session's audio ring for the app to pull.
+//! in the session's audio ring for the app to pull. The service
+//! information the FIC carries (fic.rs) is in each service's map too:
+//! `pty`, `language`, `userApps`, `hasSlideshow`, `announcements`,
+//! `clusters`, `components`, `alsoOn` (service following: other
+//! ensembles, FM with RDS), and `now`/`next` from SPI's programme guide;
+//! and beside them `ensemble`'s `ecc`, `country`, `ltoMinutes` and `utc`,
+//! the active `announcements`, `dlPlus` (the playing label's DL Plus
+//! tags), `slide` (the latest slide's details) and `spi`.
+//!
+//! **Pictures** come as `Output::Frame`s with their bytes in `raw`, never
+//! in the feed's text: `slide` (SlideShow, TS 101 499: from the playing
+//! service's X-PAD, or its packet-mode component), `logo` (a station logo
+//! from the ensemble's SPI carousel, one per service and `variant`,
+//! `square` or `wide`), and `schedule` (a service's programme list from
+//! SPI, no bytes). Nothing is ever fetched: the links a slide or SPI
+//! carries are passed on as text.
+//!
+//! **SPI costs a second sub-channel's decoding**, so it runs only while a
+//! service plays, only for an SPI sub-channel of SPI_MAX_KBPS or less, and
+//! for at most SPI_ON_S of sample time before resting SPI_REST_S (sooner
+//! once every audio service has its logo); its thread time is counted
+//! (`spiCpuMs`). The band scan's `survey` never decodes it.
 //!
 //! **Codes** (`why`, the app words them): `no_signal` (no null symbol: no
 //! DAB here), `no_sync` (a null but no phase reference), `fic_errors`
@@ -34,14 +55,24 @@
 //! (`Dab::with_aac`).
 
 use super::audio::{self, Aac, AacFactory, DabPlusFormat, Mp2Stream, Superframes};
-use super::fic::{Ensemble, FicDecoder, Subchannel};
+use super::codes;
+use super::fic::{Ensemble, FicDecoder, PacketComponent, Subchannel};
+use super::mot::{self, Limits, MotDecoder, MotObject};
 use super::msc::SubchannelDecoder;
+use super::packet::PacketReader;
+use super::spi::{Spi, SpiEvent};
 use super::ofdm::{Demod, Event};
 use super::pad::{self, PadDecoder};
 use super::tables::{self, CIF_SYMBOLS, CU_BITS, FIC_CODED_BITS, RATE, SYMBOL_BITS};
 use crate::decoder::*;
 use crate::dsp::Resampler;
 use rustfft::num_complex::Complex32;
+use std::time::Duration;
+
+/// SPI's bounds (module docs).
+const SPI_MAX_KBPS: u16 = 64;
+const SPI_ON_S: f64 = 600.0;
+const SPI_REST_S: f64 = 1800.0;
 
 const PARAMS: &[ParamSpec] = &[
     ParamSpec { key: "service", kind: ParamKind::Text, default: ParamDefault::Text("") },
@@ -78,10 +109,47 @@ impl Stream {
     }
 }
 
+impl Stream {
+    fn pad_mut(&mut self) -> &mut PadDecoder {
+        match self {
+            Stream::Mp2(m) => &mut m.pad,
+            Stream::Plus { pad, .. } => pad,
+        }
+    }
+
+    fn pad(&self) -> &PadDecoder {
+        match self {
+            Stream::Mp2(m) => &m.pad,
+            Stream::Plus { pad, .. } => pad,
+        }
+    }
+}
+
 struct Player {
     sid: u32,
     sub: SubchannelDecoder,
     stream: Stream,
+    /// SlideShow from the X-PAD, and the latest slide's details.
+    slides: MotDecoder,
+    slide: Option<Fields>,
+}
+
+/// What a data pipe's objects are for.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Purpose {
+    Spi,
+    /// The playing service's packet-mode SlideShow.
+    Slides,
+}
+
+/// A packet-mode data component being read: its sub-channel, its address's
+/// data groups, and MOT on them.
+struct DataPipe {
+    purpose: Purpose,
+    at: PacketComponent,
+    sub: SubchannelDecoder,
+    reader: PacketReader,
+    mot: MotDecoder,
 }
 
 #[derive(Default, Clone, Copy)]
@@ -119,6 +187,17 @@ pub struct Dab {
     last_meta: Option<Fields>,
     counts: Counts,
     snr_db: Option<f32>,
+    /// Packet-mode data components being read (SPI, packet SlideShow).
+    pipes: Vec<DataPipe>,
+    spi: Spi,
+    /// Sample time SPI started listening, and until when it rests.
+    spi_since: Option<f64>,
+    spi_rest_until: Option<f64>,
+    spi_cpu: Duration,
+    /// The latest sample time (UTC), for now and next.
+    now_t: f64,
+    slides: u64,
+    logos: u64,
 }
 
 impl Default for Dab {
@@ -129,11 +208,7 @@ impl Default for Dab {
 
 /// "C221" for a 16-bit SId, eight digits for a 32-bit one.
 pub fn sid_hex(sid: u32) -> String {
-    if sid > 0xffff {
-        format!("{sid:08X}")
-    } else {
-        format!("{sid:04X}")
-    }
+    codes::sid_hex(sid)
 }
 
 fn parse_sid(s: &str) -> Result<Option<u32>, DecodeError> {
@@ -176,6 +251,14 @@ impl Dab {
             last_meta: None,
             counts: Counts::default(),
             snr_db: None,
+            pipes: Vec::new(),
+            spi: Spi::new(),
+            spi_since: None,
+            spi_rest_until: None,
+            spi_cpu: Duration::ZERO,
+            now_t: 0.0,
+            slides: 0,
+            logos: 0,
         }
     }
 
@@ -201,12 +284,14 @@ impl Dab {
         &self.ens
     }
 
-    /// The MSC symbols (within a CIF) the playing sub-channel occupies.
+    /// The MSC symbols (within a CIF) the playing sub-channel and the data
+    /// pipes' occupy.
     fn mask(&self) -> [bool; CIF_SYMBOLS] {
         let mut m = [false; CIF_SYMBOLS];
-        if let Some(p) = &self.player {
-            let from = p.sub.sub.start as usize * CU_BITS;
-            let to = from + p.sub.sub.protection.size() * CU_BITS;
+        let subs = self.player.iter().map(|p| &p.sub.sub).chain(self.pipes.iter().map(|d| &d.sub.sub));
+        for sub in subs {
+            let from = sub.start as usize * CU_BITS;
+            let to = from + sub.protection.size() * CU_BITS;
             for j in from / SYMBOL_BITS..=((to - 1) / SYMBOL_BITS).min(CIF_SYMBOLS - 1) {
                 m[j] = true;
             }
@@ -247,7 +332,168 @@ impl Dab {
         } else {
             Stream::Mp2(Mp2Stream::new())
         };
-        self.player = Some(Player { sid, sub: dec, stream });
+        self.player = Some(Player { sid, sub: dec, stream, slides: MotDecoder::new(Limits::SLIDESHOW), slide: None });
+    }
+
+    /// The X-PAD application type the playing service's SlideShow starts
+    /// its data groups with (FIG 0/13), 12 until it says.
+    fn slideshow_xpad_app(&self, sid: u32) -> u8 {
+        let s = self.ens.services.get(&sid);
+        let apps = s.and_then(|s| s.apps.get(&0)).map(|v| v.as_slice()).unwrap_or(&[]);
+        apps.iter()
+            .find(|a| a.ty == codes::UA_SLIDESHOW)
+            .and_then(|a| a.data.first())
+            .map(|b| b & 0x1f)
+            .filter(|&x| x >= 12)
+            .unwrap_or(12)
+    }
+
+    /// Start or stop the packet-mode pipes: the playing service's packet
+    /// SlideShow, and SPI when its turn (module docs) has come.
+    fn update_pipes(&mut self, t: f64) {
+        let mut want: Vec<(Purpose, PacketComponent)> = Vec::new();
+        if let Some(p) = &self.player {
+            if let Some(Some(pc)) = self.ens.app_carrier(p.sid, codes::UA_SLIDESHOW) {
+                if pc.data_groups {
+                    want.push((Purpose::Slides, pc));
+                }
+            }
+        }
+        let spi = self.ens.spi().filter(|(_, pc)| {
+            self.ens.subchannels.get(&pc.subch).and_then(|s| s.protection.bitrate()).is_some_and(|b| b <= SPI_MAX_KBPS)
+        });
+        let resting = self.spi_rest_until.is_some_and(|u| t < u);
+        if self.player.is_some() && spi.is_some() && !resting {
+            let since = *self.spi_since.get_or_insert(t);
+            let audio: Vec<u32> = self.ens.services.values().filter(|s| s.audio().is_some()).map(|s| s.sid).collect();
+            let all = !audio.is_empty() && audio.iter().all(|&sid| self.spi.has_logo(sid));
+            if t - since > SPI_ON_S || (all && self.spi.si_files > 0) {
+                self.spi_rest_until = Some(t + SPI_REST_S);
+                self.spi_since = None;
+            } else if let Some((_, pc)) = spi {
+                want.push((Purpose::Spi, pc));
+            }
+        } else if !resting {
+            self.spi_since = None;
+        }
+        self.pipes.retain(|d| want.iter().any(|w| w.0 == d.purpose && w.1 == d.at));
+        for (purpose, at) in want {
+            if self.pipes.iter().any(|d| d.purpose == purpose && d.at == at) {
+                continue;
+            }
+            let Some(sub) = self.ens.subchannels.get(&at.subch).cloned() else { continue };
+            let Some(dec) = SubchannelDecoder::new(sub) else { continue };
+            let limits = if purpose == Purpose::Spi { Limits::SPI } else { Limits::SLIDESHOW };
+            self.pipes.push(DataPipe { purpose, reader: PacketReader::new(at.address), at, sub: dec, mot: MotDecoder::new(limits) });
+        }
+    }
+
+    /// A slide out, when the object is one (JPEG or PNG).
+    fn slide(&mut self, sid: u32, o: &MotObject, t: f64, out: &mut Sink) {
+        let h = &o.header;
+        let Some(mime) = mot::image_mime(h) else { return };
+        let text = |v: Option<String>| v.map(Value::Text).unwrap_or(Value::Null);
+        let (w, hgt) = mot::image_size(&o.body).map(|(w, h)| (Value::Num(w as f64), Value::Num(h as f64))).unwrap_or((Value::Null, Value::Null));
+        let category = h.param(0x25).filter(|p| p.len() >= 2);
+        let fields: Fields = vec![
+            ("sid".into(), Value::Text(sid_hex(sid))),
+            ("contentType".into(), Value::Text(mime.into())),
+            ("name".into(), text(h.content_name())),
+            ("categoryTitle".into(), text(h.text(0x26))),
+            ("categoryId".into(), category.map(|p| Value::Num(p[0] as f64)).unwrap_or(Value::Null)),
+            ("slideId".into(), category.map(|p| Value::Num(p[1] as f64)).unwrap_or(Value::Null)),
+            ("clickThroughUrl".into(), text(h.text(0x27))),
+            ("width".into(), w),
+            ("height".into(), hgt),
+            ("size".into(), Value::Num(o.body.len() as f64)),
+        ];
+        self.slides += 1;
+        if let Some(p) = self.player.as_mut().filter(|p| p.sid == sid) {
+            p.slide = Some(fields.clone());
+        }
+        out.push(t, Output::Frame { kind: "slide", fields, raw: Some(o.body.clone()) });
+    }
+
+    /// The playing service's X-PAD slides, after its PAD has been read.
+    fn pad_slides(&mut self, t: f64, out: &mut Sink) {
+        let app = match &self.player {
+            Some(p) => self.slideshow_xpad_app(p.sid),
+            None => return,
+        };
+        let Some(p) = self.player.as_mut() else { return };
+        let pad = p.stream.pad_mut();
+        pad.mot_app = app;
+        let groups = pad.take_mot();
+        let mut objs = Vec::new();
+        for g in groups {
+            objs.extend(p.slides.push_bytes(&g, t));
+        }
+        let sid = p.sid;
+        for o in objs {
+            self.slide(sid, &o, t, out);
+        }
+    }
+
+    /// One CIF through each data pipe.
+    fn feed_pipes(&mut self, cif: &[super::coding::Soft], t: f64, out: &mut Sink) {
+        if self.pipes.is_empty() {
+            return;
+        }
+        let t_cpu = crate::cpu::thread_time();
+        let mut done: Vec<(Purpose, MotObject, Option<std::collections::BTreeMap<u16, mot::Header>>)> = Vec::new();
+        for d in &mut self.pipes {
+            let Some(lf) = d.sub.push_cif(cif) else { continue };
+            for g in d.reader.push_frame(&lf) {
+                for o in d.mot.push_bytes(&g, t) {
+                    done.push((d.purpose, o, d.mot.directory().cloned()));
+                }
+            }
+        }
+        for (purpose, o, dir) in done {
+            match purpose {
+                Purpose::Slides => {
+                    if let Some(sid) = self.player.as_ref().map(|p| p.sid) {
+                        self.slide(sid, &o, t, out);
+                    }
+                }
+                Purpose::Spi => {
+                    let services: Vec<u32> = self.ens.services.values().filter(|s| s.audio().is_some()).map(|s| s.sid).collect();
+                    for ev in self.spi.push(&o, &services, dir.as_ref()) {
+                        self.spi_event(ev, t, out);
+                    }
+                }
+            }
+        }
+        if self.pipes.iter().any(|d| d.purpose == Purpose::Spi) {
+            self.spi_cpu += crate::cpu::thread_time().saturating_sub(t_cpu);
+        }
+    }
+
+    fn spi_event(&mut self, ev: SpiEvent, t: f64, out: &mut Sink) {
+        match ev {
+            SpiEvent::Logo { sid, variant, mime, name, width, height, bytes } => {
+                self.logos += 1;
+                let fields: Fields = vec![
+                    ("sid".into(), Value::Text(sid_hex(sid))),
+                    ("variant".into(), Value::Text(variant.into())),
+                    ("contentType".into(), Value::Text(mime.into())),
+                    ("name".into(), Value::Text(name)),
+                    ("width".into(), Value::Num(width as f64)),
+                    ("height".into(), Value::Num(height as f64)),
+                    ("size".into(), Value::Num(bytes.len() as f64)),
+                ];
+                out.push(t, Output::Frame { kind: "logo", fields, raw: Some(bytes) });
+            }
+            SpiEvent::Schedule { sid } => {
+                self.spi.prune(t);
+                let progs = self.spi.schedules.get(&sid).cloned().unwrap_or_default();
+                let fields: Fields = vec![
+                    ("sid".into(), Value::Text(sid_hex(sid))),
+                    ("programmes".into(), Value::List(progs.iter().map(programme_value).collect())),
+                ];
+                out.push(t, Output::Frame { kind: "schedule", fields, raw: None });
+            }
+        }
     }
 
     fn kind_of(&self, ascty: u8) -> &'static str {
@@ -265,18 +511,24 @@ impl Dab {
         self.ens.eid.is_some()
             && self.ens.label.is_some()
             && !audio.is_empty()
-            && audio.iter().all(|s| s.label.is_some() && self.ens.subchannels.contains_key(&s.audio().unwrap().subch))
+            && audio.iter().all(|s| s.best_label().is_some() && self.ens.subchannels.contains_key(&s.audio().unwrap().subch))
     }
 
     /// The feed's picture of what is heard.
     fn snapshot(&self) -> Fields {
         let text = |s: &Option<String>| s.clone().map(Value::Text).unwrap_or(Value::Null);
         let aac = self.aac_available();
-        let ensemble = match self.ens.eid {
+        let e = &self.ens;
+        let ensemble = match e.eid {
             Some(eid) => Value::Map(vec![
                 ("id".into(), Value::Text(format!("{eid:04X}"))),
-                ("label".into(), text(&self.ens.label)),
-                ("shortLabel".into(), text(&self.ens.short_label)),
+                ("label".into(), text(&e.ext_label.clone().or(e.label.clone()))),
+                ("shortLabel".into(), text(&if e.ext_label.is_some() { e.ext_short_label.clone().or(e.short_label.clone()) } else { e.short_label.clone() })),
+                ("ecc".into(), e.ecc.map(|x| Value::Text(format!("{x:02X}"))).unwrap_or(Value::Null)),
+                ("country".into(), e.ecc.and_then(|x| codes::country(x, (eid >> 12) as u8)).map(|c| Value::Text(c.into())).unwrap_or(Value::Null)),
+                ("ltoMinutes".into(), e.lto.map(|h| Value::Num(h as f64 * 30.0)).unwrap_or(Value::Null)),
+                // To the minute: a meta every second would crowd the results.
+                ("utc".into(), e.utc().map(|t| Value::Text(codes::iso_utc((t / 60.0).floor() * 60.0))).unwrap_or(Value::Null)),
             ]),
             None => Value::Null,
         };
@@ -289,16 +541,41 @@ impl Dab {
             let sub: Option<&Subchannel> = self.ens.subchannels.get(&c.subch);
             let kind = self.kind_of(c.ascty);
             let needs: Vec<Value> = if kind == "dab+" && !aac { vec![Value::Text("faad2".into())] } else { vec![] };
+            let (now, next) = self.spi.now_next(s.sid, self.now_t);
+            let mut apps: Vec<Value> = Vec::new();
+            for a in s.apps.values().flatten() {
+                let code = codes::user_app(a.ty).map(String::from).unwrap_or_else(|| format!("ua_{:03x}", a.ty));
+                if !apps.contains(&Value::Text(code.clone())) {
+                    apps.push(Value::Text(code));
+                }
+            }
             services.push(Value::Map(vec![
                 ("sid".into(), Value::Text(sid_hex(s.sid))),
-                ("label".into(), text(&s.label)),
-                ("shortLabel".into(), text(&s.short_label)),
+                ("label".into(), text(&s.best_label().cloned())),
+                ("shortLabel".into(), text(&s.best_short_label().cloned())),
                 ("bitrate".into(), sub.and_then(|x| x.protection.bitrate()).map(|b| Value::Num(b as f64)).unwrap_or(Value::Null)),
                 ("kind".into(), Value::Text(kind.into())),
                 ("subchannel".into(), Value::Num(c.subch as f64)),
                 ("protection".into(), sub.map(|x| Value::Text(x.protection.level_code())).unwrap_or(Value::Null)),
                 ("why".into(), if needs.is_empty() { Value::Null } else { Value::Text("needs_codec:faad2".into()) }),
                 ("needs".into(), Value::List(needs)),
+                ("pty".into(), s.pty.map(|p| Value::Map(vec![
+                    ("code".into(), Value::Num(p.code as f64)),
+                    ("id".into(), codes::pty_code(e.inter_table, p.code).map(|c| Value::Text(c.into())).unwrap_or(Value::Null)),
+                    ("dynamic".into(), Value::Bool(p.dynamic)),
+                ])).unwrap_or(Value::Null)),
+                ("language".into(), e.language_of(c).and_then(codes::language).map(|l| Value::Text(l.into())).unwrap_or(Value::Null)),
+                ("userApps".into(), Value::List(apps)),
+                ("hasSlideshow".into(), Value::Bool(s.has_app(codes::UA_SLIDESHOW))),
+                ("announcements".into(), Value::List(codes::announcement_types(s.asu).into_iter().map(|a| Value::Text(a.into())).collect())),
+                ("clusters".into(), Value::List(s.clusters.iter().map(|&c| Value::Num(c as f64)).collect())),
+                ("components".into(), Value::List((1..16u8).filter_map(|i| s.component_label(i).map(|l| Value::Map(vec![
+                    ("scids".into(), Value::Num(i as f64)),
+                    ("label".into(), Value::Text(l.clone())),
+                ]))).collect())),
+                ("alsoOn".into(), also_on(e, s.sid)),
+                ("now".into(), now.map(programme_value).unwrap_or(Value::Null)),
+                ("next".into(), next.map(programme_value).unwrap_or(Value::Null)),
             ]));
         }
         let audio = match &self.player {
@@ -317,9 +594,44 @@ impl Dab {
             ("audio".into(), audio),
             ("block".into(), if self.block.is_empty() { Value::Null } else { Value::Text(self.block.clone()) }),
             ("dls".into(), self.player.as_ref().and_then(|p| p.stream.dls()).map(|t| Value::Text(t.into())).unwrap_or(Value::Null)),
+            ("dlPlus".into(), self.player.as_ref().and_then(|p| p.stream.pad().dl_plus.as_ref()).map(dl_plus_value).unwrap_or(Value::Null)),
+            ("slide".into(), self.player.as_ref().and_then(|p| p.slide.clone()).map(Value::Map).unwrap_or(Value::Null)),
+            ("announcements".into(), Value::List(e.switching.iter().map(|(cluster, sw)| Value::Map(vec![
+                ("cluster".into(), Value::Num(*cluster as f64)),
+                ("types".into(), Value::List(codes::announcement_types(sw.flags).into_iter().map(|a| Value::Text(a.into())).collect())),
+                ("subchannel".into(), Value::Num(sw.subch as f64)),
+                ("new".into(), Value::Bool(sw.new)),
+                ("services".into(), Value::List(e.services.values()
+                    .filter(|s| *cluster == 0xff || s.clusters.contains(cluster))
+                    .filter(|s| s.audio().is_some())
+                    .map(|s| Value::Text(sid_hex(s.sid))).collect())),
+            ])).collect())),
+            ("spi".into(), self.spi_value()),
             ("complete".into(), Value::Bool(self.complete())),
             ("tii".into(), super::tii::to_value(self.demod.tii.heard())),
         ]
+    }
+
+    /// SPI's state for the feed: where it is and whether we listen now.
+    fn spi_value(&self) -> Value {
+        let Some((sid, pc)) = self.ens.spi() else { return Value::Null };
+        let kbps = self.ens.subchannels.get(&pc.subch).and_then(|s| s.protection.bitrate());
+        let state = if kbps.is_none_or(|b| b > SPI_MAX_KBPS) {
+            "too_wide"
+        } else if self.pipes.iter().any(|d| d.purpose == Purpose::Spi) {
+            "listening"
+        } else if self.spi_rest_until.is_some_and(|u| self.now_t < u) {
+            "resting"
+        } else {
+            "idle"
+        };
+        Value::Map(vec![
+            ("sid".into(), Value::Text(sid_hex(sid))),
+            ("subchannel".into(), Value::Num(pc.subch as f64)),
+            ("state".into(), Value::Text(state.into())),
+            ("logos".into(), Value::Num(self.logos as f64)),
+            ("schedules".into(), Value::Num(self.spi.schedules.len() as f64)),
+        ])
     }
 
     /// One CIF's logical frame through the playing stream.
@@ -412,13 +724,19 @@ impl Dab {
                     self.frames_with_services += 1;
                 }
                 self.update_player();
+                self.now_t = t;
+                self.update_pipes(t);
                 // Each CIF through the playing sub-channel: its logical
-                // frame 15 CIFs back comes out (time interleaving).
+                // frame 15 CIFs back comes out (time interleaving). And
+                // through the data pipes, which are interleaved the same.
                 for (c, cif) in f.cifs.iter().enumerate() {
+                    let tc = t + c as f64 * 0.024;
                     let lf = self.player.as_mut().and_then(|p| p.sub.push_cif(cif));
                     if let Some(lf) = lf {
-                        self.play(&lf, t + c as f64 * 0.024, out);
+                        self.play(&lf, tc, out);
+                        self.pad_slides(tc, out);
                     }
+                    self.feed_pipes(cif, tc, out);
                 }
                 self.why = if !self.sync {
                     Some("fic_errors".into())
@@ -475,6 +793,9 @@ impl Decoder for Dab {
                 if let Some(p) = self.player.as_mut() {
                     p.sub.reset();
                 }
+                for d in &mut self.pipes {
+                    d.sub.reset();
+                }
             }
             if (rate - self.rate).abs() > 1e-6 || self.resampler.is_none() && (rate - RATE).abs() > 1.0 {
                 self.rate = rate;
@@ -528,6 +849,10 @@ impl Decoder for Dab {
         self.why = None;
         self.frames_with_services = 0;
         self.next_index = None;
+        self.pipes.clear();
+        self.spi = Spi::new();
+        self.spi_since = None;
+        self.spi_rest_until = None;
     }
 
     fn status(&self) -> Status {
@@ -555,6 +880,13 @@ impl Decoder for Dab {
                 ("aus", c.aus),
                 ("auErrors", c.au_errors),
                 ("codecErrors", c.codec_errors),
+                ("slides", self.slides),
+                ("logos", self.logos),
+                ("motObjects", self.player.iter().map(|p| p.slides.counts.objects).chain(self.pipes.iter().map(|d| d.mot.counts.objects)).sum()),
+                ("motErrors", self.player.iter().map(|p| p.slides.counts.groups_bad).chain(self.pipes.iter().map(|d| d.mot.counts.groups_bad)).sum()),
+                ("motRefused", self.player.iter().map(|p| p.slides.counts.oversize).chain(self.pipes.iter().map(|d| d.mot.counts.oversize)).sum()),
+                ("packetErrors", self.pipes.iter().map(|d| d.reader.counts.crc_errors).sum()),
+                ("spiCpuMs", self.spi_cpu.as_millis() as u64),
             ],
         }
     }
@@ -608,4 +940,98 @@ pub fn survey(samples: &[Complex32], rate: f64, give_up_s: f64) -> Result<Survey
         last = d.snapshot();
     }
     Ok(Survey { meta: last, sync_s, complete_s, listened_s: used as f64 / rate })
+}
+
+/// A programme for the feed.
+fn programme_value(p: &super::spi::Programme) -> Value {
+    Value::Map(vec![
+        ("name".into(), Value::Text(p.name.clone())),
+        ("start".into(), Value::Text(codes::iso_utc(p.start))),
+        ("durationS".into(), Value::Num(p.duration_s as f64)),
+        ("description".into(), p.description.clone().map(Value::Text).unwrap_or(Value::Null)),
+    ])
+}
+
+/// DL Plus for the feed: the tags Radio's clients show by name, and every
+/// tag as sent.
+fn dl_plus_value(d: &super::pad::DlPlus) -> Value {
+    let get = |ct: u8| d.get(ct).map(|t| Value::Text(t.into())).unwrap_or(Value::Null);
+    Value::Map(vec![
+        ("itemTitle".into(), get(1)),
+        ("itemArtist".into(), get(4)),
+        ("itemAlbum".into(), get(2)),
+        ("programmeNow".into(), get(33)),
+        ("programmeHost".into(), get(36)),
+        ("stationNameLong".into(), get(32)),
+        ("itemRunning".into(), Value::Bool(d.item_running)),
+        ("itemToggle".into(), Value::Bool(d.item_toggle)),
+        ("tags".into(), Value::List(d.tags.iter().map(|t| Value::Map(vec![
+            ("type".into(), codes::dl_plus_type(t.content_type).map(|c| Value::Text(c.into())).unwrap_or(Value::Num(t.content_type as f64))),
+            ("text".into(), Value::Text(t.text.clone())),
+        ])).collect())),
+    ])
+}
+
+/// Service following (EN 300 401 §8.1.15, TS 103 176): where else a
+/// service is, from linkage sets, frequency information and other
+/// ensembles' services. Listed only; nothing here retunes.
+fn also_on(e: &Ensemble, sid: u32) -> Value {
+    use std::collections::BTreeSet;
+    // Other ensembles carrying it (FIG 0/24), with their frequencies.
+    let mut eids: BTreeSet<u16> = e.oe_services.get(&sid).into_iter().flatten().copied().collect();
+    if let Some(own) = e.eid {
+        eids.remove(&own);
+    }
+    let ensembles: Vec<Value> = eids
+        .iter()
+        .map(|eid| {
+            let khz: Vec<u32> = e.freqs.iter().filter(|(k, _)| k.0 == *eid && k.1 == 0).flat_map(|(_, f)| f.khz.clone()).collect();
+            let block = khz.iter().find_map(|f| tables::BAND_III.iter().find(|b| b.1 == f * 1000).map(|b| b.0));
+            Value::Map(vec![
+                ("eid".into(), Value::Text(format!("{eid:04X}"))),
+                ("khz".into(), Value::List(khz.iter().map(|&f| Value::Num(f as f64)).collect())),
+                ("block".into(), block.map(|b| Value::Text(b.into())).unwrap_or(Value::Null)),
+            ])
+        })
+        .collect();
+    // FM with RDS: the PIs its linkage sets name (and its own SId, which
+    // UK and German broadcasters make its PI), with FIG 0/21's frequencies.
+    let mut pis: BTreeSet<u16> = BTreeSet::new();
+    let mut hard = false;
+    for set in e.links.values() {
+        let member = set.key == Some(sid) || set.ids.iter().any(|i| i.kind == 0 && i.id == sid);
+        if !member {
+            continue;
+        }
+        hard |= set.hard;
+        pis.extend(set.ids.iter().filter(|i| i.kind == 1).map(|i| i.id as u16));
+    }
+    if sid <= 0xffff && e.freqs.keys().any(|k| k.0 == sid as u16 && k.1 == 8) {
+        pis.insert(sid as u16);
+    }
+    let fm: Vec<Value> = pis
+        .iter()
+        .map(|pi| {
+            let khz: Vec<u32> = e.freqs.iter().filter(|(k, _)| k.0 == *pi && k.1 == 8).flat_map(|(_, f)| f.khz.clone()).collect();
+            Value::Map(vec![
+                ("pi".into(), Value::Text(format!("{pi:04X}"))),
+                ("mhz".into(), Value::List(khz.iter().map(|&f| Value::Num(f as f64 / 1000.0)).collect())),
+            ])
+        })
+        .collect();
+    let linked: Vec<Value> = e
+        .links
+        .values()
+        .filter(|set| set.key == Some(sid) || set.ids.iter().any(|i| i.kind == 0 && i.id == sid))
+        .flat_map(|set| set.ids.iter().chain(set.key.map(|k| super::fic::LinkId { kind: 0, ecc: None, id: k }).as_ref()).filter(|i| i.kind == 0 && i.id != sid).map(|i| i.id).collect::<Vec<_>>())
+        .collect::<BTreeSet<u32>>()
+        .into_iter()
+        .map(|x| Value::Text(sid_hex(x)))
+        .collect();
+    Value::Map(vec![
+        ("ensembles".into(), Value::List(ensembles)),
+        ("fm".into(), Value::List(fm)),
+        ("services".into(), Value::List(linked)),
+        ("hardLink".into(), Value::Bool(hard)),
+    ])
 }

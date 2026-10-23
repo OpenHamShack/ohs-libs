@@ -48,6 +48,9 @@ pub struct TxService {
     /// Dynamic labels: (from which audio frame or AU on, text), in order.
     /// Old DAB sends short X-PAD, DAB+ variable size.
     pub dls: Vec<(u64, String)>,
+    /// DL Plus tags sent with every label: (content type, first
+    /// character, length).
+    pub dl_plus: Vec<(u8, u8, u8)>,
     /// MSC data groups for its X-PAD (SlideShow's MOT), sent in turn and
     /// then again (a carousel); with any, the X-PAD is variable size.
     pub xpad_groups: Vec<Vec<u8>>,
@@ -99,6 +102,7 @@ impl TxEnsemble {
                     protection: Protection::Uep { index: 35 },
                     audio: TxAudio::Mp2 { bitrate: 128, rate: 48_000, stereo: true, tone_hz: 1000.0 },
                     dls: vec![(0, "Shack MP2 Tone - now: 1 kHz left, 1.5 kHz right".into()), (100, "Second label for C221".into())],
+                    dl_plus: vec![],
                     xpad_groups: vec![],
                 },
                 TxService {
@@ -109,6 +113,7 @@ impl TxEnsemble {
                     protection: Protection::Eep { option: 0, level: 3, size: 48 },
                     audio: TxAudio::DabPlus { bitrate: 64, dac48: true, sbr: true, stereo: true, ps: false },
                     dls: vec![(0, "DAB+ test AUs from the Shack transmitter model".into())],
+                    dl_plus: vec![],
                     xpad_groups: vec![],
                 },
             ],
@@ -273,6 +278,7 @@ struct Source {
     mp2: Option<Mp2Encoder>,
     pad: PadEncoder,
     dls: Vec<(u64, String)>,
+    dl_plus: Vec<(u8, u8, u8)>,
     /// Audio frames (MP2) or AUs (DAB+) made so far.
     made: u64,
     pending: VecDeque<Vec<u8>>,
@@ -308,7 +314,9 @@ impl Source {
                     // PAD at the frame's end: X-PAD, the scale-factor CRC
                     // (left zero: nothing here checks it), the F-PAD.
                     if let Some((_, text)) = self.dls.iter().rev().find(|d| d.0 <= self.made) {
-                        self.pad.set_label(text);
+                        if self.pad.set_label(text) && !self.dl_plus.is_empty() {
+                            self.pad.set_dl_plus(&self.dl_plus, true, true);
+                        }
                     }
                     let (x, fp) = self.pad.frame();
                     let h = enc.header;
@@ -322,10 +330,12 @@ impl Source {
                     }
                 }
                 TxAudio::DabPlus { bitrate, dac48, sbr, stereo, ps } => {
-                    let (pad, dls, made) = (&mut self.pad, &self.dls, &mut self.made);
+                    let (pad, dls, made, tags) = (&mut self.pad, &self.dls, &mut self.made, &self.dl_plus);
                     let sf = dabplus_superframe_pad(self.superframes, bitrate, dac48, sbr, stereo, ps, &mut |_| {
                         let text = dls.iter().rev().find(|d| d.0 <= *made).map(|d| d.1.clone())?;
-                        pad.set_label(&text);
+                        if pad.set_label(&text) && !tags.is_empty() {
+                            pad.set_dl_plus(tags, true, true);
+                        }
                         *made += 1;
                         Some(pad.frame())
                     });
@@ -494,6 +504,7 @@ impl Transmitter {
                     mp2,
                     pad,
                     dls: s.dls.clone(),
+                    dl_plus: s.dl_plus.clone(),
                     made: 0,
                     pending: VecDeque::new(),
                     frame_bytes,
@@ -516,6 +527,7 @@ impl Transmitter {
                     mp2: None,
                     pad: PadEncoder::new(false),
                     dls: vec![],
+                    dl_plus: vec![],
                     made: 0,
                     pending: VecDeque::new(),
                     frame_bytes: p.info_bits() / 8,

@@ -244,6 +244,29 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
            {"main": 5, "sub": 12, "levelDb": -7.0, "confidence": 1.0}]}
   ```
 
+  Each service map also carries the FIC's service information (null or
+  empty until heard): `pty` (`{"code": 10, "id": "pop_music", "dynamic":
+  false}`, the European table's codes; `id` null under another table),
+  `language` (ISO 639: `"en"`), `userApps` (`["slideshow", "spi"]`, or
+  `"ua_44a"` for one we do not name), `hasSlideshow`, `announcements` (the
+  types that may interrupt it: `traffic`, `news`, ...) and `clusters`,
+  `components` (`[{"scids": 2, "label": ...}]`, FIG 1/4 and 2/4),
+  `alsoOn` (service following, listed only: `{"ensembles": [{"eid",
+  "khz": [...], "block"}], "fm": [{"pi", "mhz": [...]}], "services": [linked
+  SIds], "hardLink"}`), and `now`/`next` from SPI's programme guide
+  (`{"name", "start" (ISO UTC), "durationS", "description"}`). Labels are
+  FIG 2's (UTF-8) when one is heard, else FIG 1's. Beside `services`:
+  `ensemble` adds `ecc` ("E1"), `country` (ISO 3166, from the ECC and the
+  EId), `ltoMinutes` and `utc` (the ensemble's clock, to the minute);
+  `announcements` lists those on now (`[{"cluster", "types", "subchannel",
+  "new", "services"}]`; nothing switches); `dlPlus` is the playing label's
+  DL Plus (`{"itemTitle", "itemArtist", "itemAlbum", "programmeNow",
+  "programmeHost", "stationNameLong", "itemRunning", "itemToggle",
+  "tags": [{"type", "text"}]}`, null without); `slide` is the latest
+  slide's details (as its frame, below); `spi` is the ensemble's SPI
+  service when it has one (`{"sid", "subchannel", "state": "listening" |
+  "resting" | "idle" | "too_wide", "logos", "schedules"}`).
+
   `ensemble` is null and `services` empty until heard; `sync` is true
   while FIBs pass their CRC. `dls` is the playing service's programme text
   (dynamic label), the latest complete one, null until one is and cleared
@@ -267,6 +290,34 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
   SNR to 40. The SNR is read from the empty nulls, so TII does not lower
   it. `_native.testsig_dab(..., sites=[(main, sub, delay_us, gain_db)],
   eid=0xCE15)` makes such a network for an app's tests.
+- **Pictures and the guide are `frame` results** with the bytes in `raw`
+  (never in the feed's text), so the app keeps them as it likes:
+  - `slide` (SlideShow, TS 101 499; from the playing service's X-PAD in
+    old DAB or DAB+, or its packet-mode component): `{"sid",
+    "contentType": "image/jpeg" | "image/png", "name", "categoryTitle",
+    "categoryId", "slideId", "clickThroughUrl", "width", "height",
+    "size"}`. Each slide once, however often the carousel repeats it.
+    TriggerTime is not honoured: a slide is shown when it is whole.
+  - `logo` (from the ensemble's SPI carousel, TS 102 818/102 371):
+    `{"sid", "variant": "square" | "wide", "contentType", "name", "width",
+    "height", "size"}`; square prefers 128x128, wide 320x240. Which
+    service a picture belongs to is read from the SPI service information
+    file, or, with none in the carousel, from a ContentName holding the SId
+    in hex.
+  - `schedule`: `{"sid", "programmes": [{"name", "start", "durationS",
+    "description"}]}`, a service's whole known schedule each time it
+    changes.
+
+  Nothing is fetched: URLs are passed on as text. Memory is bounded: an
+  object over 450 KB (SlideShow's own limit) is refused when its header
+  says so, a few objects are assembled and a few MB held at once, and
+  anything unheard for 10-15 minutes of sample time is dropped. **SPI
+  decoding costs a second sub-channel**, so it runs only while a service
+  plays (never in `survey` or a listing-only session), only for an SPI
+  sub-channel of 64 kbit/s or less, and for 10 minutes of signal before
+  resting 30 (sooner once every audio service has its logo); measured on
+  the transmitter model, 6 ms of thread time per 4.8 s for a 16 kbit/s
+  carousel (`spiCpuMs`; the extra OFDM symbols are not in that count).
 - **Codes** (`why`, the feed's and a service's; the app words them, and
   these are the sentences suggested for Radio's catalogue):
 
@@ -300,7 +351,8 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
   and `give_up_s` (1 s) for an empty one.
 - **Counters** (`stats`): `frames`, `misses`, `resyncs`, `fibsOk`,
   `fibsBad`, `audioFrames`, `audioErrors`, `superframes`, `rsCorrected`,
-  `rsFailed`, `aus`, `auErrors`, `codecErrors`.
+  `rsFailed`, `aus`, `auErrors`, `codecErrors`, `slides`, `logos`,
+  `motObjects`, `motErrors`, `motRefused`, `packetErrors`, `spiCpuMs`.
 - **Measured** on the transmitter model (`tests/dab.rs`, 24 frames a case;
   an MP2 frame counts only when its sound is the transmitted tones, a DAB+
   AU only when it arrives whole):
@@ -325,18 +377,27 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
 - **Tests without a transmitter:** `dab::tx` (and `_native.testsig_dab`)
   is a DAB transmitter model: FIC, an MP2 service from our own encoder
   and a DAB+ service of marked test AUs, through the whole chain to OFDM,
-  and a channel model. Our MP2 decoder is also held against FFmpeg's on
+  and a channel model; and the data side: X-PAD carousels (SlideShow),
+  DL Plus, a packet-mode data service carrying an MOT directory, binary
+  SPI files, and any FIG a test adds (`tests/dab_data.rs`). Real signal:
+  `tests/dab_data.rs`'s ignored tests read a SigMF recording
+  (`SHACK_DAB_IQ`, `SHACK_DAB_RATE`; block 11B, Ayr, 23/10/2026, on shack
+  in ~/build/dab11b, 600 MB, never committed): its PTy, country, clock,
+  linkage sets, the other ensemble on 11C, and STV Radio's DL Plus. Our MP2 decoder is also held against FFmpeg's on
   streams from FFmpeg's and twolame's encoders (`tests/mp2.rs`, skipped
   where there is no ffmpeg). `SHACK_TEST_FAAD2=<a real libfaad.so.2>` runs
   the one test against a real faad2.
-- **Read, with credit** (licence headers checked): EN 300 401 and TS 102
-  563 are the sources; welle.io's tables (GPL-2.0-or-later) cross-checked
+- **Read, with credit** (licence headers checked): EN 300 401, TS 102
+  563, EN 301 234 (MOT), TS 101 499 (SlideShow), TS 102 371 (SPI's
+  binary encoding) and TS 102 980 (DL Plus) are the sources; welle.io's tables (GPL-2.0-or-later) cross-checked
   ours (its UEP table has one wrong entry); dablin's AudioSpecificConfig
   layout (GPL-3.0-or-later); FFmpeg's Layer II tables (LGPL-2.1-or-later).
   faad2's and fdk-aac's own sources were not read.
-- **Not done yet:** the slideshow (MOT) and DL Plus tags from PAD, FIG 2 (extended labels),
-  data services, a multiplex reconfiguration's "next" configuration
-  (applied only once it is current), MP2's scale-factor CRC concealment.
+- **Not done yet:** SlideShow's TriggerTime and categories as a browsable
+  set, SPI's genres, links and compressed "advanced" files, the packet
+  FEC, OE announcements (FIG 0/25, 0/26), a multiplex reconfiguration's
+  "next" configuration (applied only once it is current), MP2's
+  scale-factor CRC concealment.
 
 ### SSTV (`sstv`)
 

@@ -504,10 +504,11 @@ impl PadEncoder {
         Some(x)
     }
 
-    /// Send `text` (EBU Latin, ASCII here) from the next segment on.
-    pub fn set_label(&mut self, text: &str) {
+    /// Send `text` (EBU Latin, ASCII here) from the next segment on. True
+    /// when it is a new label.
+    pub fn set_label(&mut self, text: &str) -> bool {
         if text.as_bytes() == self.message.as_slice() {
-            return;
+            return false;
         }
         self.message = text.as_bytes().to_vec();
         self.toggle = !self.toggle;
@@ -530,6 +531,7 @@ impl PadEncoder {
         self.next_group = 0;
         self.pending.clear();
         self.sent = 0;
+        true
     }
 
     /// Send DL Plus tags (TS 102 980 §7.3) with the label now set:
