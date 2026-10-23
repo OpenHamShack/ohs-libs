@@ -82,6 +82,98 @@ codecs.folder()                       # "Open codecs folder"; None on a controll
 `afcRangeHz` 0-250 (100); `squelch` 0-20 dB (3; 0 = off); `usos` (on). Its
 status counters: `frames`, `chars`, `rejected`, `gaps`, `replays`.
 
+### PSK31, PSK63, PSK125 (`psk`)
+
+Differential BPSK with Varicode, ported from openhamshack-nb
+`ohscore/modes/psk.py` (RADIO-SDR-PLAN §8.5 M2), several stations per
+session. IQ natively; audio through the host's adapter, as RTTY.
+
+```python
+sid = host.start("psk", {"baud": 31.25, "channels": "-800,-300,640"},
+                 "audio", 12_000, center_hz=1500.0)       # a 3 kHz passband, three stations
+host.configure(sid, {"channels": "-800,-300,640,910"})    # a waterfall click: live, the others undisturbed
+host.poll()   # [{"type": "text", "text": "C", "t": ..., "offsetHz": -294.1, "snrDb": -9.8, ...}, ...]
+host.status(sid)["meta"]   # {"channels": [{"offsetHz": -300.0, "freqHz": -294.1, "sync": True,
+                           #                "snrDb": -9.6, "imdDb": -28.4}, ...]}
+```
+
+- **Parameters:** `baud` 31.25, 62.5, 125 (QPSK is not in psk.py, so not
+  here); `channels`, comma-separated carrier frequencies in Hz from the
+  session's centre, up to 16 (default "0"); `afc` (on) and `afcRangeHz`
+  0-100 (15) each side of each channel; `squelch` 0-20 (3; 0 = off), the
+  strength (dB over the noise in the symbol's own bandwidth) of the signal
+  the squelch listens for. All live; a channel kept in a new list keeps
+  its state. A channel the band cannot hold (with its AFC range and two
+  baud) is refused once the rate is known: the session's `error`,
+  `channel_outside`.
+- **Results:** one `text` result a character, `t` the time of its first
+  symbol (from the samples), `offsetHz` its channel's tracked frequency
+  from the session's centre (route it to the nearest of your
+  `channels`), `snrDb` in 2.5 kHz (add 19 dB at 31.25 Bd for the symbol
+  bandwidth). Characters arrive about a second late at PSK31 (the
+  trellis's 32 bits and the phase smoother). `meta` once a second while
+  any channel hears a signal: per channel `offsetHz`, `freqHz`, `sync`,
+  `snrDb`, `imdDb` (fldigi's IMD, measured on idle, null until the tones
+  stand 20 dB over the noise and the products can be told from it).
+  Counters: `chars`, `channels`, `acquisitions`, `replays`, `gaps`.
+- **How it decodes,** and why each part (`src/psk/mod.rs`): matched filter
+  with a zero-forcing correction; coarse AFC by squaring and an FFT, with a
+  replay of the last three seconds when it moves; symbol timing from the
+  envelope, four symbols ahead; a Costas loop for frequency and a centred,
+  leave-one-out phase reference, falling back to differential reading
+  where the reference's symbols disagree (fast fading); soft bits into a
+  Varicode trellis; and a squelch that weighs, for every character, every
+  bit before it and the trellis's second after it in a two-state (signal
+  or noise) model, so a weak over prints and its edges do not.
+- **Measured** (`tests/psk.rs`, on the test transmitter; golden numbers
+  from psk.py, `testdata/psk/`, `tools/psk_golden.py`; 3-4 fixtures a
+  point, about 150-210 characters). Character error rate, SNR in 2.5 kHz:
+
+  | 31.25 Bd | -16 | -14 | -13 | -12 | -11 | -10 | -8 | -5 |
+  |---|---|---|---|---|---|---|---|---|
+  | Rust | 39 % | 7.1 % | 4.8 % | 4.3 % | 0 | 0 | 0 | 0 |
+  | psk.py | 96 % | 49 % | 15 % | 17 % | 3.6 % | 5.7 % | 6.0 % | 2.8 % |
+
+  | 62.5 Bd | -13 | -11 | -10 | -9 | -8 | -7 | -5 | -2 |
+  |---|---|---|---|---|---|---|---|---|
+  | Rust | 27 % | 5.7 % | 5.4 % | 2.1 % | 1.2 % | 0 | 0 | 0 |
+  | psk.py | 93 % | 38 % | 19 % | 9.9 % | 6.0 % | 3.5 % | 5.4 % | 5.7 % |
+
+  | 125 Bd | -10 | -8 | -7 | -6 | -5 | -4 | -2 | +1 |
+  |---|---|---|---|---|---|---|---|---|
+  | Rust | 33 % | 7.8 % | 1.8 % | 1.4 % | 0 | 0.7 % | 0 | 0 |
+  | psk.py | 98 % | 54 % | 20 % | 8.5 % | 3.6 % | 5.7 % | 3.6 % | 6.4 % |
+
+  | 31.25 Bd, other channels | Rust | psk.py |
+  |---|---|---|
+  | Watterson moderate, -4 / 0 / +5 dB | 1.9 / 2.4 / 4.0 % | 9.5 / 6.8 / 6.6 % |
+  | Watterson poor, -4 / 0 / +5 dB | 10 / 9.1 / 6.6 % | 17 / 19 / 8.1 % |
+  | 7 and 13 Hz off, -11 dB | 2.4 %, 0.6 % | 11 %, 9.0 % |
+  | drifting 0.5 Hz/s from -8 Hz, -11 dB | 0.6 % | 14 % |
+  | sound card 500 ppm fast, -10 dB | 0 | 3.0 % |
+  | a station 50 Hz away as strong / 10 dB stronger, -8 dB | 0 / 68 % | 4.6 / 96 % |
+  | a station 70 Hz away, 10 dB stronger, -8 dB | 0 | 16 % |
+  | noise alone, 15 minutes | 0 characters | 0 |
+
+  Never worse than psk.py at any of the sweep's 62 points (PSK63 likewise: its
+  table is in the test's output), and psk.py's 3-6 % on strong signals,
+  noise printed while its squelch decayed after each over, is gone: forty
+  strong overs each followed by 8 s of noise print nothing.
+- **CPU** (one Ryzen 9 6900HX core, eight channels sharing one audio
+  adapter): 0.03 % a channel at PSK31, 0.045 % at PSK63, 0.075 % at
+  PSK125. `tests/psk.rs` prints it and fails above 3x.
+- **Tests without a transmitter:** `psk::tx` (`_native.testsig_psk`):
+  G3PLX's waveform (half-cosine transitions, idle as two tones at
+  +-baud/2) as a function of time, with drift, clock error, Watterson
+  fading, a second station and an overdriven transmitter's IMD.
+- **Read, with credit:** our psk.py (its structure, its zero-forcing idea,
+  its coarse AFC); fldigi's Varicode table as psk.py transcribed it
+  (`src/psk/pskvaricode.cxx`, Copyright (C) 2006 Dave Freese W1HKJ,
+  GPL-3.0-or-later, header checked); fldigi's IMD definition.
+- **Not done yet:** QPSK and the FEC modes; a signal browser that finds
+  the stations itself (psk.py's `find_carriers`); a station 10 dB stronger
+  50 Hz away still costs two characters in three.
+
 ### DAB (`dab`)
 
 Old DAB and DAB+ from one Band III block (ETSI EN 300 401 mode I, TS
@@ -440,6 +532,9 @@ check bans licenses`, these Python tests against an extension built from
 the tree (`tools/dev-build.sh`), and `tools/check-encumbered.py` on it.
 Wheels: `tools/build-sdr-wheels.sh` (repository root) into
 `~/build/ohs-dist/shack-sdr/` with `SHA256SUMS`; never committed.
+
+The PSK fixtures (`testdata/psk/`, `tools/psk_golden.py`) are made and
+held the same way (`tests/psk.rs`).
 
 The RTTY fixtures (`testdata/rtty/`) are recipes for `testsig` pinned by
 sha256, and `golden.json` is what openhamshack-nb's `rtty.py` printed on

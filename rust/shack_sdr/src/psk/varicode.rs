@@ -4,8 +4,10 @@
 //! for codes 0-127 is the alphabet Peter Martinez, G3PLX, published; 128-255
 //! are fldigi's own extension for 8-bit text. It is copied from our own
 //! openhamshack-nb `ohscore/modes/psk.py`, which transcribed it from fldigi
-//! (GPL-3.0-or-later; the codes are facts of the protocol) and cross-checked
-//! it against Wikipedia's "Varicode" article.
+//! and cross-checked it against Wikipedia's "Varicode" article. fldigi's
+//! file: "Copyright (C) 2006 Dave Freese, W1HKJ ... adapted from code
+//! contained in gmfsk", GPL-3.0-or-later (header checked 23/10/2026), as
+//! this crate is.
 //!
 //! Every code starts and ends with a 1 and has no "00" in it, so "00" can
 //! only mean "end of character", and idle is a run of zeros.
