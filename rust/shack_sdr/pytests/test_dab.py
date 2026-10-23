@@ -207,3 +207,27 @@ def test_a_pluto_rate_is_resampled(no_faad):
         feed(host, sid, iq(10, rate=2_400_000.0), 2_400_000)
         st = wait(host, sid, lambda s: s["meta"] and s["meta"]["ensemble"])
         assert st["meta"]["ensemble"]["label"] == "Shack Test Mux"
+
+
+@pytest.mark.skipif(not __import__("os").environ.get("SHACK_TEST_FAAD2"),
+                    reason="set SHACK_TEST_FAAD2 to a real libfaad.so.2 (never in the repository) to run this")
+def test_a_real_faad2_passes_the_probe_and_takes_dab_plus_config(monkeypatch, tmp_path):
+    """Against the user's own faad2 (Debian's libfaad2 2.11.2 passed on
+    23/10/2026): the loader's probe accepts it, and it opens on DAB+'s
+    AudioSpecificConfig (HE-AAC, 960 transform). The transmitter's AUs
+    are test bytes, not AAC, so faad2 refuses each one - counted, and the
+    session carries on."""
+    import os
+    monkeypatch.setenv("SHACK_CODEC_FAAD2", os.environ["SHACK_TEST_FAAD2"])
+    codecs.configure(tmp_path / "codecs", cache_path=tmp_path / "cache.json")
+    st = {s["id"]: s for s in codecs.status()}
+    assert st["faad2"]["state"] == "found", st["faad2"]
+    try:
+        with Host(cpu_max=0.0) as host:
+            sid = host.start("dab", {"service": "C3A7"}, "iq", dab.IQ_RATE)
+            feed(host, sid, iq(20))
+            s = wait(host, sid, lambda s: s["stats"].get("codecErrors", 0) >= 6)
+            assert s["why"] is None and s["meta"]["audio"] == {"codec": "he-aac"}
+            assert s["stats"]["codecErrors"] == s["stats"]["aus"] >= 6
+    finally:
+        _native.codec_use("faad2", None)
