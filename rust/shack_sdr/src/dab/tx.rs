@@ -7,8 +7,14 @@
 //! OFDM at 2.048 MS/s; then a channel: noise, frequency offset, multipath
 //! (static or fading), a sample clock error, and another sample rate.
 //! Receive-only code has no use for it beyond tests: nothing transmits.
+//!
+//! The data side too: MSC data groups and MOT objects in header mode
+//! (SlideShow) and directory mode (SPI's carousel), carried in a
+//! service's X-PAD or in packets on a data sub-channel, the binary SPI
+//! files (TS 102 371) and any FIG a test wants to add (`TxEnsemble.figs`).
 
 use super::coding;
+use super::packet;
 use super::pad::{scf_crc_len, PadEncoder};
 use super::rs;
 use super::tii;
@@ -42,6 +48,28 @@ pub struct TxService {
     /// Dynamic labels: (from which audio frame or AU on, text), in order.
     /// Old DAB sends short X-PAD, DAB+ variable size.
     pub dls: Vec<(u64, String)>,
+    /// MSC data groups for its X-PAD (SlideShow's MOT), sent in turn and
+    /// then again (a carousel); with any, the X-PAD is variable size.
+    pub xpad_groups: Vec<Vec<u8>>,
+}
+
+/// A packet-mode data service: its data groups on `address`, sent in turn
+/// and then again (a carousel), in packets of `packet` bytes, padding
+/// filling the rest of each logical frame.
+#[derive(Clone, Debug, PartialEq)]
+pub struct TxData {
+    /// A data service's 32-bit SId.
+    pub sid: u32,
+    pub label: String,
+    pub subch: u8,
+    pub start: u16,
+    pub protection: Protection,
+    pub scid: u16,
+    pub address: u16,
+    /// The user application FIG 0/13 signals (SPI is 0x007).
+    pub user_app: u16,
+    pub packet: usize,
+    pub groups: Vec<Vec<u8>>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -49,6 +77,10 @@ pub struct TxEnsemble {
     pub eid: u16,
     pub label: String,
     pub services: Vec<TxService>,
+    pub data: Vec<TxData>,
+    /// More FIGs (each whole, its header first), sent in turn in the FIBs
+    /// the model leaves free: about 30 a second.
+    pub figs: Vec<Vec<u8>>,
 }
 
 impl TxEnsemble {
@@ -67,6 +99,7 @@ impl TxEnsemble {
                     protection: Protection::Uep { index: 35 },
                     audio: TxAudio::Mp2 { bitrate: 128, rate: 48_000, stereo: true, tone_hz: 1000.0 },
                     dls: vec![(0, "Shack MP2 Tone - now: 1 kHz left, 1.5 kHz right".into()), (100, "Second label for C221".into())],
+                    xpad_groups: vec![],
                 },
                 TxService {
                     sid: 0xc3a7,
@@ -76,9 +109,32 @@ impl TxEnsemble {
                     protection: Protection::Eep { option: 0, level: 3, size: 48 },
                     audio: TxAudio::DabPlus { bitrate: 64, dac48: true, sbr: true, stereo: true, ps: false },
                     dls: vec![(0, "DAB+ test AUs from the Shack transmitter model".into())],
+                    xpad_groups: vec![],
                 },
             ],
+            data: vec![],
+            figs: vec![],
         }
+    }
+
+    /// The standard ensemble with a 16 kbit/s packet-mode data service after
+    /// the DAB+ one (sub-channel 3, EEP 3-A), carrying `groups` on address
+    /// 1 and signalled as user application `user_app`.
+    pub fn with_data(user_app: u16, groups: Vec<Vec<u8>>) -> Self {
+        let mut e = Self::standard();
+        e.data.push(TxData {
+            sid: 0xe1c0_0001,
+            label: "Shack SPI".into(),
+            subch: 3,
+            start: 144,
+            protection: Protection::Eep { option: 0, level: 3, size: 12 },
+            scid: 0x123,
+            address: 1,
+            user_app,
+            packet: 24,
+            groups,
+        });
+        e
     }
 }
 
@@ -180,8 +236,39 @@ pub fn dabplus_superframe_pad(
     out
 }
 
+/// A data service's packets, as they come.
+struct DataSource {
+    groups: Vec<Vec<u8>>,
+    next: usize,
+    address: u16,
+    packet: usize,
+    ci: u8,
+    queue: VecDeque<Vec<u8>>,
+}
+
+impl DataSource {
+    fn frame(&mut self, bytes: usize) -> Vec<u8> {
+        let mut lf = Vec::with_capacity(bytes);
+        while lf.len() + self.packet <= bytes {
+            if self.queue.is_empty() && !self.groups.is_empty() {
+                let g = &self.groups[self.next % self.groups.len()];
+                self.next += 1;
+                self.queue.extend(packet::packetise(g, self.address, self.packet, &mut self.ci));
+            }
+            match self.queue.pop_front() {
+                Some(p) => lf.extend(p),
+                None => lf.extend(packet::padding_packet(self.packet)),
+            }
+        }
+        lf.resize(bytes, 0);
+        lf
+    }
+}
+
 /// A service's logical frames, as they come.
 struct Source {
+    data: Option<DataSource>,
+    xpad_groups: Vec<Vec<u8>>,
     audio: TxAudio,
     mp2: Option<Mp2Encoder>,
     pad: PadEncoder,
@@ -196,6 +283,13 @@ struct Source {
 
 impl Source {
     fn next(&mut self) -> Vec<u8> {
+        if let Some(d) = self.data.as_mut() {
+            return d.frame(self.frame_bytes);
+        }
+        // A carousel: queue the X-PAD's data groups again once all are sent.
+        if !self.xpad_groups.is_empty() && self.pad.groups_queued() == 0 {
+            self.pad.queue_groups(self.xpad_groups.clone());
+        }
         if self.pending.is_empty() {
             match self.audio.clone() {
                 TxAudio::Mp2 { rate, stereo, tone_hz, .. } => {
@@ -265,6 +359,10 @@ pub struct Transmitter {
     /// receiver's time to the full service list is measured as on air.
     mci: Vec<Vec<u8>>,
     labels: Vec<Vec<u8>>,
+    /// The data services' FIGs and the ensemble's extra ones, in turn in
+    /// the FIBs of CIFs 1-3 of each frame, and which is next.
+    extra: Vec<Vec<u8>>,
+    next_extra: usize,
     interleave: Vec<i32>,
     prev: Vec<Complex64>,
     fft: std::sync::Arc<dyn rustfft::Fft<f64>>,
@@ -302,10 +400,11 @@ impl Transmitter {
         let mut subs = Vec::new();
         // FIG 0/1: every sub-channel.
         let mut d = vec![0x01u8];
-        for s in &ensemble.services {
-            d.push(s.subch << 2 | (s.start >> 8) as u8);
-            d.push(s.start as u8);
-            match s.protection {
+        let subchannels = ensemble.services.iter().map(|s| (s.subch, s.start, s.protection)).chain(ensemble.data.iter().map(|s| (s.subch, s.start, s.protection)));
+        for (subch, start, protection) in subchannels {
+            d.push(subch << 2 | (start >> 8) as u8);
+            d.push(start as u8);
+            match protection {
                 Protection::Uep { index } => d.push(index & 0x3f),
                 Protection::Eep { option, level, size } => {
                     d.push(0x80 | option << 4 | (level - 1) << 2 | (size >> 8) as u8);
@@ -324,6 +423,35 @@ impl Transmitter {
             d.push(s.subch << 2 | 2);
         }
         mci.push(fig(0, d));
+        // The data services: FIG 0/2 (P/D 1: 32-bit SIds; one packet-mode
+        // component by its SCId), 0/3 (where it is), 0/13 (what it is),
+        // and their labels (1/5), sent with the extra FIGs.
+        let mut extra = Vec::new();
+        for s in &ensemble.data {
+            let mut d = vec![0x22u8];
+            d.extend(s.sid.to_be_bytes());
+            d.push(1);
+            d.extend((0xc000 | s.scid << 2 | 2).to_be_bytes());
+            extra.push(fig(0, d));
+            let mut d = vec![0x03u8];
+            d.extend((s.scid << 4).to_be_bytes());
+            d.push(60); // DG flag 0, DSCTy 60: MOT
+            d.extend(((s.subch as u16) << 10 | s.address & 0x3ff).to_be_bytes());
+            extra.push(fig(0, d));
+            let mut d = vec![0x2du8];
+            d.extend(s.sid.to_be_bytes());
+            d.push(0x01); // SCIdS 0, one application
+            d.extend((s.user_app << 5 | 1).to_be_bytes());
+            d.push(0x01); // SPI: the basic profile
+            extra.push(fig(0, d));
+            let (lb, fl) = label16(&s.label);
+            let mut d = vec![0x05u8];
+            d.extend(s.sid.to_be_bytes());
+            d.extend(lb);
+            d.extend(fl.to_be_bytes());
+            extra.push(fig(1, d));
+        }
+        extra.extend(ensemble.figs.iter().cloned());
         let mut labels = Vec::new();
         // FIG 1/0 and 1/1: labels, EBU Latin.
         let (lb, fl) = label16(&ensemble.label);
@@ -343,8 +471,8 @@ impl Transmitter {
         for s in &ensemble.services {
             let p = s.protection.profile().expect("a valid profile");
             let frame_bytes = p.info_bits() / 8;
-            let short = matches!(s.audio, TxAudio::Mp2 { .. });
-            let pad = PadEncoder::new(short);
+            let short = matches!(s.audio, TxAudio::Mp2 { .. }) && s.xpad_groups.is_empty();
+            let pad = if s.xpad_groups.is_empty() { PadEncoder::new(short) } else { PadEncoder::with_mot(48) };
             let mp2 = match s.audio {
                 TxAudio::Mp2 { bitrate, rate, stereo, .. } => {
                     let mut e = Mp2Encoder::new(bitrate, rate, if stereo { 0 } else { 3 }, 0);
@@ -360,6 +488,8 @@ impl Transmitter {
                 prbs: coding::prbs(p.info_bits()),
                 history: VecDeque::new(),
                 source: Source {
+                    data: None,
+                    xpad_groups: s.xpad_groups.clone(),
                     audio: s.audio.clone(),
                     mp2,
                     pad,
@@ -372,12 +502,36 @@ impl Transmitter {
                 },
             });
         }
+        for s in &ensemble.data {
+            let p = s.protection.profile().expect("a valid profile");
+            subs.push(Sub {
+                start: s.start as usize * CU_BITS,
+                map: coding::puncture_map(&p),
+                prbs: coding::prbs(p.info_bits()),
+                history: VecDeque::new(),
+                source: Source {
+                    data: Some(DataSource { groups: s.groups.clone(), next: 0, address: s.address, packet: s.packet, ci: 0, queue: VecDeque::new() }),
+                    xpad_groups: vec![],
+                    audio: TxAudio::DabPlus { bitrate: 8, dac48: false, sbr: false, stereo: false, ps: false },
+                    mp2: None,
+                    pad: PadEncoder::new(false),
+                    dls: vec![],
+                    made: 0,
+                    pending: VecDeque::new(),
+                    frame_bytes: p.info_bits() / 8,
+                    t: 0,
+                    superframes: 0,
+                },
+            });
+        }
         Transmitter {
             ensemble,
             subs,
             cif: 0,
             mci,
             labels,
+            extra,
+            next_extra: 0,
             interleave: tables::frequency_interleave(),
             prev: Vec::new(),
             fft: FftPlanner::new().plan_fft_inverse(TU),
@@ -403,11 +557,26 @@ impl Transmitter {
             // 0/2), the second a label when one is due: label k in frame
             // k x 3 of every ten (each about once a second).
             let frame = cif / 4;
-            let figs: Vec<&Vec<u8>> = match (f, cif % 4) {
-                (1, 0) => self.mci.iter().collect(),
+            let figs: Vec<Vec<u8>> = match (f, cif % 4) {
+                (1, 0) => self.mci.clone(),
                 (2, 0) => {
                     let k = (frame % 10) as usize;
-                    if k % 3 == 0 { self.labels.get(k / 3).into_iter().collect() } else { vec![] }
+                    if k % 3 == 0 { self.labels.get(k / 3).cloned().into_iter().collect() } else { vec![] }
+                }
+                (_, 1..=3) if !self.extra.is_empty() => {
+                    // As many of the extra FIGs, in turn, as fit.
+                    let mut v = Vec::new();
+                    let mut room = 30;
+                    for _ in 0..self.extra.len() {
+                        let g = &self.extra[self.next_extra % self.extra.len()];
+                        if g.len() > room {
+                            break;
+                        }
+                        room -= g.len();
+                        v.push(g.clone());
+                        self.next_extra += 1;
+                    }
+                    v
                 }
                 _ => vec![],
             };
@@ -667,4 +836,190 @@ pub fn sfn_iq(ensemble: &TxEnsemble, sites: &[Site], frames: usize, ch: &Channel
         }
     }
     x
+}
+
+/// An MSC data group (EN 300 401 §5.3.3): with a session header (segment
+/// number, last flag and transport id) and the CRC.
+pub fn data_group(ty: u8, continuity: u8, last: bool, segment: u16, transport_id: u16, data: &[u8]) -> Vec<u8> {
+    let mut g = vec![0x40 | 0x20 | 0x10 | (ty & 0x0f), (continuity & 0x0f) << 4];
+    g.extend(((last as u16) << 15 | segment & 0x7fff).to_be_bytes());
+    g.push(0x10 | 2); // transport id flag, two bytes follow
+    g.extend(transport_id.to_be_bytes());
+    g.extend_from_slice(data);
+    let crc = coding::crc16_ccitt(&g);
+    g.extend(crc.to_be_bytes());
+    g
+}
+
+/// One MOT header extension parameter (EN 301 234 §6.2), its data field
+/// in the shortest form.
+pub fn mot_param(id: u8, data: &[u8]) -> Vec<u8> {
+    let mut p = match data.len() {
+        0 => vec![id],
+        1 => vec![0x40 | id],
+        4 => vec![0x80 | id],
+        n if n < 128 => vec![0xc0 | id, n as u8],
+        n => vec![0xc0 | id, 0x80 | (n >> 8) as u8, n as u8],
+    };
+    p.extend_from_slice(data);
+    p
+}
+
+/// A ContentName parameter (character set 4, ISO Latin 1: ASCII here).
+pub fn content_name(name: &str) -> Vec<u8> {
+    let mut d = vec![4 << 4];
+    d.extend(name.as_bytes());
+    mot_param(0x0c, &d)
+}
+
+/// An MOT header: the core (body size, header size, content type and
+/// subtype) and the given parameters.
+pub fn mot_header(body_size: usize, content_type: u8, subtype: u16, params: &[Vec<u8>]) -> Vec<u8> {
+    let ext: Vec<u8> = params.concat();
+    let size = 7 + ext.len();
+    let v: u64 = (body_size as u64 & 0x0fff_ffff) << 28 | (size as u64 & 0x1fff) << 15 | (content_type as u64 & 0x3f) << 9 | subtype as u64 & 0x1ff;
+    let mut h = v.to_be_bytes()[1..].to_vec();
+    h.extend(ext);
+    h
+}
+
+/// An entity cut into MOT segments, each in a data group of `ty`, every
+/// segment `seg` bytes but the last.
+fn mot_segments(ty: u8, tid: u16, bytes: &[u8], seg: usize) -> Vec<Vec<u8>> {
+    let chunks: Vec<&[u8]> = if bytes.is_empty() { vec![&[][..]] } else { bytes.chunks(seg).collect() };
+    let n = chunks.len();
+    chunks
+        .iter()
+        .enumerate()
+        .map(|(i, c)| {
+            let mut d = (c.len() as u16 & 0x1fff).to_be_bytes().to_vec(); // repetition count 0
+            d.extend_from_slice(c);
+            data_group(ty, i as u8, i + 1 == n, i as u16, tid, &d)
+        })
+        .collect()
+}
+
+/// An MOT object in header mode (SlideShow): its header's data groups
+/// (type 3), then its body's (type 4).
+pub fn mot_header_mode(tid: u16, header: &[u8], body: &[u8], seg: usize) -> Vec<Vec<u8>> {
+    let mut v = mot_segments(3, tid, header, seg);
+    v.extend(mot_segments(4, tid, body, seg));
+    v
+}
+
+/// A carousel in directory mode (SPI): the directory's data groups (type
+/// 6, transport id `dir_tid`), then each object's body (type 4).
+pub fn mot_directory_mode(dir_tid: u16, objects: &[(u16, Vec<u8>, Vec<u8>)], seg: usize) -> Vec<Vec<u8>> {
+    let mut entries = Vec::new();
+    for (tid, header, _) in objects {
+        entries.extend(tid.to_be_bytes());
+        entries.extend_from_slice(header);
+    }
+    let size = 13 + entries.len();
+    let mut dir = (size as u32 & 0x3fff_ffff).to_be_bytes().to_vec();
+    dir.extend((objects.len() as u16).to_be_bytes());
+    dir.extend([0, 0, 0]); // no carousel period
+    dir.extend((seg as u16 & 0x1fff).to_be_bytes());
+    dir.extend([0, 0]); // no directory extension
+    dir.extend(entries);
+    let mut v = mot_segments(6, dir_tid, &dir, seg);
+    for (tid, _, body) in objects {
+        v.extend(mot_segments(4, *tid, body, seg));
+    }
+    v
+}
+
+/// The header of a picture whose size is all a receiver reads first: a
+/// PNG's signature and IHDR (and its CRC field, zero), then `fill` bytes.
+/// Not a picture anyone could show; the decoders read only the header.
+pub fn test_png(width: u32, height: u32, fill: usize) -> Vec<u8> {
+    let mut b = b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR".to_vec();
+    b.extend(width.to_be_bytes());
+    b.extend(height.to_be_bytes());
+    b.extend([8, 6, 0, 0, 0, 0, 0, 0, 0]);
+    b.extend((0..fill).map(|i| (i * 7 + 3) as u8));
+    b
+}
+
+/// A JPEG's start and its SOF0 marker (as `test_png`, a header only).
+pub fn test_jpeg(width: u32, height: u32, fill: usize) -> Vec<u8> {
+    let mut b = vec![0xff, 0xd8, 0xff, 0xe0, 0, 4, 0, 0, 0xff, 0xc0, 0, 11, 8];
+    b.extend((height as u16).to_be_bytes());
+    b.extend((width as u16).to_be_bytes());
+    b.extend([1, 1, 0x11, 0]);
+    b.extend((0..fill).map(|i| (i * 13 + 5) as u8));
+    b
+}
+
+/// SPI's binary encoding (TS 102 371 §4): an element or attribute with its
+/// tag and length.
+pub fn spi_node(tag: u8, data: &[u8]) -> Vec<u8> {
+    let mut v = vec![tag];
+    match data.len() {
+        n if n < 0xfe => v.push(n as u8),
+        n if n < 0x1_0000 => {
+            v.push(0xfe);
+            v.extend((n as u16).to_be_bytes());
+        }
+        n => {
+            v.push(0xff);
+            v.extend(&(n as u32).to_be_bytes()[1..]);
+        }
+    }
+    v.extend_from_slice(data);
+    v
+}
+
+/// A DAB bearerURI's binary id (§4.7.6.1) for a 16-bit SId.
+pub fn spi_bearer(ecc: u8, eid: u16, sid: u16) -> Vec<u8> {
+    let mut v = vec![0x40, ecc];
+    v.extend(eid.to_be_bytes());
+    v.extend(sid.to_be_bytes());
+    v
+}
+
+/// A service information file (SPI 7/0): the ensemble and, for each
+/// service, its name and logos (url, width, height).
+pub fn spi_si_file(ecc: u8, eid: u16, services: &[(u16, &str, Vec<(&str, u16, u16)>)]) -> Vec<u8> {
+    let mut ens = spi_node(0x80, &[&[ecc][..], &eid.to_be_bytes()].concat());
+    for (sid, name, logos) in services {
+        let mut s = spi_node(0x12, &spi_node(0x01, name.as_bytes()));
+        let mut media = Vec::new();
+        for (url, w, h) in logos {
+            let mut m = spi_node(0x82, url.as_bytes());
+            m.extend(spi_node(0x83, &[2])); // logo_unrestricted: sized by width and height
+            m.extend(spi_node(0x84, &w.to_be_bytes()));
+            m.extend(spi_node(0x85, &h.to_be_bytes()));
+            media.extend(spi_node(0x2b, &m));
+        }
+        s.extend(spi_node(0x13, &media));
+        s.extend(spi_node(0x29, &spi_node(0x80, &spi_bearer(ecc, eid, *sid))));
+        ens.extend(spi_node(0x28, &s));
+    }
+    spi_node(0x03, &spi_node(0x26, &ens))
+}
+
+/// A timePoint (§4.7.4), long form, no LTO.
+pub fn spi_time(mjd: u32, h: u32, m: u32, s: u32) -> Vec<u8> {
+    let v: u32 = (mjd & 0x1ffff) << 14 | 1 << 11 | (h & 0x1f) << 6 | (m & 0x3f);
+    let mut b = v.to_be_bytes().to_vec();
+    b.extend([(s as u8) << 2, 0]);
+    b
+}
+
+/// A programme information file (SPI 7/1) for one service: programmes as
+/// (name, start timePoint, duration in seconds, short description).
+pub fn spi_pi_file(ecc: u8, eid: u16, sid: u16, programmes: &[(&str, Vec<u8>, u16, Option<&str>)]) -> Vec<u8> {
+    let mut sched = Vec::new();
+    for (name, start, dur, desc) in programmes {
+        let mut p = spi_node(0x12, &spi_node(0x01, name.as_bytes()));
+        let mut loc = spi_node(0x2c, &[spi_node(0x80, start), spi_node(0x81, &dur.to_be_bytes())].concat());
+        loc.extend(spi_node(0x2d, &spi_node(0x80, &spi_bearer(ecc, eid, sid))));
+        p.extend(spi_node(0x19, &loc));
+        if let Some(d) = desc {
+            p.extend(spi_node(0x13, &spi_node(0x1a, &spi_node(0x01, d.as_bytes()))));
+        }
+        sched.extend(spi_node(0x1c, &p));
+    }
+    spi_node(0x02, &spi_node(0x21, &sched))
 }
