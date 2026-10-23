@@ -12,6 +12,15 @@ per session, so a gap says something was missed) and `t` (UTC seconds,
 from the samples, never the clock), and a `type`: text, frame, image,
 meta, or state for a session's state changes.
 
+A file a decoder makes (an SSTV picture's PNG) is not a result either:
+the host keeps it, and writes it to `files_dir` when given one. The
+`image` result whose `event` is "done" names it (`file`, and `path` when
+written); `file(name)` gives its bytes, from memory or the folder, which
+is what an app's `api/decoders/files?id=` serves, and `files()` lists
+them. Names are the session's id and the decoder's, letters, digits and
+`_-.` only: anything else is refused, so a client's id cannot leave the
+folder.
+
 Sound is not a result. A decoder that makes it (DAB now; WFM, FreeDV and
 the digital voice modes later) fills the session's audio ring, and the app
 pulls it with `audio(sid, rate=12_000, channels=1)` at its own pace,
@@ -22,6 +31,7 @@ from __future__ import annotations
 
 import collections
 import itertools
+import os
 import threading
 import time
 
@@ -52,8 +62,9 @@ class Host:
     `cpu_max` the share of one core they may use together (0 = no cap)."""
 
     def __init__(self, threads: int = 1, cpu_max: float = 0.25, *, ring_s: float = 2.0, max_sessions: int = 17,
-                 testing: bool = False):
-        self._native = _native.Host(threads, cpu_max, ring_s, max_sessions, testing)
+                 testing: bool = False, files_dir: str | os.PathLike | None = None, files_keep: int = 16):
+        self._native = _native.Host(threads, cpu_max, ring_s, max_sessions, testing,
+                                    None if files_dir is None else os.fspath(files_dir), files_keep)
         self._max = max_sessions
         self._py: dict[str, _PySession] = {}
         self._results: collections.deque = collections.deque(maxlen=20_000)
@@ -104,6 +115,17 @@ class Host:
         for c in out:
             c["pcm"] = np.frombuffer(c["pcm"], dtype=np.float32)
         return out
+
+    def file(self, name: str) -> bytes | None:
+        """A decoder's file by name (an `image` "done" result's `file`):
+        its bytes, or None for a name not known or not allowed."""
+        return self._native.file(name)
+
+    def files(self) -> list[dict]:
+        """[{"name", "session", "decoder", "t", "size", "path"}], oldest
+        first: those made since this host started, after any older ones
+        found in `files_dir`."""
+        return self._native.files()
 
     def _start_python(self, entry: dict, params: dict, input_kind: str, rate: float, center_hz: float,
                       pinned: bool) -> str:

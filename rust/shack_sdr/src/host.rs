@@ -38,13 +38,24 @@
 //!   into the session's, and handed to the decoder by its worker before its
 //!   next block, so the engine never waits for a block being decoded. DAB's
 //!   `service` changes this way without losing the ensemble.
+//! - **Files a decoder makes are the host's to keep.** A decoder hands over
+//!   a finished picture's bytes (`ImageEvent::Done`) and never touches the
+//!   filesystem; the host names it after the session, keeps the last
+//!   `files_keep` in memory and, given `files_dir`, writes each there
+//!   (whole or not at all: a temporary name, then a rename), so the app's
+//!   `api/decoders/files?id=` is `file(id)` whichever it is. The result
+//!   says the name and the path, without the bytes, and a `meta` from the
+//!   same block whose `file` named it names it as the host keeps it.
 
 use crate::catalogue::{self, Kind};
-use crate::decoder::{check_params, DecodeError, Decoder, Fields, Input, InputKind, Output, Params, Sink, Status};
+use crate::decoder::{
+    check_params, DecodeError, Decoder, Fields, ImageEvent, Input, InputKind, Output, Params, Sink, Status, Value,
+};
 use crate::dsp::{AudioToIq, Resampler};
 use rustfft::num_complex::Complex32;
 use std::collections::{BTreeMap, VecDeque};
 use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread::JoinHandle;
@@ -71,11 +82,25 @@ pub struct HostConfig {
     pub max_results: usize,
     /// Offer the test decoders (testing module).
     pub testing: bool,
+    /// Where decoders' files (SSTV pictures) are written; None keeps them
+    /// in memory only.
+    pub files_dir: Option<PathBuf>,
+    /// Files kept in memory, newest; the oldest go first.
+    pub files_keep: usize,
 }
 
 impl Default for HostConfig {
     fn default() -> Self {
-        HostConfig { threads: 1, cpu_max: 0.25, ring_s: 2.0, max_sessions: 17, max_results: 20_000, testing: false }
+        HostConfig {
+            threads: 1,
+            cpu_max: 0.25,
+            ring_s: 2.0,
+            max_sessions: 17,
+            max_results: 20_000,
+            testing: false,
+            files_dir: None,
+            files_keep: 16,
+        }
     }
 }
 
@@ -200,6 +225,50 @@ pub struct SessionInfo {
     /// Frames of sound waiting in the ring, and dropped from it unpulled.
     pub audio_queued: usize,
     pub audio_dropped: u64,
+}
+
+/// A file a decoder made (an SSTV picture), as `files()` lists it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FileInfo {
+    /// The id `file()` takes: the session's id, then the decoder's name.
+    pub name: String,
+    /// Empty for a file found on disk from before this host started.
+    pub session: String,
+    pub decoder: String,
+    /// UTC seconds, from the samples (a file found on disk: its mtime).
+    pub t: f64,
+    pub size: usize,
+    pub path: Option<PathBuf>,
+}
+
+struct Saved {
+    info: FileInfo,
+    bytes: Arc<Vec<u8>>,
+}
+
+/// A name the host will read or write: letters, digits, `_`, `-` and
+/// `.`, not starting with a dot, so an id from a client can never leave
+/// the files folder.
+pub fn safe_file_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 160
+        && !name.starts_with('.')
+        && name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-' || b == b'.')
+}
+
+/// Write whole or not at all.
+fn write_file(dir: &Path, name: &str, bytes: &[u8]) -> Option<PathBuf> {
+    std::fs::create_dir_all(dir).ok()?;
+    let tmp = dir.join(format!(".{name}.part"));
+    let path = dir.join(name);
+    std::fs::write(&tmp, bytes).ok()?;
+    match std::fs::rename(&tmp, &path) {
+        Ok(()) => Some(path),
+        Err(_) => {
+            let _ = std::fs::remove_file(&tmp);
+            None
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -408,6 +477,7 @@ struct Shared {
     next: AtomicU64,
     salt: u64,
     budget: Mutex<Instant>,
+    files: Mutex<VecDeque<Saved>>,
 }
 
 pub struct Host {
@@ -461,6 +531,27 @@ impl Shared {
             Item { session: s.id.clone(), rev: c.rev, t: c.since, body: Body::State { state, why } }
         };
         self.push(vec![item]);
+    }
+
+    /// Keep a decoder's finished file; the event its result carries.
+    fn keep_file(&self, s: &Session, t: f64, file: &str, bytes: Vec<u8>) -> ImageEvent {
+        let mut name = format!("{}_{}", s.id, file);
+        name.retain(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '_' | '-' | '.'));
+        let path = self.cfg.files_dir.as_ref().and_then(|d| write_file(d, &name, &bytes));
+        let info = FileInfo {
+            name: name.clone(),
+            session: s.id.clone(),
+            decoder: s.kind.info.id.to_string(),
+            t,
+            size: bytes.len(),
+            path: path.clone(),
+        };
+        let mut files = lock(&self.files);
+        files.push_back(Saved { info, bytes: Arc::new(bytes) });
+        while files.len() > self.cfg.files_keep.max(1) {
+            files.pop_front();
+        }
+        ImageEvent::Done { file: name, png: Vec::new(), path: path.map(|p| p.to_string_lossy().into_owned()) }
     }
 
     fn wake(&self) {
@@ -548,6 +639,7 @@ impl Host {
             next: AtomicU64::new(1),
             salt,
             budget: Mutex::new(Instant::now()),
+            files: Mutex::new(VecDeque::new()),
         });
         let workers = (0..threads)
             .map(|i| {
@@ -563,6 +655,51 @@ impl Host {
 
     pub fn config(&self) -> &HostConfig {
         &self.shared.cfg
+    }
+
+    /// The bytes of a file a decoder made, by its name: from memory, else
+    /// from the files folder; None for an unknown or unsafe name.
+    pub fn file(&self, name: &str) -> Option<Vec<u8>> {
+        if !safe_file_name(name) {
+            return None;
+        }
+        if let Some(f) = lock(&self.shared.files).iter().find(|f| f.info.name == name) {
+            return Some(f.bytes.as_ref().clone());
+        }
+        std::fs::read(self.shared.cfg.files_dir.as_ref()?.join(name)).ok()
+    }
+
+    /// Every file it can give, oldest first: those made since it started,
+    /// then any others in the files folder (from before a restart).
+    pub fn files(&self) -> Vec<FileInfo> {
+        let mut out: Vec<FileInfo> = lock(&self.shared.files).iter().map(|f| f.info.clone()).collect();
+        if let Some(dir) = &self.shared.cfg.files_dir {
+            let mut disk: Vec<FileInfo> = std::fs::read_dir(dir)
+                .into_iter()
+                .flatten()
+                .flatten()
+                .filter_map(|e| {
+                    let name = e.file_name().into_string().ok()?;
+                    if !safe_file_name(&name) || out.iter().any(|f| f.name == name) {
+                        return None;
+                    }
+                    let md = e.metadata().ok()?;
+                    let t = md.modified().ok()?.duration_since(UNIX_EPOCH).ok()?.as_secs_f64();
+                    Some(FileInfo {
+                        name,
+                        session: String::new(),
+                        decoder: String::new(),
+                        t,
+                        size: md.len() as usize,
+                        path: Some(e.path()),
+                    })
+                })
+                .collect();
+            disk.sort_by(|a, b| a.t.total_cmp(&b.t));
+            disk.extend(out);
+            out = disk;
+        }
+        out
     }
 
     /// Start a session. `centre_hz` is where, in audio fed to an IQ-only
@@ -991,12 +1128,32 @@ fn decode(sh: &Shared, s: &Session, work: &mut Work, blocks: Vec<Block>) {
             Vec::new()
         } else {
             let mut items = Vec::new();
+            // Files kept in this block: (the decoder's name, the host's).
+            let mut renamed: Vec<(String, String)> = Vec::new();
             for (t, out) in sink.take() {
                 match out {
                     // Sound goes to its own ring, not the results.
                     Output::Audio { pcm, rate, channels } => lock(&s.audio).push(t, pcm, rate, channels),
-                    other => {
-                        if let Output::Meta { fields } = &other {
+                    // A file: kept (and written) here; the result names it.
+                    Output::Image { event: ImageEvent::Done { file, png, .. } } => {
+                        let event = sh.keep_file(s, t, &file, png);
+                        if let ImageEvent::Done { file: kept, .. } = &event {
+                            renamed.push((file, kept.clone()));
+                        }
+                        c.rev += 1;
+                        items.push(Item { session: s.id.clone(), rev: c.rev, t, body: Body::Output(Output::Image { event }) });
+                    }
+                    mut other => {
+                        if let Output::Meta { fields } = &mut other {
+                            // A meta naming a file just handed over names it
+                            // as the host keeps it, so a client can fetch it.
+                            for (k, v) in fields.iter_mut() {
+                                if let (true, Value::Text(name)) = (k == "file", &*v) {
+                                    if let Some((_, kept)) = renamed.iter().find(|(from, _)| from == name) {
+                                        *v = Value::Text(kept.clone());
+                                    }
+                                }
+                            }
                             c.meta = Some(fields.clone());
                         }
                         c.rev += 1;

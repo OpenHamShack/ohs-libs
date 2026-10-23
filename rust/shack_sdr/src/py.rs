@@ -128,9 +128,10 @@ fn item_py<'py>(py: Python<'py>, it: &Item) -> PyResult<Bound<'py, PyDict>> {
                             d.set_item("from", *from)?;
                             d.set_item("rgb", PyBytes::new(py, rgb))?;
                         }
-                        ImageEvent::Done { file } => {
+                        ImageEvent::Done { file, path, .. } => {
                             d.set_item("event", "done")?;
                             d.set_item("file", file)?;
+                            d.set_item("path", path.as_deref())?;
                         }
                     }
                 }
@@ -244,11 +245,52 @@ struct PyHost {
 #[pymethods]
 impl PyHost {
     #[new]
-    #[pyo3(signature = (threads=1, cpu_max=0.25, ring_s=2.0, max_sessions=17, testing=false))]
-    fn new(threads: usize, cpu_max: f64, ring_s: f64, max_sessions: usize, testing: bool) -> Self {
+    #[pyo3(signature = (threads=1, cpu_max=0.25, ring_s=2.0, max_sessions=17, testing=false, files_dir=None, files_keep=16))]
+    #[allow(clippy::too_many_arguments)]
+    fn new(
+        threads: usize,
+        cpu_max: f64,
+        ring_s: f64,
+        max_sessions: usize,
+        testing: bool,
+        files_dir: Option<std::path::PathBuf>,
+        files_keep: usize,
+    ) -> Self {
         PyHost {
-            inner: Host::new(HostConfig { threads, cpu_max, ring_s, max_sessions, testing, ..Default::default() }),
+            inner: Host::new(HostConfig {
+                threads,
+                cpu_max,
+                ring_s,
+                max_sessions,
+                testing,
+                files_dir,
+                files_keep,
+                ..Default::default()
+            }),
         }
+    }
+
+    /// A decoder's file by name (`api/decoders/files?id=`), or None.
+    fn file<'py>(&self, py: Python<'py>, name: &str) -> Option<Bound<'py, PyBytes>> {
+        self.inner.file(name).map(|b| PyBytes::new(py, &b))
+    }
+
+    /// [{"name", "session", "decoder", "t", "size", "path"}], oldest first.
+    fn files<'py>(&self, py: Python<'py>) -> PyResult<Vec<Bound<'py, PyDict>>> {
+        self.inner
+            .files()
+            .into_iter()
+            .map(|f| {
+                let d = PyDict::new(py);
+                d.set_item("name", f.name)?;
+                d.set_item("session", f.session)?;
+                d.set_item("decoder", f.decoder)?;
+                d.set_item("t", f.t)?;
+                d.set_item("size", f.size)?;
+                d.set_item("path", f.path.map(|p| p.to_string_lossy().into_owned()))?;
+                Ok(d)
+            })
+            .collect()
     }
 
     #[pyo3(signature = (decoder, params=None, input="iq", rate=12_000.0, center_hz=0.0, pinned=false))]
@@ -579,6 +621,5 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(dab_blocks, m)?)?;
     m.add_function(wrap_pyfunction!(dab_survey, m)?)?;
     crate::wfm::py::register(m)?;
-    crate::psk::py::register(m)?;
     Ok(())
 }

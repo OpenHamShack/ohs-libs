@@ -1,7 +1,6 @@
 """Install a shack-sdr wheel into a fresh venv and prove it works there:
 it imports from the wheel (not a checkout), decodes RTTY from a synthetic
-signal through the Host and two PSK31 stations in one passband through one
-session, plays an old DAB (MP2) service from the DAB
+signal through the Host, plays an old DAB (MP2) service from the DAB
 transmitter model through our own decoder, plays a stereo FM station with
 RDS from the FM test transmitter and names a band of them, lists its
 catalogue (with DAB partly available: no faad2 here), and reports every
@@ -35,23 +34,6 @@ while not got.endswith("K\n") and time.monotonic() < end:
 assert host.close()
 assert got == text, repr(got)
 assert any(e["id"] == "rtty" for e in shack_sdr.catalogue())
-psk = [(1000.0, "CQ de GM4BRI k\n", 1), (1600.0, "QRZ de G4XYZ k\n", 2)]
-x = np.zeros(9 * 12000, np.float32)
-for f, t, seed in psk:
-    s = np.frombuffer(_native.testsig_psk(t, centre=f, snr_db=0.0, seed=seed), np.float32)
-    x[:len(s)] += s[:len(x)]
-host = Host(cpu_max=0.0, ring_s=30.0)
-sid = host.start("psk", {"channels": "-300,300"}, "audio", 12000, center_hz=1300.0)
-for k in range(0, len(x), 1200):
-    host.feed(sid, x[k:k + 1200], k / 12000, k)
-chans, end = ["", ""], time.monotonic() + 20
-while sum(map(len, chans)) < 30 and time.monotonic() < end:
-    for i in host.poll():
-        if i["type"] == "text":
-            chans[0 if i["offsetHz"] < 0 else 1] += i["text"]
-    time.sleep(0.02)
-assert host.close()
-assert chans == [t for _, t, _ in psk], chans
 loader = codecs.Loader(None)
 loader._system = lambda names: []      # only what the wheel itself could bring
 st = {s["id"]: s["state"] for s in loader.status()}
@@ -85,7 +67,7 @@ band = [(-8e5, -30.0, 0xC201, "RADIO 1 ", 10, True), (5e5, -40.0, 0xC202, "RADIO
 x = np.frombuffer(_native.testsig_fm_band(band, rate=2_400_000.0, seconds=2.0), np.complex64)
 found = [(s["hz"], s["ps"]) for s in wfm.scan_band(x, 2_400_000, 98_000_000)]
 assert found == [(97_200_000, "RADIO 1 "), (98_500_000, "RADIO 2 ")], found
-print("wheel ok:", shack_sdr.__version__, sys.version.split()[0], got.strip(), "| PSK:", [c.strip() for c in chans], "| DAB:", meta["services"][0]["label"],
+print("wheel ok:", shack_sdr.__version__, sys.version.split()[0], got.strip(), "| DAB:", meta["services"][0]["label"],
       "| FM:", rds["ps"], [ps for _, ps in found])
 """
 

@@ -292,11 +292,19 @@ pub fn check_params(params: &Params, specs: &[ParamSpec]) -> Result<(), DecodeEr
 
 pub type Fields = Vec<(String, Value)>;
 
+/// A picture as it arrives. `Start`'s `format` is the pixel layout of
+/// `Lines`' `rgb` ("rgb": 3 bytes a pixel, rows top down); `Lines` may send
+/// rows again (a decoder that straightens a picture when it ends re-sends
+/// what moved). `Done` carries the finished file: the decoder names it
+/// (`file`, no directory) and hands over its bytes (`png`), and the host
+/// keeps it for `api/decoders/files` (host.rs `file`), writes it to its
+/// files folder if it has one (`path`), and passes the event on without
+/// the bytes. Decoders never touch the filesystem.
 #[derive(Clone, Debug, PartialEq)]
 pub enum ImageEvent {
     Start { width: u32, height: u32, format: &'static str },
     Lines { from: u32, rgb: Vec<u8> },
-    Done { file: String },
+    Done { file: String, png: Vec<u8>, path: Option<String> },
 }
 
 /// What a decoder produces. Five kinds cover every family in the plan.
