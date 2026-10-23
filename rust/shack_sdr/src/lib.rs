@@ -6,6 +6,7 @@
 //! - `host`: sessions on worker threads, bounded rings, the CPU budget (§3.4-3.5).
 //! - `catalogue`: every decoder kind this build has.
 //! - `rtty`: the first decoder (§8.1 item 6).
+//! - `psk`: PSK31, PSK63 and PSK125 (§8.5 M2).
 //! - `codecs`: the runtime codec loader (§5).
 //! - `testsig`: test signals and channel models, bit-identical everywhere (§7.1).
 //! - `dsp`: the small pieces the decoders share.
@@ -19,6 +20,7 @@ pub mod decoder;
 pub mod dsp;
 pub mod host;
 pub mod mp2;
+pub mod psk;
 pub mod rtty;
 pub mod testsig;
 pub mod wfm;

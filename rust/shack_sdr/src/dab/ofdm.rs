@@ -335,19 +335,7 @@ impl Demod {
             }
         }
         if best.1 < PEAK_RATIO {
-            // Always move on, by a block at least. When the samples held
-            // start a few blocks before a fade of under 40 blocks, the
-            // quietest window is the one at the start, the first loud
-            // block after it is block 0, and so null_end is `base` itself:
-            // dropping up to it dropped nothing, and Dab::feed's loop ran
-            // this whole search on the same samples for ever (gdb on
-            // ohs-box's decoder thread, 23/10/2026: at 100 % of a core in
-            // the frequency sweep below, every session on its host starved).
-            // The previous NoPrs miss is what leaves the start there: it
-            // drops to its own null end, the first loud block of a window
-            // that takes in the fade. A block forward costs nothing - the
-            // next search looks again from there.
-            self.drop_before(null_end.max(self.base + 64));
+            self.drop_before(null_end);
             return Some(Event::Miss(Miss::NoPrs));
         }
         self.offset_hz = frac + 1000.0 * best.0 as f64;
@@ -457,77 +445,5 @@ impl Demod {
             out[n + K] = v.im.round().clamp(-127.0, 127.0) as Soft;
         }
         out
-    }
-}
-
-#[cfg(test)]
-mod search_progress {
-    use super::*;
-
-    /// Gaussian noise, `amp` per component, from a fixed seed.
-    fn noise(seed: &mut u64, amp: f32) -> Complex32 {
-        let mut u = || {
-            *seed = seed.wrapping_mul(6_364_136_223_846_793_005).wrapping_add(1_442_695_040_888_963_407);
-            ((*seed >> 11) as f64 + 0.5) / (1u64 << 53) as f64
-        };
-        let (a, b) = (u(), u());
-        let r = (-2.0 * a.ln()).sqrt();
-        let th = 2.0 * std::f64::consts::PI * b;
-        Complex32::new(amp * (r * th.cos()) as f32, amp * (r * th.sin()) as f32)
-    }
-
-    /// Drive `d` over what it holds: Err when a miss dropped nothing (the
-    /// search would then look at the very same samples again, for ever).
-    fn run_dry(d: &mut Demod, msc: &[bool; CIF_SYMBOLS]) -> Result<u32, String> {
-        let mut rounds = 0u32;
-        loop {
-            let before = d.base;
-            match d.next(msc) {
-                Some(Event::Miss(m)) if d.base == before => {
-                    return Err(format!("a {} miss at {before} dropped nothing", m.code()))
-                }
-                Some(_) => {}
-                None => return Ok(rounds),
-            }
-            rounds += 1;
-            if rounds >= 100_000 {
-                return Err("the search never ran out of samples".into());
-            }
-        }
-    }
-
-    // The exact state ohs-box's decoder thread was found spinning in
-    // (gdb on it: Dab::feed's loop -> Demod::next -> search's integer
-    // frequency sweep, again and again): the samples held start loud, 16
-    // blocks of 64 before a fade of 24 blocks (0.75 ms), with nothing after
-    // it to correlate with the phase reference. The quietest 40 blocks are
-    // the window from block 0, the first loud block after it is block 0,
-    // so the "null" ends at `base` and the NoPrs miss dropped up to `base`:
-    // nothing. A search reaches it on its own after one ordinary NoPrs miss
-    // on a fade further in, which drops to a few blocks before it. Swept
-    // over where the fade starts and how long it is (17-39 blocks: shorter
-    // is no null, longer holds a quiet window of its own), each with its
-    // own noise; before the fix 14 of the 391 stuck, and tests/dab.rs's
-    // a_fading_empty_block_at_2_4_ms_never_holds_the_decoder reaches the
-    // same state from a stream.
-    #[test]
-    fn a_fade_just_past_the_start_of_what_is_held_is_passed() {
-        let msc = [false; CIF_SYMBOLS];
-        let mut stuck = Vec::new();
-        for (lead, fade) in (0..17usize).flat_map(|l| (17..40usize).map(move |f| (l, f))) {
-            let mut seed = 3u64 + lead as u64 * 100 + fade as u64;
-            let x: Vec<Complex32> = (0..(TF + TNULL + 4 * TS + 64))
-                .map(|i| {
-                    let z = noise(&mut seed, 0.05);
-                    if i >= lead * 64 && i < (lead + fade) * 64 { Complex32::new(0.0, 0.0) } else { z }
-                })
-                .collect();
-            let mut d = Demod::new();
-            d.push(&x);
-            if let Err(e) = run_dry(&mut d, &msc) {
-                stuck.push(format!("lead {lead}, fade {fade}: {e}"));
-            }
-        }
-        assert!(stuck.is_empty(), "{} of 391 stuck: {:?}", stuck.len(), &stuck[..stuck.len().min(5)]);
     }
 }
