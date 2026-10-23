@@ -307,3 +307,27 @@ fn dl_plus_from_a_real_ensemble() {
     // STV Radio, at 23:08 on 23/10/2026.
     assert_eq!(found, vec![("C756", text("Crush"), text("Jennifer Paige"))]);
 }
+
+#[test]
+fn the_showcase_ensemble_shows_everything_within_an_apps_loop() {
+    // An app's simulator replays 24 frames (2.3 s) in a loop: within two
+    // passes every slide, logo and schedule must be out.
+    let mjd = 61_337;
+    let one = dab_iq(&TxEnsemble::showcase(mjd), 24, &Channel { snr_db: None, lead_s: 0.0, ..Default::default() });
+    let iq: Vec<Complex32> = one.iter().chain(one.iter()).copied().collect();
+    for sid in ["C221", "C3A7"] {
+        let mut d = Dab::new();
+        choose(&mut d, sid);
+        let r = run(&mut d, &iq, mjd_utc(mjd, 12, 0, 0));
+        assert_eq!(r.of("slide").len(), 1, "{sid}: a slide");
+        let slide = r.of("slide")[0].2.clone().unwrap();
+        assert!(slide.starts_with(b"\x89PNG"), "a real PNG");
+        let logos: Vec<_> = r.of("logo").iter().map(|(_, f, _)| (field(f, "sid").clone(), field(f, "variant").clone())).collect();
+        assert_eq!(logos.len(), 4, "{sid}: both logos of both services: {logos:?}");
+        let m = r.metas.last().unwrap();
+        assert_eq!(get(get(service(m, sid), "now"), "name"), &text(&format!("{} Afternoon", if sid == "C221" { "Shack MP2 Tone" } else { "Shack DAB+ Data" })));
+        assert_ne!(get(service(m, sid), "pty"), &Value::Null);
+        // The whole carousel came round once: SPI rests, its cost capped.
+        assert_eq!(get(field(m, "spi"), "state"), &text("resting"));
+    }
+}

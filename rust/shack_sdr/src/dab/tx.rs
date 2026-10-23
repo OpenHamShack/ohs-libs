@@ -1035,3 +1035,80 @@ pub fn spi_pi_file(ecc: u8, eid: u16, sid: u16, programmes: &[(&str, Vec<u8>, u1
     }
     spi_node(0x02, &spi_node(0x21, &sched))
 }
+
+/// A picture that shows: horizontal bands of two colours inside a white
+/// border, as a PNG (rows repeat, so it deflates to a few hundred bytes)
+/// (sstv::png's encoder). The showcase's slides and logos.
+pub fn showcase_png(width: u32, height: u32, a: [u8; 3], b: [u8; 3]) -> Vec<u8> {
+    let mut rgb = Vec::with_capacity((width * height * 3) as usize);
+    for y in 0..height {
+        for x in 0..width {
+            let edge = x < 4 || y < 4 || x + 4 >= width || y + 4 >= height;
+            let band = y / (height / 4).max(1) % 2 == 0;
+            rgb.extend(if edge { [255, 255, 255] } else if band { a } else { b });
+        }
+    }
+    crate::sstv::png::encode(&rgb, width, height)
+}
+
+impl TxEnsemble {
+    /// The standard ensemble with everything the data side can show, for an
+    /// app's simulator: a PNG slide in each service's X-PAD, programme
+    /// types, languages, country and DL Plus in the FIC and PAD, and a 32
+    /// kbit/s SPI service with both logos of each service, their service
+    /// information and a day of programmes on `mjd`, in four six-hour
+    /// programmes from 00:00 UTC.
+    pub fn showcase(mjd: u32) -> Self {
+        let (ecc, eid) = (0xe1, 0xc1ce);
+        let mut e = Self::standard();
+        let colours = [([200, 40, 40], [250, 200, 60]), ([40, 90, 200], [120, 220, 240])];
+        for (i, s) in e.services.iter_mut().enumerate() {
+            let body = showcase_png(320, 240, colours[i].0, colours[i].1);
+            let h = mot_header(
+                body.len(),
+                2,
+                3,
+                &[content_name(&format!("slide-{:04x}.png", s.sid)), mot_param(0x05, &[0, 0, 0, 0]), mot_param(0x26, b"Shack test card")],
+            );
+            s.xpad_groups = mot_header_mode(0x0100 + i as u16, &h, &body, 1024);
+        }
+        e.services[0].dls = vec![(0, "Test Card F by The Shack Band".into())];
+        e.services[0].dl_plus = vec![(1, 0, 11), (4, 15, 14)];
+        let mut objs = Vec::new();
+        let mut si = Vec::new();
+        let mut tid = 10u16;
+        for (i, s) in e.services.iter().enumerate() {
+            let mut logos = Vec::new();
+            for (w, h) in [(128u32, 128u32), (320, 240)] {
+                let name = format!("{:04x}_{w}x{h}.png", s.sid);
+                let body = showcase_png(w, h, colours[i].1, colours[i].0);
+                objs.push((tid, mot_header(body.len(), 2, 3, &[content_name(&name)]), body));
+                tid += 1;
+                logos.push((name, w as u16, h as u16));
+            }
+            si.push((s.sid, s.label.clone(), logos));
+            let progs: Vec<(String, Vec<u8>, u16, Option<String>)> = (0..4)
+                .map(|k| (format!("{} {}", s.label, ["Night", "Morning", "Afternoon", "Evening"][k]), spi_time(mjd, 6 * k as u32, 0, 0), 21_600, Some("Test tones from the Shack".to_string())))
+                .collect();
+            let progs: Vec<(&str, Vec<u8>, u16, Option<&str>)> = progs.iter().map(|p| (p.0.as_str(), p.1.clone(), p.2, p.3.as_deref())).collect();
+            let pi = spi_pi_file(ecc, eid, s.sid, &progs);
+            objs.push((tid, mot_header(pi.len(), 7, 1, &[content_name(&format!("{:04x}_pi.dat", s.sid)), mot_param(0x27, &spi_bearer(ecc, eid, s.sid))]), pi));
+            tid += 1;
+        }
+        let si: Vec<(u16, &str, Vec<(&str, u16, u16)>)> =
+            si.iter().map(|(sid, label, logos)| (*sid, label.as_str(), logos.iter().map(|l| (l.0.as_str(), l.1, l.2)).collect())).collect();
+        let si = spi_si_file(ecc, eid, &si);
+        objs.push((tid, mot_header(si.len(), 7, 0, &[content_name("si.dat")]), si));
+        let mut e2 = Self::with_data(0x007, mot_directory_mode(1, &objs, 512));
+        e2.data[0].protection = Protection::Eep { option: 0, level: 3, size: 24 };
+        e2.services = e.services;
+        e2.figs = vec![
+            fig(0, vec![0x0d, 0xc2, 0x21, 0x01, 0x00, 0x42, 0x0c, 0x3c]),
+            fig(0, vec![0x0d, 0xc3, 0xa7, 0x01, 0x00, 0x42, 0x0c, 0x3c]),
+            fig(0, vec![0x11, 0xc2, 0x21, 0x00, 0x0a, 0xc3, 0xa7, 0x00, 0x09]),
+            fig(0, vec![0x05, 0x01, 0x09, 0x02, 0x09]),
+            fig(0, vec![0x09, 0x00, ecc, 0x01]),
+        ];
+        e2
+    }
+}

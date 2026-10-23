@@ -480,9 +480,12 @@ fn testsig_rtty<'py>(
 /// `sites`, a list of (main, sub, delay_us, gain_db), makes it a
 /// single-frequency network of transmitters sending those TII codes
 /// (dab::tx::sfn_iq); `eid` replaces the test ensemble's identifier, so an
-/// app can be tested against a real network's.
+/// app can be tested against a real network's. With `showcase_mjd` (a
+/// Modified Julian Date) the ensemble also carries everything the data
+/// side shows (TxEnsemble::showcase): slides, an SPI service with logos
+/// and that day's programmes, genres and DL Plus.
 #[pyfunction]
-#[pyo3(signature = (frames=10, snr_db=None, offset_hz=0.0, rate=2_048_000.0, clock_ppm=0.0, echo_us=0.0, echo_db=-6.0, seed=1, sites=None, eid=None))]
+#[pyo3(signature = (frames=10, snr_db=None, offset_hz=0.0, rate=2_048_000.0, clock_ppm=0.0, echo_us=0.0, echo_db=-6.0, seed=1, sites=None, eid=None, showcase_mjd=None))]
 #[allow(clippy::too_many_arguments)]
 fn testsig_dab<'py>(
     py: Python<'py>,
@@ -496,6 +499,7 @@ fn testsig_dab<'py>(
     seed: u64,
     sites: Option<Vec<(u8, u8, f64, f64)>>,
     eid: Option<u16>,
+    showcase_mjd: Option<u32>,
 ) -> PyResult<Bound<'py, PyBytes>> {
     use crate::dab::tx::{sfn_iq, Channel, Path, Site, TxEnsemble};
     let sites: Vec<Site> = match sites {
@@ -510,7 +514,7 @@ fn testsig_dab<'py>(
             })
             .collect::<PyResult<_>>()?,
     };
-    let mut ensemble = TxEnsemble::standard();
+    let mut ensemble = showcase_mjd.map(TxEnsemble::showcase).unwrap_or_else(TxEnsemble::standard);
     if let Some(e) = eid {
         ensemble.eid = e;
     }
