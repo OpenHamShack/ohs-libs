@@ -15,6 +15,10 @@ fn rtty() -> Box<dyn Decoder> {
     Box::new(crate::rtty::Rtty::new())
 }
 
+fn psk() -> Box<dyn Decoder> {
+    Box::new(crate::psk::Psk::new())
+}
+
 fn dab() -> Box<dyn Decoder> {
     Box::new(crate::dab::Dab::new())
 }
@@ -32,6 +36,7 @@ fn wfm() -> Box<dyn Decoder> {
 pub fn kinds() -> Vec<Kind> {
     vec![
         Kind { info: &crate::rtty::INFO, make: rtty },
+        Kind { info: &crate::psk::INFO, make: psk },
         Kind { info: &crate::dab::INFO, make: dab },
         Kind { info: &crate::wfm::decoder::INFO, make: wfm },
         Kind { info: &crate::sstv::INFO, make: sstv },

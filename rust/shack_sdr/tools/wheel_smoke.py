@@ -1,6 +1,7 @@
 """Install a shack-sdr wheel into a fresh venv and prove it works there:
 it imports from the wheel (not a checkout), decodes RTTY from a synthetic
-signal through the Host, plays an old DAB (MP2) service from the DAB
+signal through the Host and two PSK31 stations in one passband through one
+session, plays an old DAB (MP2) service from the DAB
 transmitter model through our own decoder, plays a stereo FM station with
 RDS from the FM test transmitter and names a band of them, receives an
 SSTV picture (Robot 36) whole and straight with its PNG kept, lists its
@@ -35,6 +36,23 @@ while not got.endswith("K\n") and time.monotonic() < end:
 assert host.close()
 assert got == text, repr(got)
 assert any(e["id"] == "rtty" for e in shack_sdr.catalogue())
+psk = [(1000.0, "CQ de GM4BRI k\n", 1), (1600.0, "QRZ de G4XYZ k\n", 2)]
+x = np.zeros(9 * 12000, np.float32)
+for f, t, seed in psk:
+    s = np.frombuffer(_native.testsig_psk(t, centre=f, snr_db=0.0, seed=seed), np.float32)
+    x[:len(s)] += s[:len(x)]
+host = Host(cpu_max=0.0, ring_s=30.0)
+sid = host.start("psk", {"channels": "-300,300"}, "audio", 12000, center_hz=1300.0)
+for k in range(0, len(x), 1200):
+    host.feed(sid, x[k:k + 1200], k / 12000, k)
+chans, end = ["", ""], time.monotonic() + 20
+while sum(map(len, chans)) < 30 and time.monotonic() < end:
+    for i in host.poll():
+        if i["type"] == "text":
+            chans[0 if i["offsetHz"] < 0 else 1] += i["text"]
+    time.sleep(0.02)
+assert host.close()
+assert chans == [t for _, t, _ in psk], chans
 loader = codecs.Loader(None)
 loader._system = lambda names: []      # only what the wheel itself could bring
 st = {s["id"]: s["state"] for s in loader.status()}
@@ -82,7 +100,8 @@ pic = sstv.png_rgb(host.file(done[0]["file"]))
 assert host.close()
 sc = sstv.score(sent, pic)
 assert sc["inSync"] == 1.0 and sc["psnr"] > 18.0, sc
-print("wheel ok:", shack_sdr.__version__, sys.version.split()[0], got.strip(), "| DAB:", meta["services"][0]["label"],
+print("wheel ok:", shack_sdr.__version__, sys.version.split()[0], got.strip(), "| PSK:", [c.strip() for c in chans],
+      "| DAB:", meta["services"][0]["label"],
       "| FM:", rds["ps"], [ps for _, ps in found], "| SSTV: robot36 %.1f dB" % sc["psnr"])
 """
 
