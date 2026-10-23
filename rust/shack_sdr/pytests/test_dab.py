@@ -252,3 +252,26 @@ def test_the_feed_carries_the_playing_services_programme_text(no_faad):
         feed(host, sid, iq(16))
         st = wait(host, sid, lambda s: s["meta"] and s["meta"].get("dls"))
         assert st["meta"]["dls"] == "DAB+ test AUs from the Shack transmitter model"
+
+
+def test_the_feed_names_the_transmitters_heard(no_faad):
+    # Two transmitters of a single-frequency network (TII 62/7 and 5/12,
+    # the second 6 dB down and 150 us later) under the ensemble id given.
+    x = iq(40, sites=[(62, 7, 0.0, 0.0), (5, 12, 150.0, -6.0)], eid=0xCE15)
+    with Host(cpu_max=0.0) as host:
+        sid = host.start("dab", {}, "iq", dab.IQ_RATE)
+        # Paced, as a receiver would feed it: the list needs 32 frames in
+        # a row, and a host fed faster than it decodes drops samples.
+        block = int(dab.IQ_RATE / 10)
+        for k in range(0, len(x), block):
+            host.feed(sid, x[k:k + block], 100.0 + k / dab.IQ_RATE, k)
+            time.sleep(0.03)
+        st = wait(host, sid, lambda s: s["meta"] and len(s["meta"].get("tii") or []) == 2)
+        assert st["stats"]["dropped"] == 0
+        meta = st["meta"]
+        assert meta["ensemble"]["id"] == "CE15"
+        assert [(t["main"], t["sub"]) for t in meta["tii"]] == [(62, 7), (5, 12)]
+        assert -2.5 < meta["tii"][0]["levelDb"] < 0.5 and -8.5 < meta["tii"][1]["levelDb"] < -5.5
+        assert all(0.0 <= t["confidence"] <= 1.0 for t in meta["tii"])
+    with pytest.raises(ValueError):
+        iq(2, sites=[(70, 0, 0.0, 0.0)])

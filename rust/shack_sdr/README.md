@@ -239,7 +239,9 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
                  "kind": "dab+", "subchannel": 2, "protection": "3-A",
                  "why": "needs_codec:faad2", "needs": ["faad2"]}],
    "playing": "C221", "why": null, "audio": {"codec": "mp2"}, "block": "11D",
-   "dls": "Shack MP2 Tone - now: 1 kHz left, 1.5 kHz right", "complete": true}
+   "dls": "Shack MP2 Tone - now: 1 kHz left, 1.5 kHz right", "complete": true,
+   "tii": [{"main": 62, "sub": 7, "levelDb": -1.0, "confidence": 1.0},
+           {"main": 5, "sub": 12, "levelDb": -7.0, "confidence": 1.0}]}
   ```
 
   `ensemble` is null and `services` empty until heard; `sync` is true
@@ -249,6 +251,22 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
   says the ensemble's label and every service's label and bit rate are
   known. `audio.codec` is `mp2`, `he-aac`, `he-aac-v2`
   or `aac-lc`.
+- **Transmitters heard (`tii`)**, strongest first: each transmitter's TII
+  (EN 300 401 §14.8, mode I) from the null symbols, `main` 0-69 and `sub`
+  0-23 as numbers (Ofcom's list writes both in hex: "3E"/"07" is 62/7;
+  with the ensemble's `id` they name the site), `levelDb` its share of the
+  received power (0 for a lone transmitter, about -3 each for two equal
+  ones; to 0.5 dB) and `confidence` 0-1 (to 0.1; two transmitters sharing
+  one sub-identifier are a fit, at most 0.7). Empty until about 3 s after
+  the lock, then looked at every 3 s, from about 3 s of averaging; a gap
+  in the samples keeps the last list, a retune or no DAB clears it.
+  Several transmitters of a single-frequency network are listed (up to
+  12); one 20 dB under the strongest, or 300 us late, is still found. On
+  the transmitter model it costs 16 us of CPU per 96 ms frame (one FFT
+  more and the averaging), and nothing it lists was not sent, from 4 dB
+  SNR to 40. The SNR is read from the empty nulls, so TII does not lower
+  it. `_native.testsig_dab(..., sites=[(main, sub, delay_us, gain_db)],
+  eid=0xCE15)` makes such a network for an app's tests.
 - **Codes** (`why`, the feed's and a service's; the app words them, and
   these are the sentences suggested for Radio's catalogue):
 

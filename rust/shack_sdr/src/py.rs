@@ -477,8 +477,12 @@ fn testsig_rtty<'py>(
 /// test ensemble (an MP2 service C221 and a DAB+ service C3A7) as complex64
 /// bytes at `rate`, through a channel of `snr_db` (None: clean),
 /// `offset_hz`, `clock_ppm` and an echo of `echo_db` at `echo_us`.
+/// `sites`, a list of (main, sub, delay_us, gain_db), makes it a
+/// single-frequency network of transmitters sending those TII codes
+/// (dab::tx::sfn_iq); `eid` replaces the test ensemble's identifier, so an
+/// app can be tested against a real network's.
 #[pyfunction]
-#[pyo3(signature = (frames=10, snr_db=None, offset_hz=0.0, rate=2_048_000.0, clock_ppm=0.0, echo_us=0.0, echo_db=-6.0, seed=1))]
+#[pyo3(signature = (frames=10, snr_db=None, offset_hz=0.0, rate=2_048_000.0, clock_ppm=0.0, echo_us=0.0, echo_db=-6.0, seed=1, sites=None, eid=None))]
 #[allow(clippy::too_many_arguments)]
 fn testsig_dab<'py>(
     py: Python<'py>,
@@ -490,8 +494,26 @@ fn testsig_dab<'py>(
     echo_us: f64,
     echo_db: f64,
     seed: u64,
+    sites: Option<Vec<(u8, u8, f64, f64)>>,
+    eid: Option<u16>,
 ) -> PyResult<Bound<'py, PyBytes>> {
-    use crate::dab::tx::{dab_iq, Channel, Path, TxEnsemble};
+    use crate::dab::tx::{sfn_iq, Channel, Path, Site, TxEnsemble};
+    let sites: Vec<Site> = match sites {
+        None => vec![Site { tii: None, delay: 0, gain: 1.0 }],
+        Some(v) => v
+            .into_iter()
+            .map(|(main, sub, delay_us, gain_db)| {
+                if crate::dab::tii::carriers(main, sub).is_none() || !(0.0..=1000.0).contains(&delay_us) {
+                    return Err(PyValueError::new_err("a site is (main 0-69, sub 0-23, delay_us 0-1000, gain_db)"));
+                }
+                Ok(Site { tii: Some((main, sub)), delay: (delay_us * 2.048).round() as usize, gain: 10f64.powf(gain_db / 20.0) })
+            })
+            .collect::<PyResult<_>>()?,
+    };
+    let mut ensemble = TxEnsemble::standard();
+    if let Some(e) = eid {
+        ensemble.eid = e;
+    }
     if !(rate >= 2_048_000.0 && rate <= 10_000_000.0) || frames > 400 {
         return Err(PyValueError::new_err("rate 2.048-10 MS/s, at most 400 frames"));
     }
@@ -505,7 +527,7 @@ fn testsig_dab<'py>(
     };
     let ch = Channel { snr_db, offset_hz, rate, clock_ppm, paths, seed, ..Default::default() };
     let bytes: Vec<u8> = py.detach(|| {
-        dab_iq(&TxEnsemble::standard(), frames, &ch)
+        sfn_iq(&ensemble, &sites, frames, &ch)
             .iter()
             .flat_map(|z| z.re.to_le_bytes().into_iter().chain(z.im.to_le_bytes()))
             .collect()
