@@ -315,7 +315,7 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
   decoding costs a second sub-channel**, so it runs only while a service
   plays (never in `survey` or a listing-only session), only for an SPI
   sub-channel of 64 kbit/s or less, and for 10 minutes of signal before
-  resting 30 (sooner once every audio service has its logo); measured on
+  resting 30 (sooner once the whole carousel has come round once); measured on
   the transmitter model, 6 ms of thread time per 4.8 s for a 16 kbit/s
   carousel (`spiCpuMs`; the extra OFDM symbols are not in that count).
 - **Codes** (`why`, the feed's and a service's; the app words them, and

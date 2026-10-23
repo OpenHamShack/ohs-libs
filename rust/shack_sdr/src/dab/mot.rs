@@ -292,6 +292,12 @@ impl MotDecoder {
         self.directory.as_ref().map(|d| &d.1)
     }
 
+    /// Has every object the directory lists been handed over (or refused)
+    /// since it arrived: the carousel received once round.
+    pub fn carousel_complete(&self) -> bool {
+        self.directory.as_ref().is_some_and(|d| !d.1.is_empty() && d.1.keys().all(|&tid| self.is_done(tid)))
+    }
+
     /// Bytes held now (segments being assembled).
     pub fn held(&self) -> usize {
         self.open.values().map(|a| a.body.bytes + a.header_segs.bytes).sum::<usize>()

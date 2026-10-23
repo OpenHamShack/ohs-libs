@@ -40,7 +40,7 @@
 //! **SPI costs a second sub-channel's decoding**, so it runs only while a
 //! service plays, only for an SPI sub-channel of SPI_MAX_KBPS or less, and
 //! for at most SPI_ON_S of sample time before resting SPI_REST_S (sooner
-//! once every audio service has its logo); its thread time is counted
+//! once the whole carousel has come round once); its thread time is counted
 //! (`spiCpuMs`). The band scan's `survey` never decodes it.
 //!
 //! **Codes** (`why`, the app words them): `no_signal` (no null symbol: no
@@ -365,9 +365,8 @@ impl Dab {
         let resting = self.spi_rest_until.is_some_and(|u| t < u);
         if self.player.is_some() && spi.is_some() && !resting {
             let since = *self.spi_since.get_or_insert(t);
-            let audio: Vec<u32> = self.ens.services.values().filter(|s| s.audio().is_some()).map(|s| s.sid).collect();
-            let all = !audio.is_empty() && audio.iter().all(|&sid| self.spi.has_logo(sid));
-            if t - since > SPI_ON_S || (all && self.spi.si_files > 0) {
+            let round = self.pipes.iter().any(|d| d.purpose == Purpose::Spi && d.mot.carousel_complete());
+            if t - since > SPI_ON_S || round {
                 self.spi_rest_until = Some(t + SPI_REST_S);
                 self.spi_since = None;
             } else if let Some((_, pc)) = spi {

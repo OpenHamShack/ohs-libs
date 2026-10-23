@@ -424,6 +424,9 @@ pub struct PadEncoder {
     mot: std::collections::VecDeque<Vec<u8>>,
     mot_subfield: usize,
     mot_sent: usize,
+    /// Whether this frame's turn is the label's: with both to send, frames
+    /// alternate, so a carousel never starves the label.
+    label_turn: bool,
     message: Vec<u8>,
     toggle: bool,
     /// The data groups of the message's segments, and where we are in them.
@@ -441,6 +444,7 @@ impl PadEncoder {
             mot: Default::default(),
             mot_subfield: 0,
             mot_sent: 0,
+            label_turn: false,
             message: Vec::new(),
             toggle: false,
             groups: Vec::new(),
@@ -554,7 +558,8 @@ impl PadEncoder {
 
     /// This frame's X-PAD (in the order sent: reversed) and F-PAD.
     pub fn frame(&mut self) -> (Vec<u8>, [u8; 2]) {
-        if !self.short {
+        self.label_turn = !self.label_turn && !self.groups.is_empty();
+        if !self.short && !self.label_turn {
             if let Some(x) = self.mot_frame() {
                 return (x.into_iter().rev().collect(), [2 << 4, 2]);
             }

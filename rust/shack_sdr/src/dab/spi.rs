@@ -340,11 +340,6 @@ impl Spi {
         Self::default()
     }
 
-    /// Have we a logo for this service yet?
-    pub fn has_logo(&self, sid: u32) -> bool {
-        self.sent.keys().any(|k| k.0 == sid)
-    }
-
     /// One whole object from the carousel; `services` are the ensemble's
     /// SIds (for the fallback by name), `dir` the carousel's directory.
     pub fn push(&mut self, obj: &MotObject, services: &[u32], dir: Option<&BTreeMap<u16, mot::Header>>) -> Vec<SpiEvent> {
