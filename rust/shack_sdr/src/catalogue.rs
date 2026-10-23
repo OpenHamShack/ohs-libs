@@ -15,10 +15,14 @@ fn rtty() -> Box<dyn Decoder> {
     Box::new(crate::rtty::Rtty::new())
 }
 
+fn dab() -> Box<dyn Decoder> {
+    Box::new(crate::dab::Dab::new())
+}
+
 /// The decoders users can start. Test decoders (host::testing) are added
 /// only to a host made for tests.
 pub fn kinds() -> Vec<Kind> {
-    vec![Kind { info: &crate::rtty::INFO, make: rtty }]
+    vec![Kind { info: &crate::rtty::INFO, make: rtty }, Kind { info: &crate::dab::INFO, make: dab }]
 }
 
 pub fn find(id: &str, testing: bool) -> Option<Kind> {

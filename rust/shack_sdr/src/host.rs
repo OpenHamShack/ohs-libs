@@ -740,12 +740,18 @@ impl Host {
         let s = self.session(id)?;
         check_params(&params, s.kind.info.params).map_err(|e| HostError::BadParams(e.code()))?;
         let merged = {
-            let mut p = lock(&s.params);
+            let p = lock(&s.params);
+            let mut m = p.clone();
             for (k, v) in params.0 {
-                p.0.insert(k, v);
+                m.0.insert(k, v);
             }
-            p.clone()
+            m
         };
+        // What only the decoder can judge (a DAB SId that is not hex) is
+        // judged now, by a fresh one, so the refusal is the caller's and not
+        // lost on the worker.
+        (s.kind.make)().configure(&merged).map_err(|e| HostError::BadParams(e.code()))?;
+        *lock(&s.params) = merged.clone();
         *lock(&s.pending) = Some(merged);
         self.shared.wake();
         Ok(())

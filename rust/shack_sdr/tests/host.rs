@@ -322,3 +322,20 @@ fn configure_is_checked_at_once_and_applied_live() {
     assert!(meta.iter().any(|(k, v)| k == "name" && *v == Value::Text("b".into())), "{meta:?}");
 }
 
+
+#[test]
+fn iq_below_a_decoders_minimum_rate_is_refused() {
+    // DAB's OFDM needs 2.048 MS/s or more (its catalogue entry says so).
+    let h = Host::new(HostConfig::default());
+    assert_eq!(h.start("dab", Params::new(), InputKind::Iq, 1_536_000.0, 0.0, false), Err(HostError::BadInput("rate")));
+}
+
+#[test]
+fn a_parameter_only_the_decoder_can_judge_is_refused_at_once() {
+    let h = Host::new(HostConfig::default());
+    let sid = h.start("dab", Params::new(), InputKind::Iq, 2_048_000.0, 0.0, false).unwrap();
+    assert_eq!(h.configure(&sid, Params::new().with("service", Value::Text("not hex".into()))), Err(HostError::BadParams("bad_param")));
+    assert_eq!(h.configure(&sid, Params::new().with("block", Value::Text("99Z".into()))), Err(HostError::BadParams("bad_param")));
+    h.configure(&sid, Params::new().with("service", Value::Text("c221".into()))).unwrap();
+    assert_eq!(h.status(&sid).unwrap().params.text("service"), Some("c221"));
+}

@@ -5,7 +5,7 @@
 //! is lowest until the frame is full: no psychoacoustic model, which only
 //! decides what is audible, not whether the stream is valid.
 
-use super::tables::{self, QUANT_BITS, QUANT_STEPS, TABLES};
+use super::tables::{self, QUANT_BITS, QUANT_STEPS};
 use super::{crc_bits, layout, Header};
 
 /// The analysis filter bank of one channel.
