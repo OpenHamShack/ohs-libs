@@ -224,12 +224,12 @@ fn info_py<'py>(py: Python<'py>, i: &Info) -> PyResult<Bound<'py, PyDict>> {
 /// A read-only view of a float32 buffer, its pointer usable with the GIL
 /// released: the exporter (a numpy array) cannot resize or free its memory
 /// while the view is held, and the view outlives the use.
-struct View {
-    ptr: usize,
-    len: usize,
+pub(crate) struct View {
+    pub(crate) ptr: usize,
+    pub(crate) len: usize,
 }
 
-fn view(buf: &PyBuffer<f32>) -> PyResult<View> {
+pub(crate) fn view(buf: &PyBuffer<f32>) -> PyResult<View> {
     if !buf.is_c_contiguous() {
         return Err(PyValueError::new_err("samples must be contiguous"));
     }
@@ -578,5 +578,6 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(testsig_dab, m)?)?;
     m.add_function(wrap_pyfunction!(dab_blocks, m)?)?;
     m.add_function(wrap_pyfunction!(dab_survey, m)?)?;
+    crate::wfm::py::register(m)?;
     Ok(())
 }

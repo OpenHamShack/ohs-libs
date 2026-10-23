@@ -20,5 +20,8 @@ pub mod scan;
 pub mod receiver;
 pub mod tx;
 
+#[cfg(feature = "python")]
+pub(crate) mod py;
+
 pub use receiver::{Config, ConfigError, Status, WfmReceiver};
 pub use scan::{scan, Found, ScanOptions, ScanReport};

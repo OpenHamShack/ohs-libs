@@ -1,0 +1,133 @@
+# English template for the shack-sdr domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-sdr\n"
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Alarm"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Alarm test"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Children's programmes"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Country music"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Culture"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Current affairs"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Documentary"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Drama"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Easy listening"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Education"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Finance"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Folk music"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Information"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Jazz music"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Leisure"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Light classical"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "National music"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "News"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "No programme type"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Oldies music"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Other music"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Phone-in"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Pop music"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Religion"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Rock music"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Science"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Serious classical"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Social affairs"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Sport"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Travel"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Varied"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/wfm.py
+msgid "Weather"
+msgstr ""

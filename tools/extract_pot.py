@@ -6,8 +6,9 @@ build hosts and the libraries are stdlib-only, so this does the same for
 the one pattern they use, a literal inside `_()`, plus the two catalogs
 that are not calls:
 
-- shack-client, shack-cw, shack-desktop, shack-packet, shack-pad, shack-rec, shack-rig: every `_("...")` in the package's
-  source, subpackages included. Each package has its own domain (I18N.md
+- shack-client, shack-cw, shack-desktop, shack-packet, shack-pad, shack-rec, shack-rig, shack-sdr: every `_("...")` in
+  the package's source, subpackages included (shack_sdr's Python half
+  lives beside its Rust, in rust/shack_sdr/python). Each package has its own domain (I18N.md
   §2, one domain per package), so a template lists only its own package's
   sentences.
 - shack-bandplan: every sentence template in shack_bandplan.messages.T and
@@ -46,9 +47,9 @@ def render(domain: str, entries: dict[str, list[str]]) -> str:
     return "\n".join(out)
 
 
-def underscore_entries(package: str) -> dict:
+def underscore_entries(package: str, src: Path | None = None) -> dict:
     entries: dict[str, list[str]] = {}
-    src = ROOT / "python" / package / "src" / package
+    src = src or ROOT / "python" / package / "src" / package
     for p in sorted(src.rglob("*.py")):
         tree = ast.parse(p.read_text(), str(p))
         for node in ast.walk(tree):
@@ -84,6 +85,8 @@ TARGETS = [
     *[(ROOT / "python" / pkg / "src" / pkg / "locale" / f"{pkg.replace('_', '-')}.pot", pkg.replace("_", "-"),
        lambda pkg=pkg: underscore_entries(pkg))
       for pkg in ("shack_client", "shack_cw", "shack_desktop", "shack_packet", "shack_pad", "shack_rec", "shack_rig")],
+    (ROOT / "rust" / "shack_sdr" / "python" / "shack_sdr" / "locale" / "shack-sdr.pot", "shack-sdr",
+     lambda: underscore_entries("shack_sdr", ROOT / "rust" / "shack_sdr" / "python" / "shack_sdr")),
     (ROOT / "python" / "shack_bandplan" / "src" / "shack_bandplan" / "locale" / "shack-bandplan.pot",
      "shack-bandplan", bandplan_entries),
 ]

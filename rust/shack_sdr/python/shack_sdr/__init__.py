@@ -20,6 +20,9 @@ that are already Python and work (shack_cw's CW, ohsdigi's slot modes)
 appear in the same catalogue, marked with the library that decodes them
 (`engine`), so an app and its clients see one list (catalogue.py).
 
+Broadcast FM has a stream receiver of its own for an app's receive thread
+(stereo, RDS) and the band scanner's many-carrier RDS: `shack_sdr.wfm`.
+
 Receive only by construction: nothing in this package has a transmit
 method, and it imports no radio link or rig library (a test checks).
 Every refusal is `DecoderError(code, detail)`: codes, never sentences; the
@@ -29,8 +32,8 @@ app words them from its catalog.
 from __future__ import annotations
 
 from ._native import DecoderError, __version__
-from . import codecs, dab
+from . import codecs, dab, wfm
 from .catalogue import catalogue, register
 from .host import Host
 
-__all__ = ["DecoderError", "Host", "__version__", "catalogue", "codecs", "dab", "register"]
+__all__ = ["DecoderError", "Host", "__version__", "catalogue", "codecs", "dab", "register", "wfm"]
