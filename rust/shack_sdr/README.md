@@ -294,7 +294,9 @@ host.audio(sid, rate=12_000, channels=1)   # its sound from the ring; RDS as `me
 `RtlSdrSource`, `SdrplaySource`, `cu8_to_complex`, `complex_to_cu8`, and
 `rtlsdr.availability()`, `sdrplay.availability()` (`why`
 `sdrplay_api_missing`, `host` on a controller), `RtlSdrSource.rates()`,
-`SdrplaySource.rates()`. Moved from `shack_packet.sdr`, behaviour unchanged.
+`SdrplaySource.rates()`. Moved from `shack_packet.sdr`; since 23/10/2026
+`SdrplaySource` opens an RSP exactly as SoapySDRPlay3 does (below), which
+changes what Packet's RSP hears too (the tuner's DC tracking), never its gain.
 
 **Antenna/input selection** (added for Radio, RADIO-SDR-PLAN §6):
 every source has `src.antennas()` (its input names, the first the
@@ -321,6 +323,115 @@ RSPduo tuner change is `sdrplay_api_SwapRspDuoActiveTuner` (both of
 `SdrplaySource`'s stream callbacks run the same code, because which
 tuner the API now drives can change under that call). NOT YET RUN ON AN
 RSP of any kind: see `sources/sdrplay.py`'s module docstring.
+
+### SDRplay's gain models and switches
+
+```python
+from shack_sdr.sources import SdrplaySource, sdrplay
+src = SdrplaySource(145_650_000, 2_400_000, 40.0, serial="240309F070", lna_state=4, antenna="Antenna A",
+                    gain_model="soapysdrplay3",   # or "reduction" (the default, Packet's)
+                    agc_setpoint=-30,             # dBfs, set at open whatever the gain
+                    bias_t=None, rf_notch=None, dab_notch=None, hdr=None)   # None: SDRplay's default (off)
+src.set_gain(45.0); src.set_gain(None)            # live: one Update(Tuner_Gr | Ctrl_Agc)
+src.gain_now()        # 45.0: the gain as this model reports it, from the API's structure while running
+src.gain_sense()      # {"gainIsReduction": True, "gainModel": "soapysdrplay3", "rfgrRange": [0, 27]}
+src.set_options(bias_t=True, rf_notch=False)      # live: SoapySDRPlay3's Update reason for each
+src.status()          # ...plus "gainModel", "gainIsReduction", "rfgrRange", "gRdB", "lnaState",
+                      # "options", "overloads", "overloaded", "apiGaps", "apiLost"
+sdrplay.soapy_gain_split(40.0, sdrplay.HW_RSPDX)  # (59, 1); soapy_gain_of(59, 1, hw) -> 40.0
+```
+
+- **`gain_model="reduction"`** (the default, unchanged): a number is gRdB
+  (20-59) with AGC off and the LNA at `lna_state`; None is SDRplay's AGC
+  at 50 Hz. `gain_now()` is gRdB.
+- **`gain_model="soapysdrplay3"`**: SoapySDR's overall gain under
+  SoapySDRPlay3, for a station that ran on it (Radio's `device soapy`,
+  `driver=sdrplay`). A number is split as SoapySDR's base
+  Device::setGain splits it over SoapySDRPlay3's elements, IFGR (gRdB
+  20-59) first, then RFGR (the LNA state, 0 to the model's top: 3 RSP1,
+  8 RSP2, 9 RSP1A/1B/duo, 27 RSPdx/dx R2), each truncated as its
+  `(int)value` is; both are reductions, so more is less gain. None is
+  AGC_CTRL_EN at `agc_setpoint` with gRdB and the LNA state left as they
+  were (`lna_state`, its `rfgain_sel`, at open; the last split after a
+  manual spell). `gain_now()` and `status()["gain"]` are its getGain:
+  (gRdB - 20) + LNA state. Held to the table openhamshack-nb's tests hold
+  Radio to (`pytests/test_sources.py` SOAPYSDRPLAY3_RSPDX): manual 40 is
+  gRdB 59 at LNA state 1, as on ohs-box.
+- **`gain_sense()`** gives the three fields Radio's S-meter reads
+  (`gainIsReduction`, `gainModel`, `rfgrRange`); they are in `status()`
+  too.
+- **Switches** `bias_t`, `rf_notch`, `dab_notch`, `hdr` write the field
+  and push the Update reason SoapySDRPlay3's `biasT_ctrl`,
+  `rfnotch_ctrl`, `dabnotch_ctrl`, `hdr_ctrl` do, per model (an RSPduo's
+  notch is the AM notch on Tuner 1's Hi-Z port); a model without the
+  switch ignores it, as SoapySDRPlay3 does. `status()["options"]` reads
+  back each switch the model has. Bias-T puts DC on the antenna socket:
+  leave it None unless the station's preamplifier wants it.
+
+### SDRplay: parity with SoapySDRPlay3
+
+Radio ran ohs-box's RSPdx through SoapySDRPlay3 0.5.2 (MIT,
+github.com/pothosware/SoapySDRPlay3) until store 0.1.22-beta.2, and now
+through `SdrplaySource`. With the gain mapped exactly (gRdB 59, LNA state
+1 at rxGain 40) a repeater ident still measured 28.6 dB over the noise
+against 31.8 under SoapySDRPlay3, jittering about ±1 dB within an ident
+against ±0.2. So every field SoapySDRPlay3 sets for an RSPdx at open and
+stream start was listed from its source (line numbers are 0.5.2's
+`Settings.cpp`, `Streaming.cpp`, `CMakeLists.txt`) for the case Radio
+used: `serial` and `rfgain_sel=4` its only arguments, 2.4 MS/s, Antenna
+A, manual gain 40, CF32. Radio's calls, in order (openhamshack-nb
+`ohscore/devices/soapy.py`): construct, setAntenna, setSampleRate,
+setGainMode(false), setGain(40), setupStream(CF32), activateStream, then
+setFrequency on the running stream.
+
+| Field | SoapySDRPlay3 at 2.4 MS/s | Where | shack_sdr before 23/10/2026 | Now |
+|---|---|---|---|---|
+| fsHz | 2 400 000 (rate > 2 MS/s: fs = rate) | Settings.cpp 1019-1022, 807-809 | 2 400 000 | same |
+| ifType | IF_Zero | 1019-1022, 813-815 | IF_Zero | same |
+| decimation | factor 1 = API default, so enable, factor and wideBandSignal untouched (0, 1, 0) | 818-827 | enable written 0 | same values |
+| bwType | getBwEnumForRate: BW_1_536 | 830-832, 1091-1101 | BW_1_536 fixed | `bw_for_rate`, same at 2.4 |
+| loMode | never written: LO_Auto | - | LO_Auto written | same |
+| rfHz | (uint32_t)frequency, after Init | 674-676 | float, before Init | truncated; still set before Init (one tune, not two) |
+| ppm | never written (only setFrequencyCorrection, 701-704): 0 | - | 0 | same |
+| DCenable, IQenable | API default 1, 1 (only `iqcorr_ctrl` writes them) | 1617-1626 | default | same |
+| dcOffsetTuner | **dcCal 4, speedUp 0, trackTime 63** before Init; refreshRateTime default 2048 | Streaming.cpp 359-361 | **API default: dcCal 3, trackTime 1** (9 µs of tracking every 18 ms) | **4, 0, 63** |
+| AGC (manual) | setGainMode(false): AGC_DISABLE | 515-527 | AGC_DISABLE | same |
+| AGC set point | **-30 dBfs in the constructor, whatever the gain** | 65 | -30 under AGC only, else API default -60 | **-30 always** (`agc_setpoint`) |
+| AGC (automatic) | AGC_CTRL_EN | 515-527 | AGC_50HZ | AGC_CTRL_EN under `gain_model="soapysdrplay3"` |
+| gRdB, LNA state | rfgain_sel=4 sets LNA 4 (RF_GAIN_IN_MENU is ON by default, CMakeLists 36); setGain(40) then splits IFGR, RFGR: 59, 1 | 68-76, 1590-1614, 537-565 | a private override in Radio | `gain_model="soapysdrplay3"` |
+| minGr, attack/decay, adsbMode | never written: NORMAL_MIN_GR, 0, ADSB_DECIMATION | - | default | same |
+| antennaSel (RSPdx) | ANTENNA_A, device level | 274-293 | ANTENNA_A | same |
+| rfNotchEnable, rfDabNotchEnable (RSPdx) | 0 (only `rfnotch_ctrl`, `dabnotch_ctrl`) | 1707-1763, 1764-1801 | 0, never written | options `rf_notch`, `dab_notch` |
+| hdrEnable (RSPdx) | 0 (only `hdr_ctrl`) | 1802-1826 | 0 | option `hdr` |
+| biasTEnable | 0 (only `biasT_ctrl`) | 1661-1706 | 0 | option `bias_t` |
+| extRefOutputEn (RSP2, duo) | 0 (only `extref_ctrl`) | 1635-1660 | 0 | same (not offered: no station uses it) |
+| device.tuner (not a duo) | GetDevices' own (Tuner_A) | 2100-2105 | Tuner_A if 0 | same |
+| USB mode | ISOCH (BULK only if built so; off by default) | Streaming.cpp 368-371, CMakeLists 42 | default ISOCH | same |
+| Debug | DebugEnable(Disable) | Settings.cpp 2125, Streaming.cpp 356 | not called: API default Disable | same |
+| Power overload event | **acknowledged at once, Update(Ctrl_OverloadMsgAck), detected and corrected** | Streaming.cpp 173-185 | **ignored, never acknowledged** | acknowledged; counted (`overloads`, `overloaded`) |
+| Sample format | CF32 = int16 / 32768 (native CS16, full scale 32767) | Streaming.cpp 40-44, 145-153 | / 32768 | same, bit for bit |
+| Callback buffering | copies each packet in C into 8 buffers of 65 536 samples (27 ms each); a full ring drops the packet | Streaming.cpp 101-143, SoapySDRPlay.hpp 44-46 | a numpy array per packet (about 1800 a second) under the GIL, concatenated every 50 ms | two memmoves per packet into one preallocated 50 ms block; API-side drops counted from firstSampleNum (`apiGaps`, `apiLost`) |
+
+**Differences found:** three that touch the radio - the tuner's DC
+offset tracking (SDRplay's default retracks for 9 µs every 18 ms;
+SoapySDRPlay3 tracks for 567 µs), overload events never acknowledged, and
+the AGC set point outside AGC (inert in manual) - and one in how long the
+API's thread is held per packet. All four now match.
+
+**Expected on air** (not yet run on an RSP; ohs-box is the place to check
+it): the DC tracking is the likely cause of both symptoms. A 9 µs
+correction every 18 ms (55 Hz) steps the I/Q offset 55 times a second;
+on an FM ident that is level modulation at 55 Hz and its harmonics, and
+spreading it over the channel lifts the noise measured beside it.
+Expect the ident's level to settle to SoapySDRPlay3's ±0.2 dB and the
+SNR to come back by up to the 3.2 dB missing, with the same noise floor
+in a quiet channel. The overload ack matters only on a strong signal: SDRplay's
+API asks for each overload change to be acknowledged, and what it does
+with one that never is is not documented; if `overloads` stays 0 on 2 m,
+it was not involved. If
+`apiGaps` rises above 0 the callback was losing packets, which would also
+show as clicks and a raised floor; it should stay 0 now.
+
 
 ## Building and testing
 

@@ -103,6 +103,76 @@ static int running, opened, locked, selected, open_err, ndev = 1;
 static int hwver = SDRPLAY_RSPdx_ID, cur_tuner = sdrplay_api_Tuner_A, init_count, update_count;
 static pthread_t th;
 static int token = 5;
+static unsigned int skip_next;   /* samples the next packet's number jumps by (an API-side drop) */
+static char logbuf[1 << 17];
+
+/* SDRplay's own defaults (the headers' "default:" comments), which
+   SelectDevice leaves in the structure: what a module that never writes a
+   field gets, and so what SoapySDRPlay3 left in every field it never set. */
+static void api_defaults(void) {
+    memset(&dev, 0, sizeof dev); memset(&chA, 0, sizeof chA); memset(&chB, 0, sizeof chB);
+    dev.fsFreq.fsHz = 2e6; dev.ppm = 0.0; dev.mode = sdrplay_api_ISOCH;
+    dev.rspDxParams.antennaSel = sdrplay_api_RspDx_ANTENNA_A;
+    sdrplay_api_RxChannelParamsT *chs[2] = {&chA, &chB};
+    for (int k = 0; k < 2; k++) {
+        sdrplay_api_RxChannelParamsT *c = chs[k];
+        c->tunerParams.bwType = sdrplay_api_BW_0_200; c->tunerParams.ifType = sdrplay_api_IF_Zero;
+        c->tunerParams.loMode = sdrplay_api_LO_Auto;
+        c->tunerParams.gain.gRdB = 50; c->tunerParams.gain.LNAstate = 0;
+        c->tunerParams.gain.minGr = sdrplay_api_NORMAL_MIN_GR;
+        c->tunerParams.rfFreq.rfHz = 200000000.0;
+        c->tunerParams.dcOffsetTuner.dcCal = 3; c->tunerParams.dcOffsetTuner.speedUp = 0;
+        c->tunerParams.dcOffsetTuner.trackTime = 1; c->tunerParams.dcOffsetTuner.refreshRateTime = 2048;
+        c->ctrlParams.dcOffset.DCenable = 1; c->ctrlParams.dcOffset.IQenable = 1;
+        c->ctrlParams.decimation.enable = 0; c->ctrlParams.decimation.decimationFactor = 1;
+        c->ctrlParams.decimation.wideBandSignal = 0;
+        c->ctrlParams.agc.enable = sdrplay_api_AGC_50HZ; c->ctrlParams.agc.setPoint_dBfs = -60;
+        c->ctrlParams.adsbMode = sdrplay_api_ADSB_DECIMATION;
+        c->rsp2TunerParams.antennaSel = sdrplay_api_Rsp2_ANTENNA_A; c->rsp2TunerParams.amPortSel = sdrplay_api_Rsp2_AMPORT_2;
+        c->rspDuoTunerParams.tuner1AmPortSel = sdrplay_api_RspDuo_AMPORT_2;
+        c->rspDxTunerParams.hdrBw = sdrplay_api_RspDx_HDRMODE_BW_1_700;
+    }
+}
+
+/* Every field a module could set at open or stream time, as the API holds
+   it at this moment: one line per Init and per Update, so a test compares
+   the whole structure, not the fields it thought to ask about. */
+static void snap(const char *what, unsigned int reason, unsigned int ext) {
+    sdrplay_api_RxChannelParamsT *c = cur_tuner == sdrplay_api_Tuner_B ? &chB : &chA;
+    size_t at = strlen(logbuf);
+    if (at > sizeof logbuf - 2048) return;
+    snprintf(logbuf + at, sizeof logbuf - at,
+        "%s reason=%u ext=%u tuner=%d fsHz=%.0f ppm=%g mode=%d rfHz=%.3f bwType=%d ifType=%d loMode=%d "
+        "gRdB=%d LNAstate=%d minGr=%d dcCal=%d speedUp=%d trackTime=%d refreshRateTime=%d "
+        "DCenable=%d IQenable=%d decEnable=%d decimationFactor=%d wideBandSignal=%d "
+        "agcEnable=%d setPoint_dBfs=%d attack_ms=%d decay_ms=%d decay_delay_ms=%d decay_threshold_dB=%d "
+        "adsbMode=%d hdrEnable=%d dxBiasTEnable=%d antennaSel=%d dxRfNotchEnable=%d dxRfDabNotchEnable=%d hdrBw=%d "
+        "rsp1aBiasTEnable=%d rsp1aRfNotchEnable=%d rsp1aRfDabNotchEnable=%d rsp2BiasTEnable=%d rsp2RfNotchEnable=%d "
+        "duoBiasTEnable=%d duoAmNotchEnable=%d duoRfNotchEnable=%d duoRfDabNotchEnable=%d\n",
+        what, reason, ext, cur_tuner, dev.fsFreq.fsHz, dev.ppm, dev.mode, c->tunerParams.rfFreq.rfHz,
+        c->tunerParams.bwType, c->tunerParams.ifType, c->tunerParams.loMode,
+        c->tunerParams.gain.gRdB, c->tunerParams.gain.LNAstate, c->tunerParams.gain.minGr,
+        c->tunerParams.dcOffsetTuner.dcCal, c->tunerParams.dcOffsetTuner.speedUp,
+        c->tunerParams.dcOffsetTuner.trackTime, c->tunerParams.dcOffsetTuner.refreshRateTime,
+        c->ctrlParams.dcOffset.DCenable, c->ctrlParams.dcOffset.IQenable, c->ctrlParams.decimation.enable,
+        c->ctrlParams.decimation.decimationFactor, c->ctrlParams.decimation.wideBandSignal,
+        c->ctrlParams.agc.enable, c->ctrlParams.agc.setPoint_dBfs, c->ctrlParams.agc.attack_ms,
+        c->ctrlParams.agc.decay_ms, c->ctrlParams.agc.decay_delay_ms, c->ctrlParams.agc.decay_threshold_dB,
+        c->ctrlParams.adsbMode, dev.rspDxParams.hdrEnable, dev.rspDxParams.biasTEnable, dev.rspDxParams.antennaSel,
+        dev.rspDxParams.rfNotchEnable, dev.rspDxParams.rfDabNotchEnable, c->rspDxTunerParams.hdrBw,
+        c->rsp1aTunerParams.biasTEnable, dev.rsp1aParams.rfNotchEnable, dev.rsp1aParams.rfDabNotchEnable,
+        c->rsp2TunerParams.biasTEnable, c->rsp2TunerParams.rfNotchEnable,
+        c->rspDuoTunerParams.biasTEnable, c->rspDuoTunerParams.tuner1AmNotchEnable,
+        c->rspDuoTunerParams.rfNotchEnable, c->rspDuoTunerParams.rfDabNotchEnable);
+}
+const char *stub_log(void) { return logbuf; }
+void stub_clear(void) { logbuf[0] = 0; }
+void stub_skip(unsigned int n) { skip_next = n; }
+void stub_overload(int kind) {
+    sdrplay_api_EventParamsT ep; memset(&ep, 0, sizeof ep);
+    ep.powerOverloadParams.powerOverloadChangeType = kind;
+    if (cbs.EventCbFn) cbs.EventCbFn(sdrplay_api_PowerOverloadChange, cur_tuner, &ep, 0);
+}
 
 void stub_set_iq(const short *i, const short *q, long n) {
     free(iq_i); free(iq_q); iq_i = malloc(n * 2); iq_q = malloc(n * 2);
@@ -149,8 +219,11 @@ static void *pump(void *a) {
                to prove an RSPduo tuner swap does not go deaf (both of
                SdrplaySource's callbacks run the same code, sdrplay.py
                docstring). */
+            p.firstSampleNum += skip_next; skip_next = 0;
+            p.numSamples = N;
             if (cur_tuner == sdrplay_api_Tuner_B) cbs.StreamBCbFn(bi, bq, &p, N, 0, 0);
             else cbs.StreamACbFn(bi, bq, &p, N, 0, 0);
+            p.firstSampleNum += N;
             sent += N;
         }
         nanosleep(&ts, 0);
@@ -171,21 +244,19 @@ sdrplay_api_ErrT sdrplay_api_GetDevices(sdrplay_api_DeviceT *d, unsigned int *n,
 sdrplay_api_ErrT sdrplay_api_SelectDevice(sdrplay_api_DeviceT *d) {
     if (!locked || (d->tuner != sdrplay_api_Tuner_A && d->tuner != sdrplay_api_Tuner_B)) return sdrplay_api_Fail;
     selected = 1; cur_tuner = d->tuner;
-    memset(&dev, 0, sizeof dev); memset(&chA, 0, sizeof chA); memset(&chB, 0, sizeof chB);
-    dev.fsFreq.fsHz = 2e6;
-    chA.tunerParams.gain.gRdB = chB.tunerParams.gain.gRdB = 50;
-    chA.ctrlParams.agc.enable = chB.ctrlParams.agc.enable = sdrplay_api_AGC_50HZ;
+    api_defaults();
     return sdrplay_api_Success;
 }
 sdrplay_api_ErrT sdrplay_api_ReleaseDevice(sdrplay_api_DeviceT *d) { selected = 0; return sdrplay_api_Success; }
 const char *sdrplay_api_GetErrorString(sdrplay_api_ErrT e) { return "stub error"; }
 sdrplay_api_ErrT sdrplay_api_GetDeviceParams(HANDLE h, sdrplay_api_DeviceParamsT **p) { *p = &params; return sdrplay_api_Success; }
 sdrplay_api_ErrT sdrplay_api_Init(HANDLE h, sdrplay_api_CallbackFnsT *c, void *ctx) {
-    cbs = *c; running = 1; init_count++; pthread_create(&th, 0, pump, 0); return sdrplay_api_Success;
+    cbs = *c; running = 1; init_count++; snap("init", 0, 0); pthread_create(&th, 0, pump, 0);
+    return sdrplay_api_Success;
 }
 sdrplay_api_ErrT sdrplay_api_Uninit(HANDLE h) { if (running) { running = 0; pthread_join(th, 0); } return sdrplay_api_Success; }
 sdrplay_api_ErrT sdrplay_api_Update(HANDLE h, sdrplay_api_TunerSelectT t, sdrplay_api_ReasonForUpdateT r, sdrplay_api_ReasonForUpdateExtension1T e) {
-    update_count++; return sdrplay_api_Success;
+    update_count++; snap("update", (unsigned int)r, (unsigned int)e); return sdrplay_api_Success;
 }
 sdrplay_api_ErrT sdrplay_api_SwapRspDuoActiveTuner(HANDLE h, sdrplay_api_TunerSelectT *tuner,
                                                     sdrplay_api_RspDuo_AmPortSelectT port) {
@@ -193,7 +264,9 @@ sdrplay_api_ErrT sdrplay_api_SwapRspDuoActiveTuner(HANDLE h, sdrplay_api_TunerSe
     *tuner = cur_tuner;
     return sdrplay_api_Success;
 }
-void stub_reset(void) { hwver = SDRPLAY_RSPdx_ID; cur_tuner = sdrplay_api_Tuner_A; init_count = update_count = 0; }
+void stub_reset(void) {
+    hwver = SDRPLAY_RSPdx_ID; cur_tuner = sdrplay_api_Tuner_A; init_count = update_count = 0; logbuf[0] = 0; skip_next = 0;
+}
 """
 
 
@@ -266,6 +339,7 @@ def rsp(tmp_path_factory):
                    check=True)
     ctl = ctypes.CDLL(str(lib))
     ctl.stub_rf.restype = ctl.stub_fs.restype = ctypes.c_double
+    ctl.stub_log.restype = ctypes.c_char_p
     return lib, ctl
 
 
@@ -292,6 +366,233 @@ def test_the_rsp_fields_written_are_the_fields_the_headers_name(sdr):
         assert src.read().samples.dtype == np.complex64
     assert ctl.stub_state() == 0
     assert SdrplaySource.rates() == [2_400_000.0]
+
+
+def snaps(ctl) -> list[dict]:
+    """The stand-in API's record: one dict per Init and per Update, every
+    field as the API held it then."""
+    out = []
+    for line in ctl.stub_log().decode().splitlines():
+        what, *kv = line.split()
+        out.append({"what": what, **{k: float(v) for k, v in (x.split("=") for x in kv)}})
+    return out
+
+
+#: What SoapySDRPlay3 0.5.2 leaves in SDRplay's structure when an RSPdx
+#: starts streaming for Radio's ohs-box station (serial and rfgain_sel=4
+#: its only arguments; Antenna A, 2.4 MS/s, manual gain 40, 145.65 MHz):
+#: the README's "SDRplay: parity with SoapySDRPlay3" table, field by field,
+#: with SoapySDRPlay3's lines. The keys are every field the stand-in
+#: records, so a field recorded later must be decided here, not missed.
+SOAPYSDRPLAY3_RSPDX_INIT = {
+    "tuner": 1,                         # GetDevices' own, not set for a non-duo (Settings.cpp 2100-2105)
+    "fsHz": 2_400_000,                  # setSampleRate: above 2 MS/s, fs = rate (Settings.cpp 1019-1022, 807-809)
+    "ppm": 0,                           # only setFrequencyCorrection writes it (Settings.cpp 701-704); never called
+    "mode": 0,                          # ISOCH: BULK only when built STREAMING_USB_MODE_BULK (Streaming.cpp 368-371)
+    "rfHz": 145_650_000,                # (uint32_t)frequency (Settings.cpp 674-676); we tune before Init, it after
+    "bwType": 1536,                     # getBwEnumForRate(2.4e6) (Settings.cpp 830-832, 1091-1101)
+    "ifType": 0,                        # IF_Zero above 2 MS/s (Settings.cpp 1019-1022, 813-815)
+    "loMode": 1,                        # never written: LO_Auto, the API's default
+    "gRdB": 59, "LNAstate": 1,          # IFGR then RFGR, base Device::setGain over setGain (Settings.cpp 537-565)
+    "minGr": 20,                        # never written: NORMAL_MIN_GR
+    "dcCal": 4, "speedUp": 0, "trackTime": 63,   # activateStream (Streaming.cpp 359-361)
+    "refreshRateTime": 2048,            # never written: the API's default
+    "DCenable": 1, "IQenable": 1,       # never written without iqcorr_ctrl (Settings.cpp 1617-1626): API default
+    "decEnable": 0, "decimationFactor": 1, "wideBandSignal": 0,  # decM 1 == the default factor: untouched (818-827)
+    "agcEnable": 0,                     # setGainMode(false): AGC_DISABLE (Settings.cpp 515-527)
+    "setPoint_dBfs": -30,               # the constructor (Settings.cpp 65)
+    "attack_ms": 0, "decay_ms": 0, "decay_delay_ms": 0, "decay_threshold_dB": 0,   # never written
+    "adsbMode": 0,                      # never written: ADSB_DECIMATION
+    "hdrEnable": 0,                     # only hdr_ctrl (Settings.cpp 1802-1826)
+    "dxBiasTEnable": 0,                 # only biasT_ctrl (Settings.cpp 1661-1706)
+    "antennaSel": 0,                    # setAntenna("Antenna A") (Settings.cpp 274-293)
+    "dxRfNotchEnable": 0,               # only rfnotch_ctrl (Settings.cpp 1707-1763)
+    "dxRfDabNotchEnable": 0,            # only dabnotch_ctrl (Settings.cpp 1764-1801)
+    "hdrBw": 3,                         # never written: HDRMODE_BW_1_700
+    "rsp1aBiasTEnable": 0, "rsp1aRfNotchEnable": 0, "rsp1aRfDabNotchEnable": 0,  # another model's: untouched
+    "rsp2BiasTEnable": 0, "rsp2RfNotchEnable": 0,
+    "duoBiasTEnable": 0, "duoAmNotchEnable": 0, "duoRfNotchEnable": 0, "duoRfDabNotchEnable": 0,
+}
+
+#: SoapySDR's overall gain under SoapySDRPlay3 on an RSPdx: rxGain ->
+#: (gRdB, LNA state, the gain getGain reports). The same table as
+#: openhamshack-nb tests/test_sdr_receivers.py SOAPYSDRPLAY3_RSPDX, which
+#: Radio's soapy path was held to on ohs-box's settings.
+SOAPYSDRPLAY3_RSPDX = {
+    0.0: (20, 0, 0.0),
+    10.0: (30, 0, 10.0),
+    10.7: (30, 0, 10.0),      # (int)30.7 = 30; the 0.7 left is (int)0.7 = 0 on RFGR
+    25.0: (45, 0, 25.0),
+    39.0: (59, 0, 39.0),
+    40.0: (59, 1, 40.0),      # ohs-box: manual 40 was gRdB 59 at LNA state 1, whatever rfgain_sel said
+    40.5: (59, 1, 40.0),
+    50.0: (59, 11, 50.0),
+    66.0: (59, 27, 66.0),
+    73.0: (59, 27, 66.0),     # Radio's top; RFGR stops at 27
+}
+SOAPYSDRPLAY3_RSP1A = {40.0: (59, 1, 40.0), 50.0: (59, 9, 48.0), 73.0: (59, 9, 48.0)}
+
+
+def ohs_box(lib, **kw):
+    """SdrplaySource as Radio opens ohs-box's RSPdx (soapyArgs serial and
+    rfgain_sel=4, Antenna A, manual 40, 2 m)."""
+    args = {"gain_model": "soapysdrplay3", "lna_state": 4, "antenna": "Antenna A", **kw}
+    gain = args.pop("gain", 40.0)
+    return SdrplaySource(145_650_000, 2_400_000, gain, lib_path=lib, **args)
+
+
+def test_an_rspdx_starts_with_every_field_soapysdrplay3_set(sdr):
+    lib, ctl = sdr
+    with ohs_box(lib) as src:
+        init = [e for e in snaps(ctl) if e["what"] == "init"]
+        assert len(init) == 1
+        got = {k: v for k, v in init[0].items() if k not in ("what", "reason", "ext")}
+        assert set(got) == set(SOAPYSDRPLAY3_RSPDX_INIT)
+        assert {k: v for k, v in got.items() if v != SOAPYSDRPLAY3_RSPDX_INIT[k]} == {}
+        assert [e["what"] for e in snaps(ctl)] == ["init"]        # nothing pushed after it at open
+        assert src.status()["options"] == {"bias_t": False, "rf_notch": False, "dab_notch": False, "hdr": False}
+
+
+def test_the_reduction_model_differs_from_it_only_in_gain(sdr):
+    # Packet's model (the default) shares every other field: the parity is
+    # the module's, not the gain model's.
+    lib, ctl = sdr
+    with SdrplaySource(145_650_000, 2_400_000, None, lib_path=lib, antenna="Antenna A"):
+        init = snaps(ctl)[0]
+    differs = {k for k, v in SOAPYSDRPLAY3_RSPDX_INIT.items() if init[k] != v}
+    assert differs == {"gRdB", "LNAstate", "agcEnable"}
+    assert (init["gRdB"], init["LNAstate"], init["agcEnable"]) == (50, 3, sdrplay.AGC_50HZ)
+
+
+def test_soapysdrplay3s_gain_split_is_its_table():
+    for hw, table in ((sdrplay.HW_RSPDX, SOAPYSDRPLAY3_RSPDX), (sdrplay.HW_RSP1A, SOAPYSDRPLAY3_RSP1A)):
+        for g, (grdb, lna, back) in table.items():
+            assert sdrplay.soapy_gain_split(g, hw) == (grdb, lna), (hw, g)
+            assert sdrplay.soapy_gain_of(grdb, lna, hw) == back, (hw, g)
+    assert sdrplay.soapy_rfgr_range(sdrplay.HW_RSP2) == (0, 8)
+    assert sdrplay.soapy_rfgr_range(99) == (20, 59)                # SoapySDRPlay3's fallthrough, kept
+    assert [sdrplay.bw_for_rate(r) for r in (250e3, 2.4e6, 6e6, 10e6)] == [200, 1536, 6000, 8000]
+
+
+def test_the_soapysdrplay3_model_sets_and_reports_its_table_live(sdr):
+    lib, ctl = sdr
+    with ohs_box(lib) as src:
+        assert src.gain_now() == 40.0
+        for g, (grdb, lna, back) in SOAPYSDRPLAY3_RSPDX.items():
+            src.set_gain(g)
+            last = snaps(ctl)[-1]
+            assert (last["gRdB"], last["LNAstate"], last["agcEnable"]) == (grdb, lna, sdrplay.AGC_DISABLE), g
+            assert int(last["reason"]) & sdrplay.UPDATE_TUNER_GR
+            assert src.gain_now() == back
+            st = src.status()
+            assert (st["gain"], st["gRdB"], st["lnaState"]) == (back, grdb, lna)
+        assert ctl.stub_init_count() == 1
+    assert src.gain_now() == 66.0                                   # closed: from the gain asked for (73)
+
+
+def test_another_model_tops_the_lna_state_at_its_own_range(sdr):
+    lib, ctl = sdr
+    ctl.stub_set_hwver(sdrplay.HW_RSP1A)
+    with ohs_box(lib, gain=50.0, antenna=None) as src:
+        init = snaps(ctl)[0]
+        assert (init["gRdB"], init["LNAstate"]) == (59, 9) and src.gain_now() == 48.0
+        assert src.gain_sense() == {"gainIsReduction": True, "gainModel": "soapysdrplay3", "rfgrRange": [0, 9]}
+
+
+def test_soapysdrplay3s_agc_keeps_the_lna_state_it_had(sdr):
+    lib, ctl = sdr
+    with ohs_box(lib, gain=None) as src:
+        init = snaps(ctl)[0]
+        # rfgain_sel's LNA state, AGC_CTRL_EN at -30 dBfs, gRdB the API's 50.
+        assert (init["gRdB"], init["LNAstate"], init["agcEnable"], init["setPoint_dBfs"]) == (50, 4, 4, -30)
+        assert src.gain_now() == 34.0                                # (50 - 20) + 4
+        src.set_gain(45.0)
+        last = snaps(ctl)[-1]
+        assert (last["gRdB"], last["LNAstate"], last["agcEnable"]) == (59, 6, 0)
+        src.set_gain(None)
+        last = snaps(ctl)[-1]
+        assert (last["gRdB"], last["LNAstate"], last["agcEnable"]) == (59, 6, 4)
+        assert src.gain_sense() == {"gainIsReduction": True, "gainModel": "soapysdrplay3", "rfgrRange": [0, 27]}
+    with ohs_box(lib, gain=None, agc_setpoint=-40):
+        assert snaps(ctl)[-1]["setPoint_dBfs"] == -40
+
+
+def test_the_reduction_model_is_unchanged(sdr):
+    lib, ctl = sdr
+    with SdrplaySource(lib_path=lib, gain=35.0, lna_state=4) as src:
+        assert src.gain_now() == 35.0 and src.status()["gain"] == 35.0
+        assert src.gain_sense() == {"gainIsReduction": True, "gainModel": "reduction", "rfgrRange": [0, 27]}
+        assert (snaps(ctl)[0]["gRdB"], snaps(ctl)[0]["LNAstate"]) == (35, 4)
+    with pytest.raises(ValueError):
+        SdrplaySource(gain_model="db")
+
+
+def test_the_switches_are_soapysdrplay3s_fields_and_updates(sdr):
+    lib, ctl = sdr
+    with ohs_box(lib, hdr=True, rf_notch=True) as src:              # RSPdx: all four, on the device
+        init = snaps(ctl)[0]
+        assert (init["hdrEnable"], init["dxRfNotchEnable"], init["dxRfDabNotchEnable"], init["dxBiasTEnable"]) == \
+            (1, 1, 0, 0)
+        ctl.stub_clear()
+        src.set_options(bias_t=True, hdr=False)
+        upd = snaps(ctl)
+        assert [(e["reason"], e["ext"]) for e in upd] == [(0, sdrplay.EXT1_RSPDX_BIAST), (0, sdrplay.EXT1_RSPDX_HDR)]
+        assert (upd[-1]["dxBiasTEnable"], upd[-1]["hdrEnable"]) == (1, 0)
+        assert src.status()["options"] == {"bias_t": True, "rf_notch": True, "dab_notch": False, "hdr": False}
+        with pytest.raises(ValueError):
+            src.set_options(bias_t=None)
+    ctl.stub_set_hwver(sdrplay.HW_RSP1A)
+    with ohs_box(lib, antenna=None) as src:
+        ctl.stub_clear()
+        src.set_options(dab_notch=True, hdr=True)                    # an RSP1A has no HDR: ignored, as SoapySDRPlay3
+        upd = snaps(ctl)
+        assert [(e["reason"], e["ext"]) for e in upd] == [(sdrplay.UPDATE_RSP1A_DAB_NOTCH, 0)]
+        assert upd[0]["rsp1aRfDabNotchEnable"] == 1
+        assert "hdr" not in src.status()["options"]
+    ctl.stub_set_hwver(sdrplay.HW_RSPDUO)
+    with ohs_box(lib, antenna="Tuner 1 Hi-Z") as src:
+        ctl.stub_clear()
+        src.set_options(rf_notch=True, dab_notch=True)               # Hi-Z: the AM notch; the DAB notch's sign bit
+        upd = snaps(ctl)
+        assert [e["reason"] for e in upd] == [sdrplay.UPDATE_RSPDUO_AM_NOTCH, sdrplay.UPDATE_RSPDUO_DAB_NOTCH]
+        assert (upd[-1]["duoAmNotchEnable"], upd[-1]["duoRfNotchEnable"], upd[-1]["duoRfDabNotchEnable"]) == (1, 0, 1)
+        src.set_antenna("Tuner 1 50 ohm")
+        ctl.stub_clear()
+        src.set_options(rf_notch=True)                               # 50 ohm: the RF notch
+        assert [e["reason"] for e in snaps(ctl)] == [sdrplay.UPDATE_RSPDUO_RF_NOTCH]
+
+
+def test_an_overload_is_acknowledged_as_soapysdrplay3_does(sdr):
+    lib, ctl = sdr
+    with ohs_box(lib) as src:
+        ctl.stub_clear()
+        ctl.stub_overload(sdrplay.OVERLOAD_DETECTED)
+        assert [e["reason"] for e in snaps(ctl)] == [sdrplay.UPDATE_CTRL_OVERLOAD_ACK]
+        assert (src.status()["overloads"], src.status()["overloaded"]) == (1, True)
+        ctl.stub_overload(sdrplay.OVERLOAD_CORRECTED)
+        assert [e["reason"] for e in snaps(ctl)] == [sdrplay.UPDATE_CTRL_OVERLOAD_ACK] * 2
+        assert (src.status()["overloads"], src.status()["overloaded"]) == (1, False)
+
+
+def test_samples_are_scaled_as_soapysdrplay3s_cf32_and_api_drops_counted(sdr):
+    lib, ctl = sdr
+    ctl.stub_set_iq.argtypes = (ctypes.POINTER(ctypes.c_short), ctypes.POINTER(ctypes.c_short), ctypes.c_long)
+    i = np.arange(-32768, 32768, 7, dtype=np.int16)                 # every corner of the range, full scale included
+    q = np.ascontiguousarray(i[::-1])
+    ctl.stub_set_iq(i.ctypes.data_as(ctypes.POINTER(ctypes.c_short)), q.ctypes.data_as(ctypes.POINTER(ctypes.c_short)),
+                    len(i))
+    with ohs_box(lib) as src:
+        b = src.read().samples
+        n = len(b)
+        assert n >= sdrplay.BLOCK_S * 2_400_000
+        k = np.arange(n) % len(i)
+        assert np.array_equal(b.real, i[k] / np.float32(32768)) and np.array_equal(b.imag, q[k] / np.float32(32768))
+        assert src.status()["apiGaps"] == 0
+        ctl.stub_skip(1000)
+        src.read()
+        src.read()
+        assert (src.status()["apiGaps"], src.status()["apiLost"]) == (1, 1000)
+        assert src.stats.dropped == 0                                # counted, not yet trusted to move the index
 
 
 def test_a_single_input_rsp_reports_rx_and_refuses_to_switch(sdr):
