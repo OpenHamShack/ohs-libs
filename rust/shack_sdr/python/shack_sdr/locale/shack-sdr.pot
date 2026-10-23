@@ -131,3 +131,11 @@ msgstr ""
 #: rust/shack_sdr/python/shack_sdr/wfm.py
 msgid "Weather"
 msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/sources/sdrplay.py
+msgid "gain_model {gain_model!r} is not one of {gain_models}"
+msgstr ""
+
+#: rust/shack_sdr/python/shack_sdr/sources/sdrplay.py
+msgid "{name}={on!r}: set_options takes {options} as True or False"
+msgstr ""

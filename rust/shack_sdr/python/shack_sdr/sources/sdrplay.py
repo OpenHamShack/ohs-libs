@@ -146,6 +146,7 @@ import sys
 
 import numpy as np
 
+from ..i18n import _
 from .source import IqSource, SdrError
 
 READ_TIMEOUT_S = 3.0
@@ -457,7 +458,8 @@ class SdrplaySource(IqSource):
                  hdr: bool | None = None):
         super().__init__(centre, rate, gain)
         if gain_model not in GAIN_MODELS:
-            raise ValueError(f"gain_model {gain_model!r} is not one of {GAIN_MODELS}")
+            raise ValueError(_("gain_model {gain_model!r} is not one of {gain_models}").format(
+                gain_model=gain_model, gain_models=GAIN_MODELS))
         self.serial = serial
         self.lna_state = int(lna_state)
         self.gain_model = gain_model
@@ -724,7 +726,8 @@ class SdrplaySource(IqSource):
         is refused here: once written, SDRplay's default is just False."""
         for name, on in kw.items():
             if name not in OPTIONS or on is None:
-                raise ValueError(f"{name}={on!r}: set_options takes {OPTIONS} as True or False")
+                raise ValueError(_("{name}={on!r}: set_options takes {options} as True or False").format(
+                    name=name, on=on, options=OPTIONS))
         for name, on in kw.items():
             self.options[name] = bool(on)
             if self._running:
