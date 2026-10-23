@@ -18,7 +18,10 @@
 //!   sets (0/6), frequency information (0/21) and other ensembles'
 //!   services (0/24). Those three use SIV signalling (C/N is a version,
 //!   not current/next), and their lists are kept as heard; nothing here
-//!   retunes.
+//!   retunes. Their change event indication (an empty list) is not acted
+//!   on: block 11B (Ayr) sends one for its linkage sets several times a
+//!   second, and clearing on each would make every list flicker; a set
+//!   is rebuilt when its database starts again (C/N 0).
 
 use super::coding::{self, Soft, Viterbi};
 use super::tables::{self, Protection, FIB_BITS, FIC_INFO_BITS};
@@ -592,7 +595,7 @@ impl Ensemble {
                         k += 2;
                     }
                     if eids.is_empty() {
-                        self.oe_services.remove(&sid); // the change event: forget it
+                        // A change event (module docs).
                     } else if self.oe_services.len() < MAX_ENTRIES || self.oe_services.contains_key(&sid) {
                         self.oe_services.insert(sid, eids);
                     }
@@ -613,9 +616,7 @@ impl Ensemble {
             k += 2;
             let key = (lsn, hard, ils, pd);
             if !has_list {
-                // A change event: the set is being redefined.
-                self.links.remove(&key);
-                continue;
+                continue; // a change event (module docs)
             }
             if k >= b.len() {
                 return;
@@ -684,8 +685,7 @@ impl Ensemble {
                 k += n;
                 let key = (id, rm, oe);
                 if n == 0 {
-                    self.freqs.remove(&key); // the change event
-                    continue;
+                    continue; // a change event (module docs)
                 }
                 let khz: Vec<u32> = match rm {
                     0 => list.chunks_exact(3).map(|c| (be(c) & 0x7ffff) * 16).collect(),
