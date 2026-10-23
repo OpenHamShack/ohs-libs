@@ -215,6 +215,23 @@ def test_a_staged_host_library_is_found_under_its_versioned_name(tmp_path, no_sy
     assert st["faad2"]["path"] == str(staged / "libfaad.so.2.0.0")
 
 
+def test_the_controllers_staged_faad2_layout_is_found(tmp_path, no_system, monkeypatch):
+    """faad2 as the platform stages it on a controller (ohs-box, 23/10/2026):
+    the soname a link to the versioned file, and faad2's DRM build beside
+    them, which is a different library and must never be taken for it."""
+    staged = tmp_path / "hostlibs" / "faad2"
+    staged.mkdir(parents=True)
+    shutil.copy(faad(tmp_path), staged / "libfaad.so.2.11.2")
+    (staged / "libfaad.so.2").symlink_to("libfaad.so.2.11.2")
+    shutil.copy(faad(tmp_path), staged / "libfaad_drm.so.2")
+    monkeypatch.setenv("SHACK_HOSTLIBS", str(tmp_path / "hostlibs"))
+    ld = codecs.Loader(None)
+    names = [p.name for p, where in ld.candidates("faad2")]
+    assert names == ["libfaad.so.2", "libfaad.so.2.11.2"]
+    st = {s["id"]: s for s in ld.status()}
+    assert st["faad2"]["state"] == "found" and st["faad2"]["path"] == str(staged / "libfaad.so.2")
+
+
 def test_the_folders_are_where_the_plan_says(monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     if sys.platform.startswith("linux"):
