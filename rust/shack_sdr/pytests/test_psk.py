@@ -117,3 +117,43 @@ def test_refusals_are_codes():
         while host.status(sid)["state"] != "error" and time.monotonic() < end:
             time.sleep(0.01)
         assert (host.status(sid)["state"], host.status(sid)["why"]) == ("error", "channel_outside")
+
+
+def test_an_over_that_stops_on_its_last_character():
+    # Radio's drain: the transmitter unkeys on the last character's "00",
+    # no idle after it, and the noise goes on. The "k" prints, and before a
+    # second of that noise has been fed (psk.py printed it on its "00"; this
+    # decoder used to want 0.13 s of idle after it, and a second more).
+    text = "CQ DE GM4BRI PSE K"
+    x = np.frombuffer(_native.testsig_psk(text, centre=1000.0, snr_db=0.0, postamble_s=0.0, tail_s=3.0, seed=4),
+                      np.float32)
+    with Host(cpu_max=0.0, ring_s=30.0) as host:
+        sid = host.start("psk", {}, "audio", RATE, center_hz=1000.0)
+        # Up to 0.9 s past where the carrier stops (three seconds of noise
+        # follow it), and no further.
+        stop = len(x) - int(3.0 * RATE) + int(0.9 * RATE)
+        for k in range(0, stop, 1200):
+            host.feed(sid, x[k:min(k + 1200, stop)], k / RATE, k)
+        items = collect(host, sid, len(_native.psk_truth(text)), secs=5.0)
+        got = "".join(i["text"] for i in items if i["type"] == "text")
+        assert got == _native.psk_truth(text)
+
+
+def test_a_frequency_step_mid_over():
+    # NB's own echo: the TX lock moves the sender 6 Hz in the middle of the
+    # over, phase-continuously. Nothing is lost, and the channel's tracked
+    # frequency is where the carrier went.
+    text = "CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n"
+    x = np.frombuffer(_native.testsig_psk(text, centre=0.0, snr_db=5.0, seed=50, iq=True), np.complex64).copy()
+    at = int(4.7 * RATE)
+    x[at:] *= np.exp(2j * np.pi * 6.0 * np.arange(len(x) - at) / RATE).astype(np.complex64)
+    with Host(cpu_max=0.0, ring_s=30.0) as host:
+        sid = host.start("psk", {}, "iq", RATE)
+        for k in range(0, len(x), 1200):
+            host.feed(sid, x[k:k + 1200], k / RATE, k)
+        items = collect(host, sid, len(_native.psk_truth(text)), secs=5.0)
+        got = "".join(i["text"] for i in items if i["type"] == "text")
+        assert got == _native.psk_truth(text)
+        after = [i["offsetHz"] for i in items if i["type"] == "text" and i["t"] > 5.5]
+        assert after and all(abs(f - 6.0) < 0.5 for f in after), after
+        assert host.status(sid)["stats"]["replays"] >= 1

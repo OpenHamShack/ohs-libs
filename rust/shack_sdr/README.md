@@ -127,7 +127,8 @@ host.status(sid)["meta"]   # {"channels": [{"offsetHz": -300.0, "freqHz": -294.1
   any channel hears a signal: per channel `offsetHz`, `freqHz`, `sync`,
   `snrDb`, `imdDb` (fldigi's IMD, measured on idle, null until the tones
   stand 20 dB over the noise and the products can be told from it).
-  Counters: `chars`, `channels`, `acquisitions`, `replays`, `gaps`.
+  Counters: `chars`, `channels`, `acquisitions`, `replays` (the
+  look-back decoded again, for the coarse AFC or a step), `gaps`.
 - **How it decodes,** and why each part (`src/psk/mod.rs`): matched filter
   with a zero-forcing correction; coarse AFC by squaring and an FFT, with a
   replay of the last three seconds when it moves; symbol timing from the
@@ -136,7 +137,16 @@ host.status(sid)["meta"]   # {"channels": [{"offsetHz": -300.0, "freqHz": -294.1
   where the reference's symbols disagree (fast fading); soft bits into a
   Varicode trellis; and a squelch that weighs, for every character, every
   bit before it and the trellis's second after it in a two-state (signal
-  or noise) model, so a weak over prints and its edges do not.
+  or noise) model, so a weak over prints and its edges do not. When the
+  squelch closes, what the trellis holds is released at once, and a last
+  character whose own bits ("00" and all) are plainly the over's prints
+  though the carrier stopped on it (a drain with no idle tail): 0.4 to
+  0.7 s after the carrier, where it took 0.13 s of idle and a second more.
+  A step in the carrier mid-over (a TX lock correcting the sender: NB's
+  own echo) is seen by a frequency detector beside the Costas loop
+  (psk.py's fine AFC), measured and placed to the sample on the look-back,
+  and the look-back decoded again with the AFC stepped there; on an over
+  of 12 dB Es/N0 or more (below, the loop alone follows, as before).
 - **Measured** (`tests/psk.rs`, on the test transmitter; golden numbers
   from psk.py, `testdata/psk/`, `tools/psk_golden.py`; 3-4 fixtures a
   point, about 150-210 characters). Character error rate, SNR in 2.5 kHz:
@@ -170,7 +180,11 @@ host.status(sid)["meta"]   # {"channels": [{"offsetHz": -300.0, "freqHz": -294.1
   Never worse than psk.py at any of the sweep's 62 points (PSK63 likewise: its
   table is in the test's output), and psk.py's 3-6 % on strong signals,
   noise printed while its squelch decayed after each over, is gone: forty
-  strong overs each followed by 8 s of noise print nothing.
+  strong overs each followed by 8 s of noise print nothing. An over that
+  stops dead on its last "00" copies whole at every speed down to -3 dB,
+  and one cut mid-character prints nothing false. Steps of 1.6 to 14 Hz
+  mid-over, at every speed, 24 and 16 dB in the symbol's bandwidth: 45 of
+  45 overs whole (the Costas loop alone: 9).
 - **CPU** (one Ryzen 9 6900HX core, eight channels sharing one audio
   adapter): 0.03 % a channel at PSK31, 0.045 % at PSK63, 0.075 % at
   PSK125. `tests/psk.rs` prints it and fails above 3x.
@@ -184,7 +198,8 @@ host.status(sid)["meta"]   # {"channels": [{"offsetHz": -300.0, "freqHz": -294.1
   GPL-3.0-or-later, header checked); fldigi's IMD definition.
 - **Not done yet:** QPSK and the FEC modes; a signal browser that finds
   the stations itself (psk.py's `find_carriers`); a station 10 dB stronger
-  50 Hz away still costs two characters in three.
+  50 Hz away still costs two characters in three; a step in a weak over's
+  carrier (under 12 dB Es/N0) still costs what the loop alone loses.
 
 ### DAB (`dab`)
 
