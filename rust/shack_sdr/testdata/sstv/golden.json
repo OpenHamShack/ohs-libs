@@ -1,0 +1,1502 @@
+{
+ "about": "How openhamshack-nb ohscore/modes/sstv.py's Decoder did on each fixture in cases.json, captured before its removal (RADIO-SDR-PLAN \u00a77.1): its best picture's PSNR against the picture sent and the share of its rows within a pixel of their place (shack_sdr's sstv_score), the pictures it started and in which modes, and its CPU seconds. The Rust decoder is held to never worse.",
+ "reference": {
+  "file": "openhamshack-nb ohscore/modes/sstv.py",
+  "commit": "3fcfbcc",
+  "sha256": "52d05af2cc54a1241ac852bbffe1e9dec10215538b4501d5a3ad5f641eda65e4"
+ },
+ "results": [
+  {
+   "id": "robot36-clean-000",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 24.342,
+   "inSync": 1.0,
+   "maxShift": 0.906,
+   "rows": 240,
+   "cpuS": 0.26,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-awgn30-001",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 23.298,
+   "inSync": 1.0,
+   "maxShift": 0.763,
+   "rows": 240,
+   "cpuS": 0.29,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-awgn20-002",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 18.852,
+   "inSync": 0.9955,
+   "maxShift": 1.059,
+   "rows": 240,
+   "cpuS": 0.26,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-awgn15-003",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 15.066,
+   "inSync": 0.9464,
+   "maxShift": 4.995,
+   "rows": 240,
+   "cpuS": 0.27,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-awgn10-004",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 11.056,
+   "inSync": 0.6339,
+   "maxShift": 16.0,
+   "rows": 240,
+   "cpuS": 0.28,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-awgn6-005",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 8.349,
+   "inSync": 0.3259,
+   "maxShift": 16.0,
+   "rows": 240,
+   "cpuS": 0.3,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-awgn3-006",
+   "starts": 0,
+   "modes": [],
+   "psnr": 0.0,
+   "inSync": 0.0,
+   "maxShift": null,
+   "rows": 0,
+   "cpuS": 3.81,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-offset+40-007",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 16.316,
+   "inSync": 1.0,
+   "maxShift": 0.8,
+   "rows": 240,
+   "cpuS": 0.26,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-offset-100-008",
+   "starts": 0,
+   "modes": [],
+   "psnr": 0.0,
+   "inSync": 0.0,
+   "maxShift": null,
+   "rows": 0,
+   "cpuS": 3.88,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-clock+200-009",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 18.774,
+   "inSync": 1.0,
+   "maxShift": 0.895,
+   "rows": 240,
+   "cpuS": 0.27,
+   "audioS": 40.33
+  },
+  {
+   "id": "robot36-clock-200-010",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 18.964,
+   "inSync": 0.9955,
+   "maxShift": 1.669,
+   "rows": 240,
+   "cpuS": 0.25,
+   "audioS": 40.35
+  },
+  {
+   "id": "robot36-joined-011",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 18.526,
+   "inSync": 0.9857,
+   "maxShift": 13.077,
+   "rows": 148,
+   "cpuS": 0.19,
+   "audioS": 25.58
+  },
+  {
+   "id": "robot36-novis-012",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 18.875,
+   "inSync": 1.0,
+   "maxShift": 0.928,
+   "rows": 240,
+   "cpuS": 0.29,
+   "audioS": 39.43
+  },
+  {
+   "id": "robot36-fading-good-013",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 17.995,
+   "inSync": 0.9062,
+   "maxShift": 2.005,
+   "rows": 240,
+   "cpuS": 0.26,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-good-014",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 17.168,
+   "inSync": 0.8527,
+   "maxShift": 13.141,
+   "rows": 240,
+   "cpuS": 0.28,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-good-015",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 18.598,
+   "inSync": 0.9554,
+   "maxShift": 3.1,
+   "rows": 240,
+   "cpuS": 0.27,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-good-016",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 16.004,
+   "inSync": 0.7589,
+   "maxShift": 16.0,
+   "rows": 240,
+   "cpuS": 0.3,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-good-017",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 17.886,
+   "inSync": 0.933,
+   "maxShift": 1.752,
+   "rows": 240,
+   "cpuS": 0.29,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-good-018",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 19.858,
+   "inSync": 0.9732,
+   "maxShift": 1.755,
+   "rows": 240,
+   "cpuS": 0.28,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-good-019",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 17.924,
+   "inSync": 0.942,
+   "maxShift": 11.021,
+   "rows": 240,
+   "cpuS": 0.41,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-good-020",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 19.518,
+   "inSync": 0.8571,
+   "maxShift": 1.822,
+   "rows": 240,
+   "cpuS": 0.3,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-moderate-021",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 15.151,
+   "inSync": 0.558,
+   "maxShift": 16.0,
+   "rows": 240,
+   "cpuS": 0.29,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-moderate-022",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 15.692,
+   "inSync": 0.3973,
+   "maxShift": 16.0,
+   "rows": 240,
+   "cpuS": 0.29,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-moderate-023",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 16.025,
+   "inSync": 0.4955,
+   "maxShift": 15.077,
+   "rows": 240,
+   "cpuS": 0.42,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-moderate-024",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 16.051,
+   "inSync": 0.5223,
+   "maxShift": 16.0,
+   "rows": 240,
+   "cpuS": 0.29,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-moderate-025",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 15.517,
+   "inSync": 0.3214,
+   "maxShift": 13.071,
+   "rows": 240,
+   "cpuS": 0.29,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-moderate-026",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 15.257,
+   "inSync": 0.4688,
+   "maxShift": 16.0,
+   "rows": 240,
+   "cpuS": 0.29,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-moderate-027",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 15.154,
+   "inSync": 0.3929,
+   "maxShift": 16.0,
+   "rows": 240,
+   "cpuS": 0.29,
+   "audioS": 40.34
+  },
+  {
+   "id": "robot36-fading-moderate-028",
+   "starts": 1,
+   "modes": [
+    "robot36"
+   ],
+   "psnr": 15.758,
+   "inSync": 0.4911,
+   "maxShift": 14.154,
+   "rows": 240,
+   "cpuS": 0.4,
+   "audioS": 40.34
+  },
+  {
+   "id": "martin1-clean-029",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 32.555,
+   "inSync": 1.0,
+   "maxShift": 0.625,
+   "rows": 256,
+   "cpuS": 0.41,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-awgn30-030",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 31.621,
+   "inSync": 1.0,
+   "maxShift": 0.443,
+   "rows": 256,
+   "cpuS": 0.41,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-awgn20-031",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 27.024,
+   "inSync": 1.0,
+   "maxShift": 0.677,
+   "rows": 256,
+   "cpuS": 0.39,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-awgn15-032",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 23.324,
+   "inSync": 1.0,
+   "maxShift": 0.776,
+   "rows": 256,
+   "cpuS": 0.5,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-awgn10-033",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 18.745,
+   "inSync": 0.9875,
+   "maxShift": 6.869,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-awgn6-034",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 14.663,
+   "inSync": 0.8292,
+   "maxShift": 16.0,
+   "rows": 256,
+   "cpuS": 0.42,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-awgn3-035",
+   "starts": 0,
+   "modes": [],
+   "psnr": 0.0,
+   "inSync": 0.0,
+   "maxShift": null,
+   "rows": 0,
+   "cpuS": 14.02,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-offset+40-036",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 23.954,
+   "inSync": 1.0,
+   "maxShift": 0.29,
+   "rows": 256,
+   "cpuS": 0.44,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-offset-100-037",
+   "starts": 0,
+   "modes": [],
+   "psnr": 0.0,
+   "inSync": 0.0,
+   "maxShift": null,
+   "rows": 0,
+   "cpuS": 11.77,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-clock+200-038",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 27.241,
+   "inSync": 1.0,
+   "maxShift": 0.438,
+   "rows": 256,
+   "cpuS": 0.45,
+   "audioS": 118.61
+  },
+  {
+   "id": "martin1-clock-200-039",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 26.618,
+   "inSync": 1.0,
+   "maxShift": 0.812,
+   "rows": 256,
+   "cpuS": 0.44,
+   "audioS": 118.66
+  },
+  {
+   "id": "martin1-joined-040",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 26.479,
+   "inSync": 1.0,
+   "maxShift": 0.66,
+   "rows": 155,
+   "cpuS": 0.28,
+   "audioS": 72.55
+  },
+  {
+   "id": "martin1-novis-041",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 27.378,
+   "inSync": 1.0,
+   "maxShift": 0.611,
+   "rows": 256,
+   "cpuS": 0.46,
+   "audioS": 117.72
+  },
+  {
+   "id": "martin1-fading-good-042",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 23.179,
+   "inSync": 0.9667,
+   "maxShift": 1.143,
+   "rows": 256,
+   "cpuS": 0.46,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-good-043",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 22.999,
+   "inSync": 0.9792,
+   "maxShift": 2.078,
+   "rows": 256,
+   "cpuS": 0.39,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-good-044",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 21.846,
+   "inSync": 0.9708,
+   "maxShift": 5.112,
+   "rows": 256,
+   "cpuS": 0.4,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-good-045",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 21.975,
+   "inSync": 0.9792,
+   "maxShift": 9.128,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-good-046",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 21.839,
+   "inSync": 0.975,
+   "maxShift": 5.884,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-good-047",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 23.516,
+   "inSync": 0.9625,
+   "maxShift": 5.965,
+   "rows": 256,
+   "cpuS": 0.42,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-good-048",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 21.842,
+   "inSync": 0.9792,
+   "maxShift": 15.012,
+   "rows": 256,
+   "cpuS": 0.56,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-good-049",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 23.638,
+   "inSync": 0.975,
+   "maxShift": 1.075,
+   "rows": 256,
+   "cpuS": 0.42,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-moderate-050",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 19.887,
+   "inSync": 0.5958,
+   "maxShift": 1.866,
+   "rows": 256,
+   "cpuS": 0.4,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-moderate-051",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 20.562,
+   "inSync": 0.6292,
+   "maxShift": 11.062,
+   "rows": 256,
+   "cpuS": 0.42,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-moderate-052",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 20.316,
+   "inSync": 0.6125,
+   "maxShift": 1.954,
+   "rows": 256,
+   "cpuS": 0.42,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-moderate-053",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 19.872,
+   "inSync": 0.6042,
+   "maxShift": 9.045,
+   "rows": 256,
+   "cpuS": 0.41,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-moderate-054",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 19.971,
+   "inSync": 0.6625,
+   "maxShift": 16.0,
+   "rows": 256,
+   "cpuS": 0.41,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-moderate-055",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 20.202,
+   "inSync": 0.6542,
+   "maxShift": 14.035,
+   "rows": 256,
+   "cpuS": 0.44,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-moderate-056",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 19.917,
+   "inSync": 0.5875,
+   "maxShift": 8.981,
+   "rows": 256,
+   "cpuS": 0.41,
+   "audioS": 118.63
+  },
+  {
+   "id": "martin1-fading-moderate-057",
+   "starts": 1,
+   "modes": [
+    "martinm1"
+   ],
+   "psnr": 19.767,
+   "inSync": 0.5917,
+   "maxShift": 2.553,
+   "rows": 256,
+   "cpuS": 0.42,
+   "audioS": 118.63
+  },
+  {
+   "id": "scottie1-clean-058",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 31.475,
+   "inSync": 1.0,
+   "maxShift": 0.48,
+   "rows": 256,
+   "cpuS": 0.4,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-awgn30-059",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 30.956,
+   "inSync": 1.0,
+   "maxShift": 0.471,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-awgn20-060",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 26.912,
+   "inSync": 1.0,
+   "maxShift": 0.556,
+   "rows": 256,
+   "cpuS": 0.42,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-awgn15-061",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 23.032,
+   "inSync": 1.0,
+   "maxShift": 0.808,
+   "rows": 256,
+   "cpuS": 0.41,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-awgn10-062",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 18.42,
+   "inSync": 0.9833,
+   "maxShift": 9.05,
+   "rows": 256,
+   "cpuS": 0.41,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-awgn6-063",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 14.349,
+   "inSync": 0.8208,
+   "maxShift": 16.0,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-awgn3-064",
+   "starts": 0,
+   "modes": [],
+   "psnr": 0.0,
+   "inSync": 0.0,
+   "maxShift": null,
+   "rows": 0,
+   "cpuS": 11.48,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-offset+40-065",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 23.906,
+   "inSync": 1.0,
+   "maxShift": 0.399,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-offset-100-066",
+   "starts": 0,
+   "modes": [],
+   "psnr": 0.0,
+   "inSync": 0.0,
+   "maxShift": null,
+   "rows": 0,
+   "cpuS": 11.21,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-clock+200-067",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 26.896,
+   "inSync": 1.0,
+   "maxShift": 0.395,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 113.95
+  },
+  {
+   "id": "scottie1-clock-200-068",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 26.644,
+   "inSync": 1.0,
+   "maxShift": 0.781,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 114.0
+  },
+  {
+   "id": "scottie1-joined-069",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 26.389,
+   "inSync": 1.0,
+   "maxShift": 0.5,
+   "rows": 155,
+   "cpuS": 0.26,
+   "audioS": 69.76
+  },
+  {
+   "id": "scottie1-novis-070",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 16.64,
+   "inSync": 0.975,
+   "maxShift": 7.31,
+   "rows": 256,
+   "cpuS": 0.55,
+   "audioS": 113.07
+  },
+  {
+   "id": "scottie1-fading-good-071",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 20.5,
+   "inSync": 0.8833,
+   "maxShift": 11.067,
+   "rows": 256,
+   "cpuS": 0.51,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-good-072",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 21.533,
+   "inSync": 0.9833,
+   "maxShift": 12.973,
+   "rows": 256,
+   "cpuS": 0.42,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-good-073",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 23.568,
+   "inSync": 0.925,
+   "maxShift": 1.111,
+   "rows": 256,
+   "cpuS": 0.49,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-good-074",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 23.106,
+   "inSync": 0.9375,
+   "maxShift": 1.18,
+   "rows": 256,
+   "cpuS": 0.44,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-good-075",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 20.972,
+   "inSync": 0.8583,
+   "maxShift": 11.016,
+   "rows": 256,
+   "cpuS": 0.51,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-good-076",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 21.122,
+   "inSync": 0.9375,
+   "maxShift": 1.166,
+   "rows": 256,
+   "cpuS": 0.46,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-good-077",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 22.507,
+   "inSync": 0.9458,
+   "maxShift": 12.051,
+   "rows": 256,
+   "cpuS": 0.46,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-good-078",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 21.232,
+   "inSync": 0.8958,
+   "maxShift": 13.046,
+   "rows": 256,
+   "cpuS": 0.44,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-moderate-079",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 20.255,
+   "inSync": 0.6667,
+   "maxShift": 8.971,
+   "rows": 256,
+   "cpuS": 0.44,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-moderate-080",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 20.248,
+   "inSync": 0.6375,
+   "maxShift": 16.0,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-moderate-081",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 21.002,
+   "inSync": 0.6917,
+   "maxShift": 2.165,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-moderate-082",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 20.665,
+   "inSync": 0.6458,
+   "maxShift": 7.176,
+   "rows": 256,
+   "cpuS": 0.47,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-moderate-083",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 20.639,
+   "inSync": 0.6458,
+   "maxShift": 14.004,
+   "rows": 256,
+   "cpuS": 0.49,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-moderate-084",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 20.616,
+   "inSync": 0.7083,
+   "maxShift": 11.097,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-moderate-085",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 20.602,
+   "inSync": 0.6167,
+   "maxShift": 6.005,
+   "rows": 256,
+   "cpuS": 0.43,
+   "audioS": 113.98
+  },
+  {
+   "id": "scottie1-fading-moderate-086",
+   "starts": 1,
+   "modes": [
+    "scottie_s1"
+   ],
+   "psnr": 21.093,
+   "inSync": 0.7,
+   "maxShift": 2.178,
+   "rows": 256,
+   "cpuS": 0.52,
+   "audioS": 113.98
+  },
+  {
+   "id": "pd120-clean-087",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 30.55,
+   "inSync": 1.0,
+   "maxShift": 0.581,
+   "rows": 496,
+   "cpuS": 0.57,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-awgn30-088",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 27.312,
+   "inSync": 1.0,
+   "maxShift": 0.648,
+   "rows": 496,
+   "cpuS": 0.53,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-awgn20-089",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 19.873,
+   "inSync": 0.9871,
+   "maxShift": 1.582,
+   "rows": 496,
+   "cpuS": 0.53,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-awgn15-090",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 15.441,
+   "inSync": 0.8556,
+   "maxShift": 13.761,
+   "rows": 496,
+   "cpuS": 0.52,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-awgn10-091",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 11.158,
+   "inSync": 0.5,
+   "maxShift": 16.0,
+   "rows": 496,
+   "cpuS": 0.52,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-awgn6-092",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 8.377,
+   "inSync": 0.2457,
+   "maxShift": 16.0,
+   "rows": 496,
+   "cpuS": 0.55,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-awgn3-093",
+   "starts": 0,
+   "modes": [],
+   "psnr": 0.0,
+   "inSync": 0.0,
+   "maxShift": null,
+   "rows": 0,
+   "cpuS": 11.75,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-offset+40-094",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 16.345,
+   "inSync": 0.694,
+   "maxShift": 1.759,
+   "rows": 496,
+   "cpuS": 0.64,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-offset-100-095",
+   "starts": 0,
+   "modes": [],
+   "psnr": 0.0,
+   "inSync": 0.0,
+   "maxShift": null,
+   "rows": 0,
+   "cpuS": 12.02,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-clock+200-096",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 19.65,
+   "inSync": 0.9116,
+   "maxShift": 2.096,
+   "rows": 496,
+   "cpuS": 0.72,
+   "audioS": 130.42
+  },
+  {
+   "id": "pd120-clock-200-097",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 19.881,
+   "inSync": 0.9655,
+   "maxShift": 1.318,
+   "rows": 496,
+   "cpuS": 0.7,
+   "audioS": 130.47
+  },
+  {
+   "id": "pd120-joined-098",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 19.861,
+   "inSync": 0.9789,
+   "maxShift": 2.077,
+   "rows": 300,
+   "cpuS": 0.45,
+   "audioS": 79.64
+  },
+  {
+   "id": "pd120-novis-099",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 19.855,
+   "inSync": 0.9957,
+   "maxShift": 1.145,
+   "rows": 478,
+   "cpuS": 0.59,
+   "audioS": 129.54
+  },
+  {
+   "id": "pd120-fading-good-100",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 16.838,
+   "inSync": 0.625,
+   "maxShift": 14.013,
+   "rows": 496,
+   "cpuS": 0.67,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-good-101",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 17.835,
+   "inSync": 0.5431,
+   "maxShift": 16.0,
+   "rows": 496,
+   "cpuS": 0.52,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-good-102",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 18.526,
+   "inSync": 0.5172,
+   "maxShift": 15.2,
+   "rows": 496,
+   "cpuS": 0.49,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-good-103",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 17.784,
+   "inSync": 0.5539,
+   "maxShift": 13.138,
+   "rows": 496,
+   "cpuS": 0.5,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-good-104",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 16.613,
+   "inSync": 0.5194,
+   "maxShift": 15.235,
+   "rows": 496,
+   "cpuS": 0.67,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-good-105",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 18.016,
+   "inSync": 0.5603,
+   "maxShift": 14.162,
+   "rows": 496,
+   "cpuS": 0.51,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-good-106",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 17.068,
+   "inSync": 0.4591,
+   "maxShift": 14.034,
+   "rows": 496,
+   "cpuS": 0.5,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-good-107",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 17.912,
+   "inSync": 0.5625,
+   "maxShift": 15.101,
+   "rows": 496,
+   "cpuS": 0.5,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-moderate-108",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 16.837,
+   "inSync": 0.222,
+   "maxShift": 16.0,
+   "rows": 496,
+   "cpuS": 0.49,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-moderate-109",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 17.199,
+   "inSync": 0.2155,
+   "maxShift": 15.281,
+   "rows": 496,
+   "cpuS": 0.55,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-moderate-110",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 16.493,
+   "inSync": 0.1638,
+   "maxShift": 16.0,
+   "rows": 496,
+   "cpuS": 0.5,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-moderate-111",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 16.214,
+   "inSync": 0.2112,
+   "maxShift": 16.0,
+   "rows": 496,
+   "cpuS": 0.53,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-moderate-112",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 17.001,
+   "inSync": 0.2069,
+   "maxShift": 15.091,
+   "rows": 496,
+   "cpuS": 0.52,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-moderate-113",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 16.739,
+   "inSync": 0.2134,
+   "maxShift": 16.0,
+   "rows": 496,
+   "cpuS": 0.5,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-moderate-114",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 17.203,
+   "inSync": 0.2802,
+   "maxShift": 15.17,
+   "rows": 496,
+   "cpuS": 0.64,
+   "audioS": 130.45
+  },
+  {
+   "id": "pd120-fading-moderate-115",
+   "starts": 1,
+   "modes": [
+    "pd120"
+   ],
+   "psnr": 16.714,
+   "inSync": 0.2888,
+   "maxShift": 15.008,
+   "rows": 496,
+   "cpuS": 0.49,
+   "audioS": 130.45
+  }
+ ]
+}
