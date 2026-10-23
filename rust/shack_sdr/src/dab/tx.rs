@@ -11,6 +11,7 @@
 use super::coding;
 use super::pad::{scf_crc_len, PadEncoder};
 use super::rs;
+use super::tii;
 use super::tables::{self, Protection, CIFS, CIF_BITS, CU_BITS, K, SYMBOL_BITS, TU, GUARD, TNULL};
 use crate::dsp::Resampler;
 use crate::mp2::encode::Encoder as Mp2Encoder;
@@ -267,6 +268,9 @@ pub struct Transmitter {
     interleave: Vec<i32>,
     prev: Vec<Complex64>,
     fft: std::sync::Arc<dyn rustfft::Fft<f64>>,
+    /// This transmitter's TII (main, sub), sent in the null symbol of the
+    /// frames that hold CIFs 0-3 mod 8; None sends a silent null.
+    pub tii: Option<(u8, u8)>,
 }
 
 /// The FIG header and its data.
@@ -377,6 +381,7 @@ impl Transmitter {
             interleave: tables::frequency_interleave(),
             prev: Vec::new(),
             fft: FftPlanner::new().plan_fft_inverse(TU),
+            tii: None,
         }
     }
 
@@ -467,10 +472,27 @@ impl Transmitter {
         out
     }
 
+    /// A null symbol carrying TII (§14.8): each pair (k0, k0 + 1) with the
+    /// phase reference's phase at k0, as strong as a data carrier, over the
+    /// whole null with its last TU samples the useful part (g_TII,k: the
+    /// first TNULL - TU are its cyclic prefix).
+    fn tii_null(&self, main: u8, sub: u8, prs: &[Complex64]) -> Vec<Complex64> {
+        let ks = tii::carriers(main, sub).expect("a valid TII");
+        let mut buf = vec![Complex64::new(0.0, 0.0); TU];
+        for pair in ks.chunks(2) {
+            let phase = prs[(pair[0] + 768) as usize];
+            for &k in pair {
+                buf[(k + TU as i32) as usize % TU] = phase;
+            }
+        }
+        self.fft.process(&mut buf);
+        let scale = 1.0 / (K as f64).sqrt();
+        (0..TNULL).map(|n| buf[(n + TU - (TNULL - TU)) % TU] * scale).collect()
+    }
+
     /// The next 96 ms transmission frame, 196 608 samples at 2.048 MS/s, with
     /// mean power 1 outside the null symbol.
     pub fn frame(&mut self) -> Vec<Complex32> {
-        let mut out = vec![Complex64::new(0.0, 0.0); TNULL];
         // The phase reference symbol: z[k + 768], k = -768..768, z[768] = 0.
         let mut z = vec![Complex64::new(0.0, 0.0); 2 * 768 + 1];
         for k in -768i32..=768 {
@@ -479,6 +501,10 @@ impl Transmitter {
                 z[(k + 768) as usize] = Complex64::from_polar(1.0, q * std::f64::consts::FRAC_PI_2);
             }
         }
+        let mut out = match self.tii {
+            Some((main, sub)) if self.cif % 8 == 0 => self.tii_null(main, sub, &z),
+            _ => vec![Complex64::new(0.0, 0.0); TNULL],
+        };
         out.extend(self.symbol(&z));
         self.prev = z;
         // FIC (symbols 2-4) and MSC (5-76) bits.
@@ -566,12 +592,38 @@ impl Fader {
 
 /// `frames` transmission frames of `ensemble` through `ch`.
 pub fn dab_iq(ensemble: &TxEnsemble, frames: usize, ch: &Channel) -> Vec<Complex32> {
-    let mut tx = Transmitter::new(ensemble.clone());
+    sfn_iq(ensemble, &[Site { tii: None, delay: 0, gain: 1.0 }], frames, ch)
+}
+
+/// One transmitter of a single-frequency network, as the receiver has it:
+/// its TII (main, sub), and its delay (samples at 2.048 MS/s) and gain.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Site {
+    pub tii: Option<(u8, u8)>,
+    pub delay: usize,
+    pub gain: f64,
+}
+
+/// `frames` frames of `ensemble` from every site of a single-frequency
+/// network (the same frames, each with its own TII), summed at the
+/// receiver, then through `ch`.
+pub fn sfn_iq(ensemble: &TxEnsemble, sites: &[Site], frames: usize, ch: &Channel) -> Vec<Complex32> {
     let mut rng = Rng::new(ch.seed);
     let lead = (ch.lead_s * tables::RATE) as usize;
-    let mut x: Vec<Complex64> = vec![Complex64::new(0.0, 0.0); lead];
-    for _ in 0..frames {
-        x.extend(tx.frame().iter().map(|v| Complex64::new(v.re as f64, v.im as f64)));
+    let mut x: Vec<Complex64> = vec![Complex64::new(0.0, 0.0); lead + frames * tables::TF];
+    for site in sites {
+        let mut tx = Transmitter::new(ensemble.clone());
+        tx.tii = site.tii;
+        let mut n = lead + site.delay;
+        for _ in 0..frames {
+            for v in tx.frame() {
+                if n >= x.len() {
+                    break;
+                }
+                x[n] += Complex64::new(v.re as f64, v.im as f64) * site.gain;
+                n += 1;
+            }
+        }
     }
     // Multipath.
     let x = if ch.paths.is_empty() {

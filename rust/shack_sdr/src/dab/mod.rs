@@ -15,4 +15,5 @@ pub mod ofdm;
 pub mod pad;
 pub mod rs;
 pub mod tables;
+pub mod tii;
 pub mod tx;
