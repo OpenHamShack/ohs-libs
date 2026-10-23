@@ -200,6 +200,21 @@ def test_on_a_controller_the_host_library_replaces_the_folder(tmp_path, no_syste
     assert st["mbelib"]["host"] and not st["codec2"]["host"]
 
 
+def test_a_staged_host_library_is_found_under_its_versioned_name(tmp_path, no_system, monkeypatch):
+    """The platform stages files by pattern and copies them rather than the
+    soname's link, so /opt/hostlibs/faad2/ may hold only libfaad.so.2.0.0."""
+    staged = tmp_path / "hostlibs" / "faad2"
+    staged.mkdir(parents=True)
+    shutil.copy(faad(tmp_path), staged / "libfaad.so.2.0.0")
+    (staged / "stamp.json").write_text("{}")
+    monkeypatch.setenv("SHACK_HOSTLIBS", str(tmp_path / "hostlibs"))
+    ld = codecs.Loader(None)
+    assert [p.name for p, where in ld.candidates("faad2")] == ["libfaad.so.2.0.0"]
+    st = {s["id"]: s for s in ld.status()}
+    assert st["faad2"]["state"] == "found" and st["faad2"]["where"] == "host"
+    assert st["faad2"]["path"] == str(staged / "libfaad.so.2.0.0")
+
+
 def test_the_folders_are_where_the_plan_says(monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
     if sys.platform.startswith("linux"):

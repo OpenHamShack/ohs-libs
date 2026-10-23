@@ -101,7 +101,7 @@ class Loader:
             out.append((Path(env), "env"))
         hostlibs = os.environ.get("SHACK_HOSTLIBS")
         if hostlibs and e["hostLibrary"]:
-            out += [(Path(hostlibs) / e["hostLibrary"] / n, "host") for n in names]
+            out += [(p, "host") for p in _staged(Path(hostlibs) / e["hostLibrary"], names)]
         elif self.folder:
             out += [(self.folder / n, "folder") for n in names]
         if e["shippable"]:
@@ -226,6 +226,22 @@ class Loader:
             if s["id"] == codec and s["state"] == "found":
                 return s["path"]
         return None
+
+
+def _staged(folder: Path, names) -> list[Path]:
+    """A controller's staged copy of a host library (RADIO-SDR-PLAN §5.6),
+    `$SHACK_HOSTLIBS/<name>/`: each known name first, then any versioned file
+    of one of them (libfaad.so.2.0.0 for libfaad.so.2). The platform stages
+    the package's files by pattern (`libfaad.so.2*`) and copies files, not
+    links, so whether the soname itself arrives depends on how the package
+    ships it; the versioned file is the same library either way."""
+    out = [folder / n for n in names]
+    try:
+        files = sorted(p for p in folder.iterdir() if p.is_file())
+    except OSError:
+        return out
+    out += [p for n in names for p in files if p.name.startswith(n + ".") and p not in out]
+    return out
 
 
 def _ldconfig() -> dict[str, list[Path]]:
