@@ -38,6 +38,9 @@ rustfft = "6"
 # The codec loader: dlopen/LoadLibraryExW and symbol lookup. ISC. Only ever
 # opens a full path the loader chose (src/codecs).
 libloading = "0.8"
+# Deflate for SSTV's PNGs (src/sstv/png.rs). Pure Rust, no C,
+# MIT/Zlib/Apache-2.0; its one dependency, adler2, 0BSD/MIT/Apache-2.0.
+miniz_oxide = "0.9"
 
 [target.'cfg(unix)'.dependencies]
 # CLOCK_THREAD_CPUTIME_ID, for the host's CPU budget (src/cpu.rs).

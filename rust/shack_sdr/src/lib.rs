@@ -10,6 +10,7 @@
 //! - `testsig`: test signals and channel models, bit-identical everywhere (§7.1).
 //! - `dsp`: the small pieces the decoders share.
 //! - `wfm`: broadcast FM: stereo, RDS and the band scanner's many-carrier RDS.
+//! - `sstv`: SSTV pictures, every common mode, with the test transmitter.
 
 pub mod catalogue;
 pub mod dab;
@@ -20,6 +21,7 @@ pub mod dsp;
 pub mod host;
 pub mod mp2;
 pub mod rtty;
+pub mod sstv;
 pub mod testsig;
 pub mod wfm;
 

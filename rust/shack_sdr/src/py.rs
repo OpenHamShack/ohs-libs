@@ -621,5 +621,6 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(dab_blocks, m)?)?;
     m.add_function(wrap_pyfunction!(dab_survey, m)?)?;
     crate::wfm::py::register(m)?;
+    crate::sstv::py::register(m)?;
     Ok(())
 }
