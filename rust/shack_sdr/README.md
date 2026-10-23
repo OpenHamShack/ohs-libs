@@ -270,6 +270,9 @@ host.audio(sid, rate=12_000, channels=1)   # its sound from the ring; RDS as `me
   only. The scan is about 35 ms of CPU per MHz per second of capture with
   every carrier decoded to the end (the worst case); a typical scan stops
   each station after about 1.1 s, and threads divide the wall time.
+  `tests/wfm_scan.rs` prints the figure on every run and fails only above
+  3x it (`SHACK_SDR_CPU_BUDGET_SCALE` sets the multiple): a regression
+  catcher, since a shared VM measures half as much again with nothing changed.
 - **Tests without a transmitter:** `wfm::tx` (`_native.testsig_wfm`,
   `testsig_fm_band`) builds the BS.450 multiplex with pre-emphasis, the
   pilot, L-R, RDS from real groups (`rds::Station`), FM at ±75 kHz, and a
