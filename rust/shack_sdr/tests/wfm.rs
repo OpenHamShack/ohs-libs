@@ -491,3 +491,33 @@ fn the_wfm_host_session_plays_stereo_into_its_ring_and_reports_rds() {
     assert!(h.configure(&sid, Params::new().with("deemphasis", Value::Num(60.0))).is_err());
     h.close();
 }
+
+#[test]
+fn cpu_per_stream_on_this_host() {
+    // One station's processing, timed as the thread's own CPU (not wall
+    // time, which a loaded host inflates); printed with --nocapture and
+    // held loosely, since hosts differ.
+    let mut t = Tx::new(RATE);
+    t.left = Audio::Noise { amp: 0.25, seed: 1 };
+    t.right = Audio::Noise { amp: 0.25, seed: 2 };
+    t.rds = Some(station());
+    let secs = 10.0;
+    let x = iq(&t, secs, &Channel { cnr_db: Some(25.0), seed: 4, ..Default::default() });
+    for (name, cfg) in [
+        ("stereo + RDS, 48 kHz", Config::default()),
+        ("stereo, no RDS", Config { rds: false, ..Config::default() }),
+        ("12 kHz mono + RDS", Config { audio_rate: 12_000, channels: 1, ..Config::default() }),
+        ("RDS and pilot only", Config { audio: false, ..Config::default() }),
+    ] {
+        let mut rx = WfmReceiver::new(RATE, cfg).unwrap();
+        let mut out = Vec::new();
+        let c0 = shack_sdr::cpu::thread_time();
+        for c in x.chunks(4800) {
+            out.clear();
+            rx.process_iq(c, &mut out);
+        }
+        let cpu = (shack_sdr::cpu::thread_time() - c0).as_secs_f64();
+        eprintln!("{name:22}: {:.2} % of one core at 240 kS/s", 100.0 * cpu / secs);
+        assert!(cpu / secs < 0.15, "{name}: {cpu}");
+    }
+}

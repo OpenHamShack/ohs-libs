@@ -17,7 +17,7 @@
 //!   no step at the joins.
 //! - **Levels** come from the first round's spectra: each grid point's
 //!   power within ±75 kHz (dBFS, a full-scale complex tone is 0 dB), the
-//!   noise floor the median bin's power over the same width. A station is a
+//!   noise floor the 30th-percentile bin's power over the same width. A station is a
 //!   grid point `min_snr_db` over the floor that is no weaker than its
 //!   neighbours (an FM station's skirts reach the next grid point, and a
 //!   second station 100 kHz away is a rarity the scanner can live without).
@@ -318,7 +318,11 @@ fn find_carriers(
         .map(|k| pw[k])
         .collect();
     inside.sort_by(|a, b| a.total_cmp(b));
-    let floor = inside[inside.len() / 2] * (2 * half_bins + 1) as f64;
+    // The 30th percentile, not the median: a busy band is half stations
+    // or more, and their skirts would lift a median. Averaged over a
+    // round's segments, a noise bin's power is within 0.3 dB of its mean
+    // at that percentile.
+    let floor = inside[inside.len() * 3 / 10] * (2 * half_bins + 1) as f64;
     let floor_db = 10.0 * floor.max(1e-30).log10();
     let lo = (BAND_LO.max(centre_hz - edge + GRID) / GRID).ceil() as i64;
     let hi = (BAND_HI.min(centre_hz + edge - GRID) / GRID).floor() as i64;

@@ -1,8 +1,9 @@
 //! The band scanner's many-carrier RDS (src/wfm/scan.rs) on a synthetic
 //! capture: stations at different levels, stereo and mono, on the 100 kHz
 //! grid, in noise; each found at its frequency with its PI, PS and PTY,
-//! and nothing reported where there is no station. Also the CPU it takes
-//! per MHz of capture on this host, printed with --nocapture.
+//! and nothing reported where there is no station; twelve stations in 8
+//! and 10 MHz. Also the CPU it takes per MHz of capture on this host,
+//! printed with --nocapture.
 
 use shack_sdr::wfm::rds::Station;
 use shack_sdr::wfm::tx::{self, Audio, BandStation, Tx};
@@ -75,6 +76,9 @@ fn the_budget_is_kept_and_noise_alone_finds_nothing() {
     let iq = tx::band(rate, 1.0, &[], -50.0, 3);
     let report = scan(&iq, rate, 98_000_000.0, &ScanOptions::default());
     assert!(report.stations.is_empty(), "{:?}", report.stations);
+    // The floor in noise alone: -50 dBFS over 4 MHz is -64.3 in 150 kHz.
+    let want = -50.0 - 10.0 * (4_000_000.0f64 / 150_000.0).log10();
+    assert!((report.noise_db as f64 - want).abs() < 1.0, "{} {want}", report.noise_db);
     // A budget too small for the work: it stops at a round's end, with
     // what each carrier had.
     let stations = vec![st(0xC201, "RADIO 1 ", 10, 0.0, -20.0, true), st(0xC202, "RADIO 2 ", 13, 1_000_000.0, -30.0, true)];
@@ -83,4 +87,45 @@ fn the_budget_is_kept_and_noise_alone_finds_nothing() {
     assert_eq!(report.stations.len(), 2);
     assert!(report.timed_out && report.used_s < 1.0, "{report:?}");
     assert!(report.wall_s < 0.5, "{}", report.wall_s);
+}
+
+#[test]
+fn cpu_per_mhz_of_capture_on_this_host() {
+    // A full 8 and 10 MHz capture with twelve stations, scanned to the end
+    // of the capture (RadioText asked for, which none sends, so no carrier
+    // stops early): the worst case, per MHz of capture and per second of it.
+    for rate in [8_000_000.0, 10_000_000.0] {
+        let n = 12;
+        let stations: Vec<BandStation> = (0..n)
+            .map(|k| {
+                let off = -0.42 * rate + (k as f64 + 0.5) * 0.84 * rate / n as f64;
+                let off = (off / 100_000.0).round() * 100_000.0;
+                st(0xC300 + k as u16, &format!("STN {k:02} "), (k % 31) as u8 + 1, off, -25.0 - 3.0 * k as f64, k % 3 != 0)
+            })
+            .map(|mut s| {
+                s.tx.rds.as_mut().unwrap().rt.clear();
+                s
+            })
+            .collect();
+        let secs = 1.5;
+        let iq = tx::band(rate, secs, &stations, -60.0, 9);
+        for threads in [1, 4] {
+            let r = scan(&iq, rate, 98_000_000.0, &ScanOptions { budget_s: 60.0, threads, rt: true, ..ScanOptions::default() });
+            let mhz = rate / 1e6;
+            eprintln!(
+                "{mhz:4.0} MHz, {threads} thread(s), {} stations: {:.1} ms CPU per MHz per second of capture ({:.2} s CPU, {:.2} s wall for {:.1} s); all named: {}",
+                r.stations.len(),
+                1000.0 * r.cpu_s / mhz / r.used_s,
+                r.cpu_s,
+                r.wall_s,
+                r.used_s,
+                r.stations.iter().all(|f| f.fields.ps.is_some())
+            );
+            eprintln!("noise floor {:.1} dBFS in 150 kHz", r.noise_db);
+            let found: Vec<f64> = r.stations.iter().map(|f| f.hz).collect();
+            let want: Vec<f64> = stations.iter().map(|s| 98_000_000.0 + s.offset_hz).collect();
+            assert_eq!(found, want, "{:?}", r.stations.iter().map(|f| (f.hz, f.level_db)).collect::<Vec<_>>());
+            assert!(r.cpu_s / mhz / r.used_s < 0.05, "{}", r.cpu_s);
+        }
+    }
 }
