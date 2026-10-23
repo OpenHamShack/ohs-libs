@@ -38,8 +38,15 @@ const ADVANCE: usize = 32;
 /// Integer frequency search: +-40 carriers (40 kHz; a receiver 150 ppm off
 /// at 240 MHz is 36 kHz).
 const MAX_SHIFT: i32 = 40;
-/// The phase reference's correlation peak over its mean, for a sync.
-const PEAK_RATIO: f32 = 14.0;
+/// The phase reference's correlation peak over its mean, for a first sync.
+/// Noise alone, over 81 shifts of 2048 delays, reaches 12-15 now and then
+/// (the largest of ~166 000 exponential draws), and once locked a false
+/// sync to noise at 14 was seen; real phase references give hundreds even
+/// at 3 dB SNR.
+const PEAK_RATIO: f32 = 40.0;
+/// Once locked (one shift, 2048 delays: noise's largest is about 8), the
+/// phase reference counts as present above this.
+const TRACK_RATIO: f32 = 16.0;
 
 /// Why a span of samples gave no frame.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -139,6 +146,12 @@ impl Demod {
         self.state = State::Search;
         self.offset_hz = 0.0;
         self.clock = 0.0;
+    }
+
+    /// Search again from the samples now buffered (the decoder saw that a
+    /// lock reads nothing).
+    pub fn resync(&mut self) {
+        self.state = State::Search;
     }
 
     pub fn locked(&self) -> bool {
@@ -295,7 +308,10 @@ impl Demod {
         // phase reference is sure. Then to the sample, within that block.
         let quiet = best / 40.0;
         let edge = (quiet * mean).sqrt();
-        let Some(b_end) = (at..blocks.len()).find(|&b| blocks[b] > edge) else {
+        // Loud must last: the phase reference and data follow a null, while
+        // one loud block in a stretch of noise is only noise.
+        let sustained = |b: usize| blocks.get(b..b + 16).is_some_and(|w| w.iter().sum::<f32>() / 16.0 > edge);
+        let Some(b_end) = (at..blocks.len()).find(|&b| blocks[b] > edge && sustained(b)) else {
             self.drop_before(self.base + (TF / 2) as u64);
             return Some(Event::Miss(Miss::NoNull));
         };
@@ -402,7 +418,7 @@ impl Demod {
             let err = (f - self.offset_hz + 500.0).rem_euclid(1000.0) - 500.0;
             self.offset_hz += 0.5 * err;
         }
-        let good = prs_ratio >= PEAK_RATIO / 2.0;
+        let good = prs_ratio >= TRACK_RATIO;
         let (start, misses) = if good && timing_err.abs() < 300.0 {
             self.clock = (self.clock + 0.2 * timing_err / TF as f64).clamp(-2e-4, 2e-4);
             (start + timing_err * 0.5, 0)
