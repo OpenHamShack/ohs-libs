@@ -9,6 +9,7 @@
 //! - `codecs`: the runtime codec loader (§5).
 //! - `testsig`: test signals and channel models, bit-identical everywhere (§7.1).
 //! - `dsp`: the small pieces the decoders share.
+//! - `wfm`: broadcast FM: stereo, RDS and the band scanner's many-carrier RDS.
 
 pub mod catalogue;
 pub mod dab;
@@ -20,6 +21,7 @@ pub mod host;
 pub mod mp2;
 pub mod rtty;
 pub mod testsig;
+pub mod wfm;
 
 #[cfg(feature = "python")]
 mod py;
