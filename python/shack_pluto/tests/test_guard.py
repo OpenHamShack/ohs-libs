@@ -107,6 +107,20 @@ def test_a_pluto_that_will_not_read_quiet_gives_no_guard(sysfs):
     assert e.value.reason == "guard-not-quiet"
 
 
+def test_a_shell_without_read_timeouts_gives_no_guard_and_leaves_it_quiet(sysfs):
+    # dash, Debian's /bin/sh: its `read` has no -t, so every look would
+    # fail at once and read as EOF - a guard that says `ready` and then
+    # quits blaming a live app. It must refuse before `ready` instead.
+    import shutil
+    dash = shutil.which("dash")
+    if dash is None:
+        pytest.skip("no dash on this host")
+    with pytest.raises(GuardError) as e:
+        Guard(LocalRunner(shell=dash), 10, root=str(sysfs.root)).start(timeout=5)
+    assert e.value.reason == "guard-failed" and "no-read-timeout" in e.value.detail
+    assert sysfs.quiet()
+
+
 def test_no_ad936x_gives_no_guard(tmp_path):
     from conftest import Sysfs
     Sysfs(tmp_path, name="xadc")

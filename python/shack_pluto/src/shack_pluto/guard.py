@@ -67,6 +67,16 @@ key without a confirmed one (PlutoLink, "tx-unguarded"), so a Pluto whose
 guard cannot be started - no SSH, a wrong password, a USB-only URI, a
 firmware the script does not suit - opens receive-only and says why.
 
+**A shell without `read -t`** (dash, Debian's /bin/sh: "Illegal option
+-t", status 2) fails every read at once, which the loop above cannot tell
+from EOF: such a guard used to say `ready` and then quit at the next look
+with `quiet eof`, blaming an app that was alive. Safe - quiet, and no
+longer confirmed - but the wrong reason, so before `ready` the script
+reads /dev/null with `-t` and wants EOF's status, 1 (both firmwares
+above, bash and busybox); anything else is `error no-read-timeout` and no
+guard, with the transmitter already quieted. Found 23/10/2026 when the
+tests ran on a host with no busybox and fell back to dash.
+
 The transport is a `Runner`: `SshRunner` (paramiko, which the desktop
 bundles carry with cryptography) for a real Pluto, `LocalRunner` for the
 tests, which run this very script under the host's busybox or sh against
@@ -132,6 +142,7 @@ trap "leave pipe" PIPE
 : > $LOG
 quiet
 if ! isquiet; then say "error not-quiet"; exit 3; fi
+read -t 1 x </dev/null 2>/dev/null; [ $? = 1 ] || { say "error no-read-timeout"; exit 5; }
 say "ready pid=$$ limit=$LIMIT hb=$HB"
 last=$(now); on=
 while :; do
@@ -372,20 +383,26 @@ class _PipeSession:
 class LocalRunner:
     """Runs the command in a local shell, for the tests: busybox's `sh`
     when the host has one, because that is the Pluto's shell, and a
-    script that only works in bash or dash proves nothing about it (the
-    host's /bin/sh is dash, whose `read` has no -t, and a guard under it
-    quits at once - closed, but not what we are testing)."""
+    script that only works in bash proves less about it. A host without
+    busybox (ohs-dev, a stock Debian) gets bash, whose `read -t` takes
+    fractions and reports EOF as 1 as busybox does - never /bin/sh, which
+    is dash there and has no `read -t` at all, so the guard refuses to
+    start under it (`error no-read-timeout`). `shell` names one outright,
+    for the test that proves that refusal."""
 
-    def __init__(self):
+    def __init__(self, shell: str | None = None):
         self.sessions: list[_PipeSession] = []
-        self.busybox = shutil.which("busybox")
+        self.busybox = None if shell else shutil.which("busybox")
+        self.shell = shell or shutil.which("bash") or "/bin/sh"
 
     def start(self, command: str) -> _PipeSession:
-        if self.busybox and command.startswith("sh "):
-            command = f"{shlex.quote(self.busybox)} {command}"
-        proc = subprocess.Popen([self.busybox or "/bin/sh", "sh", "-c", command] if self.busybox
-                                else ["/bin/sh", "-c", command],
-                                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        # The command is `sh -c <script> ...`, as the Pluto's dropbear
+        # runs it; its `sh` becomes the chosen shell, run directly with no
+        # shell around it, so a signal a test sends reaches the guard.
+        words = shlex.split(command)
+        if words[:1] == ["sh"]:
+            words[:1] = [self.busybox, "sh"] if self.busybox else [self.shell]
+        proc = subprocess.Popen(words, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         s = _PipeSession(proc)
         self.sessions.append(s)
         return s
