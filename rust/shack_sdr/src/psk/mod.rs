@@ -36,6 +36,15 @@
 //!   kept; when the coarse AFC finds the signal somewhere else, they are
 //!   decoded again at the new frequency, so the first characters of an over
 //!   that began off-tune are not lost (RTTY's replay, rtty/mod.rs).
+//! - **A step in the carrier mid-over** (a TX lock correcting the sender,
+//!   our own echo on NB) is seen by a frequency detector beside the Costas
+//!   loop, measured on the look-back, placed to the sample, and the
+//!   look-back decoded again with the AFC stepped there: no character lost
+//!   to a step within the AFC's range on a strong signal, where the loop
+//!   alone lost several (Demod::follow_step, Channel::follow_step).
+//! - **The end of an over.** As the squelch closes, what the trellis holds
+//!   is released at once, and a last character whose own bits are plainly
+//!   the over's prints though the carrier stopped on its "00".
 //!
 //! Together: the character error rate psk.py reaches at a given SNR, this
 //! reaches 2-3 dB lower, at every speed (tests/psk.rs prints the sweep).
@@ -134,6 +143,35 @@ const COSTAS_ZETA: f64 = 0.707;
 const NOISE_LEAK: f64 = 0.8;
 /// The share of the Costas loop's frequency moved to the AFC each symbol.
 const AFC_TRANSFER: f64 = 0.05;
+/// The step detector (Demod::follow_step): its average's time constant,
+/// symbols; how many of its standard errors, and how many hertz, an offset
+/// from the Costas loop must be to be seen as a step; once measured, how
+/// many hertz it must be to be followed (the loop holds less than a hertz
+/// without slipping, and 1.6 Hz cost a character at PSK31), and how much
+/// more, in power, the squared input must add up there than at the loop's
+/// frequency (1.7 for 1.3 Hz over FD_SETTLE_S; noise mistaken for a step
+/// rarely makes 1.1).
+const FD_TAU_SYMS: f64 = 4.0;
+const FD_SURE: f64 = 3.0;
+const FD_SEEN_HZ: f64 = 0.7;
+const FD_MIN_HZ: f64 = 1.3;
+const FD_PEAK: f64 = 1.3;
+/// The input's power over four symbols under this share of its power over
+/// thirty-two is a fade, or the over's end, not a step.
+const FD_FADE: f64 = 0.5;
+/// Only an over at least this strong (Es/N0 of 12 dB) is watched for
+/// steps. At 10 dB fading's phase passed for steps (the sweep's Watterson
+/// "poor" at -8 dB in 2.5 kHz lost 14 characters more); at 14 dB a step in
+/// a PSK31 over at 16 dB went unfollowed one time in four.
+const FD_ESN0: f64 = 15.8;
+/// After a step is seen, it is heard this long (and for at least this many
+/// symbols) before it is measured: long enough for the squared input to
+/// tell half-bauds apart and place the step's frequency to a fraction of a
+/// hertz.
+const FD_SETTLE_S: f64 = 0.15;
+const FD_SETTLE_SYMS: f64 = 4.0;
+/// How far back before the detector saw it, symbols, a step is looked for.
+const STEP_SEARCH_SYMS: f64 = 16.0;
 /// Coarse AFC (psk.py's constants): an FFT of this many symbols, every this
 /// many, believed when its peak stands this far over the median.
 const ACQ_SYMS: usize = 32;
@@ -397,6 +435,20 @@ struct Demod {
     timing_rot: Complex64,
     timing_ph: Complex64,
     timing_n: u64,
+    /// The step detector's average, each squared symbol against the last,
+    /// with its magnitude's; symbols in it since it was started afresh; and
+    /// whether that was on a step seen, which it is now hearing out.
+    fd_sym: Complex64,
+    fd_sym_mag: f64,
+    fd_n: u64,
+    fd_settling: bool,
+    /// The input's power over four symbols and over thirty-two: a fade
+    /// shows in the first falling under the second, a step does not.
+    pow_fast: f64,
+    pow_slow: f64,
+    /// The first working sample the step detector may use (the matched
+    /// filter holds nothing from before the AFC last stepped).
+    fd_from: u64,
     /// The next symbol's working-sample index (the matched filter's output).
     strobe: f64,
     theta: f64,
@@ -429,6 +481,13 @@ struct Demod {
     z20: u64,
     idle_run: u32,
     imd: Option<(f64, f64, f64)>,
+    // -- a step in the carrier's frequency
+    /// A step seen and heard for a while, for the channel to measure.
+    step_seen: Option<StepSeen>,
+    /// To apply as each working sample is reached (a replay over steps).
+    retune_at: VecDeque<(u64, f64)>,
+    /// This is a replay: a step it finds is not replayed again.
+    replaying: bool,
 }
 
 impl Demod {
@@ -449,6 +508,13 @@ impl Demod {
             timing_rot: rot,
             timing_ph: Complex64::from_polar(1.0, -2.0 * PI * (m0 as f64 % g.sps) / g.sps),
             timing_n: 0,
+            fd_sym: Complex64::new(0.0, 0.0),
+            fd_sym_mag: 0.0,
+            fd_n: 0,
+            fd_settling: false,
+            pow_fast: 0.0,
+            pow_slow: 0.0,
+            fd_from: 0,
             strobe: m0 as f64 + g.sps,
             theta: 0.0,
             nu: 0.0,
@@ -473,11 +539,31 @@ impl Demod {
             z20: m0,
             idle_run: 0,
             imd: None,
+            step_seen: None,
+            retune_at: VecDeque::new(),
+            replaying: false,
         }
     }
 
     fn freq(&self, baud: f64) -> f64 {
         self.afc_hz + self.nu * baud / (2.0 * PI)
+    }
+
+    /// Move the AFC, and the step detector's average with it: the symbols
+    /// it has already heard were mixed at the old frequency.
+    fn retune(&mut self, f: f64, g: &Geometry) {
+        let d = 2.0 * PI * (f - self.afc_hz) / g.work; // rad a sample
+        self.fd_sym *= Complex64::from_polar(1.0, -2.0 * d * g.sps.round());
+        self.afc_hz = f;
+    }
+
+    /// A step followed: the detector starts afresh once the matched filter
+    /// holds only samples mixed at the new frequency.
+    fn stepped(&mut self, f: f64, g: &Geometry) {
+        self.retune(f, g);
+        self.fd_restart();
+        self.fd_settling = false;
+        self.fd_from = self.m + g.mf.len() as u64;
     }
 }
 
@@ -500,6 +586,10 @@ impl Demod {
     /// One working sample. Returns true when it completed a symbol.
     fn step(&mut self, z: Complex32, cx: &Ctx, printed: &mut f64, out: &mut Vec<Emit>) -> bool {
         let g = cx.g;
+        while let Some(&(_, f)) = self.retune_at.front().filter(|(at, _)| self.m >= *at) {
+            self.stepped(f, g);
+            self.retune_at.pop_front();
+        }
         let (s, c) = (2.0 * PI * self.phase).sin_cos();
         self.phase = (self.phase + self.afc_hz / g.work).rem_euclid(1.0);
         let z = z * Complex32::new(c as f32, -s as f32);
@@ -509,6 +599,10 @@ impl Demod {
             self.z2.pop_front();
             self.z20 += 1;
         }
+        // The input's power, for the step detector's fade test.
+        let p = z.norm_sqr() as f64;
+        self.pow_fast += (p - self.pow_fast) / (4.0 * g.sps);
+        self.pow_slow += (p - self.pow_slow) / (32.0 * g.sps);
         let l = g.mf.len();
         self.hist[self.pos] = z;
         self.hist[self.pos + l] = z;
@@ -530,6 +624,28 @@ impl Demod {
         self.timing_n += 1;
         if self.timing_n % 4096 == 0 {
             self.timing_ph /= self.timing_ph.norm();
+        }
+        // The step detector on the matched filter's output, from each
+        // symbol's centre to the next (on the strobe's grid, but now, not
+        // four symbols behind where the strobe reads them): that far apart
+        // idle's two tones turn alike modulo a turn, so the filter's lean to
+        // the nearer one does not bias it, and at the centres the symbols
+        // are clean of their neighbours. Not while the filter still holds
+        // samples mixed before the AFC last moved: whether those turn by
+        // the old offset or the new depends on whether the carrier had
+        // stepped yet, which is what is being measured.
+        let lag = g.sps.round() as usize;
+        let centre = (m as f64 - self.strobe).rem_euclid(g.sps) < 1.0 && m >= self.fd_from;
+        if let Some(p) = self.y.len().checked_sub(lag).map(|i| self.y[i]).filter(|_| centre) {
+            let (yy, pp) = (y * y, (p * p).conj());
+            let q = Complex64::new(yy.re as f64, yy.im as f64) * Complex64::new(pp.re as f64, pp.im as f64);
+            // While a step is measured, a plain mean of everything since it
+            // was seen; otherwise the last few symbols.
+            let mean = 1.0 / (self.fd_n as f64 + 1.0);
+            let k = if self.fd_settling { mean } else { mean.max(1.0 / FD_TAU_SYMS) };
+            self.fd_sym += (q - self.fd_sym) * k;
+            self.fd_sym_mag += (q.norm() - self.fd_sym_mag) * k;
+            self.fd_n += 1;
         }
         self.y.push_back(y);
         let mut produced = false;
@@ -561,6 +677,93 @@ impl Demod {
         produced
     }
 
+    /// A sudden step in the carrier's frequency (a transmitter's TX lock
+    /// correcting it mid-over: NB's own echo). The Costas loop holds less
+    /// than a hertz without slipping and pulls in a step of a few only over
+    /// seconds of slipped cycles; meanwhile the smoother's reference turns
+    /// within its window, the squelch closes, and characters go. A step
+    /// detector beside it, psk.py's fine AFC (the doubled phase change from
+    /// one symbol to the next), sees the step within a few symbols; once it
+    /// has heard FD_SETTLE_S of it, the channel measures it and finds where
+    /// it was on its look-back, and decodes that again with the AFC stepped
+    /// there (Channel::follow_step). Following the step only from where it
+    /// was seen was not enough: the symbols between were read turning by up
+    /// to a radian each, and the smoother's window then held the bend.
+    fn follow_step(&mut self, cx: &Ctx) {
+        let baud = cx.cfg.baud;
+        // Only on a strong signal, out of a fade: there the offset is known
+        // to a fraction of a hertz within a few symbols, and that is where a
+        // step costs characters. A weak signal's copy is limited by its
+        // noise, and a detector on it would only add its own; in a fade the
+        // phase turns quickly near the null, and that is no step. Once a
+        // step is seen it is heard out whatever it does meanwhile to the
+        // squelch's estimate of the signal's strength - but not if the
+        // signal goes: the end of an over looks like a step to the
+        // detector, and the noise after it is no measure of one.
+        let strong = self.on > 0.0 && self.over_a2 >= 2.0 * self.noise * FD_ESN0;
+        let present = self.on > 0.0 && self.pow_fast >= FD_FADE * self.pow_slow;
+        if !present {
+            self.fd_settling = false;
+        }
+        if self.fd_n < 2 || !present || !self.fd_settling && !strong {
+            return;
+        }
+        // How sure: the spread of the doubled phase changes the average
+        // holds (its coherence, for a spread of sigma, is exp(-sigma^2/2)),
+        // and so the standard error of their mean.
+        let rho = (self.fd_sym.norm() / self.fd_sym_mag.max(1e-30)).clamp(1e-6, 1.0);
+        let n = if self.fd_settling { self.fd_n as f64 } else { (self.fd_n as f64).min(2.0 * FD_TAU_SYMS) };
+        let se = 0.5 * (-2.0 * rho.ln()).sqrt() / n.sqrt(); // rad a symbol
+        let fine = 0.5 * self.fd_sym.arg(); // rad a symbol, modulo pi
+        let off = fine - self.nu;
+        let hz = off * baud / (2.0 * PI);
+        // Seen: an offset the loop does not hold, plainly more than the
+        // detector's noise. (Possibly half a baud out: a step of 14 Hz at
+        // PSK31 reads as -1.6 Hz here.)
+        let sure = off.abs() >= FD_SURE * se && hz.abs() >= FD_SEEN_HZ;
+        if !self.fd_settling {
+            if sure {
+                // A step, seen in an average that still holds the symbols
+                // from before it, so it says less than the step. It starts
+                // afresh: from here on only the symbols since count.
+                self.fd_settling = true;
+                self.fd_restart();
+            }
+            return;
+        }
+        // Measured after FD_SETTLE_S of it (and FD_SETTLE_SYMS).
+        if (self.fd_n as f64) < (FD_SETTLE_S * baud).max(FD_SETTLE_SYMS) {
+            return;
+        }
+        self.fd_settling = false;
+        let hz = |rad: f64| rad * baud / (2.0 * PI);
+        if self.replaying {
+            // Within a replay the steps already found are scheduled; one
+            // still seen is followed where it is, with no replay of its own.
+            let g = cx.g;
+            let len = ((self.fd_n as f64).max(FD_SETTLE_SYMS) * g.sps) as usize;
+            let (from, to) = (self.z2.len().saturating_sub(len), self.z2.len());
+            let reach = step_reach(cx.cfg);
+            let total = sq_branch(&self.z2, from, to, hz(fine), baud / 2.0, reach, g.work);
+            let gain = sq_power(&self.z2, from, to, total, g.work) / sq_power(&self.z2, from, to, hz(self.nu), g.work).max(1e-30);
+            if (total - hz(self.nu)).abs() >= FD_MIN_HZ && gain >= FD_PEAK {
+                let f = (self.afc_hz + total - hz(self.nu)).clamp(-cx.cfg.afc_range, cx.cfg.afc_range);
+                self.stepped(f, g);
+            }
+        } else {
+            // The channel measures it on its look-back and decodes that
+            // again with the step where it was.
+            self.step_seen = Some(StepSeen { fine_hz: self.afc_hz + hz(fine), loop_hz: self.afc_hz + hz(self.nu), syms: self.fd_n as f64 });
+            self.fd_restart();
+        }
+    }
+
+    fn fd_restart(&mut self) {
+        self.fd_sym = Complex64::new(0.0, 0.0);
+        self.fd_sym_mag = 0.0;
+        self.fd_n = 0;
+    }
+
     fn symbol(&mut self, y: Complex64, at: f64, cx: &Ctx, printed: &mut f64, out: &mut Vec<Emit>) {
         let baud = cx.cfg.baud;
         // The Costas loop, decision-directed, its error normalised by the
@@ -590,7 +793,8 @@ impl Demod {
             let t = AFC_TRANSFER * self.nu;
             let f = (self.afc_hz + t * baud / (2.0 * PI)).clamp(-cx.cfg.afc_range, cx.cfg.afc_range);
             self.nu -= (f - self.afc_hz) * 2.0 * PI / baud;
-            self.afc_hz = f;
+            self.retune(f, cx.g);
+            self.follow_step(cx);
         }
         self.theta = (self.theta + PI).rem_euclid(2.0 * PI) - PI;
         // What the smoother sees is the symbol turned by the loop's
@@ -899,6 +1103,101 @@ impl Demod {
     }
 }
 
+/// A step in a channel's carrier, as its demodulator saw it: the fine
+/// detector's offset (Hz from the channel's nominal, modulo half the baud),
+/// where the loop had the carrier, and how many symbols since it was seen.
+#[derive(Clone, Copy, Debug)]
+struct StepSeen {
+    fine_hz: f64,
+    loop_hz: f64,
+    syms: f64,
+}
+
+/// How many half-bauds either way a step's offset may be, for the AFC's
+/// range: the carrier anywhere in it, the AFC anywhere too.
+fn step_reach(cfg: &Config) -> i64 {
+    let half = cfg.baud / 2.0;
+    ((2.0 * cfg.afc_range + half) / half).ceil() as i64
+}
+
+/// x[from..to] squared - BPSK's data squared away, leaving a tone at twice
+/// the carrier - and turned back by a carrier `hz` off: its power.
+fn sq_power(x: &VecDeque<Complex32>, from: usize, to: usize, hz: f64, work: f64) -> f64 {
+    let step = Complex64::from_polar(1.0, -2.0 * 2.0 * PI * hz / work);
+    let mut rot = Complex64::new(1.0, 0.0);
+    let mut acc = Complex64::new(0.0, 0.0);
+    for z in x.range(from..to) {
+        let zz = z * z;
+        acc += Complex64::new(zz.re as f64, zz.im as f64) * rot;
+        rot *= step;
+    }
+    acc.norm_sqr()
+}
+
+/// The carrier near `hz` where sq_power peaks: a parabola through it and
+/// either side, a third of the way to its first nulls.
+fn sq_peak(x: &VecDeque<Complex32>, from: usize, to: usize, hz: f64, work: f64) -> f64 {
+    let h = 0.3 * work / (2.0 * (to - from).max(1) as f64);
+    let p = |f: f64| sq_power(x, from, to, f, work);
+    let (a, b, c) = (p(hz - h), p(hz), p(hz + h));
+    let den = a - 2.0 * b + c;
+    if den < 0.0 { hz + (0.5 * h * (a - c) / den).clamp(-h, h) } else { hz }
+}
+
+/// Of `hz` and the carriers whole half-bauds from it (to `reach` of them),
+/// the one where x[from..to] adds up most, at its peak. The fine detector
+/// cannot tell offsets half a baud apart (a symbol turned by pi more looks
+/// the same squared), and the matched filter it reads distorts a carrier
+/// far off its centre, so that it read a step of 14 Hz at PSK31 as 12.8;
+/// the squared input has the data out and nothing in the way, and a
+/// quarter of a second of it tells 15.6 Hz apart at any SNR the detector
+/// runs at.
+fn sq_branch(x: &VecDeque<Complex32>, from: usize, to: usize, hz: f64, half: f64, reach: i64, work: f64) -> f64 {
+    let (mut best, mut pick) = (-1.0, hz);
+    for k in -reach..=reach {
+        let f = hz + k as f64 * half;
+        let v = sq_power(x, from, to, f, work);
+        if v > best {
+            best = v;
+            pick = f;
+        }
+    }
+    sq_peak(x, from, to, pick, work)
+}
+
+/// Where, at or after `search` in x[lo..], a carrier at `before` Hz stepped
+/// to `after`: the squared input is one steady tone before the step and
+/// another after it, so the place where, each turned back by its own, they
+/// add up the most. The step being phase-continuous (a TX LO retuned
+/// through an NCO, as NB's simulator and a synthesiser's fine step do),
+/// there is no jump to find, only the bend.
+fn sq_step(x: &VecDeque<Complex32>, lo: usize, search: usize, before: f64, after: f64, work: f64) -> usize {
+    let n = x.len();
+    let (w0, w1) = (-2.0 * 2.0 * PI * before / work, -2.0 * 2.0 * PI * after / work);
+    let sq = |i: usize| {
+        let z = x[i] * x[i];
+        Complex64::new(z.re as f64, z.im as f64)
+    };
+    // post[k]: from k on, turned back as if the step were at `lo`.
+    let mut post = vec![Complex64::new(0.0, 0.0); n - lo + 1];
+    for i in (lo..n).rev() {
+        post[i - lo] = post[i - lo + 1] + sq(i) * Complex64::from_polar(1.0, w1 * (i - lo) as f64);
+    }
+    let (mut pre, mut best, mut at) = (Complex64::new(0.0, 0.0), -1.0, search);
+    for k in lo..n {
+        if k >= search {
+            // The step at k: the turn changes there, the phase does not.
+            let v = (pre + post[k - lo] * Complex64::from_polar(1.0, (w0 - w1) * (k - lo) as f64)).norm();
+            if v > best {
+                best = v;
+                at = k;
+            }
+        }
+        pre += sq(k) * Complex64::from_polar(1.0, w0 * (k - lo) as f64);
+    }
+    at
+}
+
 /// One signal in the passband.
 struct Channel {
     nominal: f64,
@@ -909,6 +1208,11 @@ struct Channel {
     chan: Decimator,
     /// Decimated samples (nominal frame) from working sample `ring0`.
     ring: VecDeque<Complex32>,
+    /// The AFC each of them was (or, after a replay, should have been)
+    /// decoded at, and the steps found in them: (working sample, AFC from
+    /// there).
+    ring_afc: VecDeque<f64>,
+    steps: Vec<(u64, f64)>,
     ring0: u64,
     n: u64,
     demod: Demod,
@@ -933,6 +1237,8 @@ impl Channel {
             decim: Decimator::new(g.taps.clone(), g.d),
             chan: Decimator::new(g.chan.clone(), 1),
             ring: VecDeque::new(),
+            ring_afc: VecDeque::new(),
+            steps: Vec::new(),
             ring0: 0,
             n: 0,
             demod: Demod::new(g, 0.0, 0, None),
@@ -953,6 +1259,8 @@ impl Channel {
         self.decim.reset();
         self.chan.reset();
         self.ring.clear();
+        self.ring_afc.clear();
+        self.steps.clear();
         self.ring0 = 0;
         self.n = 0;
         self.demod = Demod::new(g, self.demod.afc_hz, 0, None);
@@ -979,13 +1287,19 @@ impl Channel {
         let keep = (REPLAY_S * g.work).max(2.0 * ACQ_SYMS as f64 * g.sps) as usize;
         for z in work {
             self.ring.push_back(z);
+            self.ring_afc.push_back(self.demod.afc_hz);
             if self.ring.len() > keep {
                 self.ring.pop_front();
+                self.ring_afc.pop_front();
                 self.ring0 += 1;
             }
             self.n += 1;
             let cx = Ctx { g, cfg, locked: self.locked || !cfg.afc };
-            if self.demod.step(z, &cx, &mut self.printed, out) {
+            let produced = self.demod.step(z, &cx, &mut self.printed, out);
+            if let Some(seen) = self.demod.step_seen.take() {
+                self.follow_step(seen, g, cfg, out);
+            }
+            if produced {
                 self.lost = if self.demod.on < 0.0 { self.lost + 1 } else { 0 };
                 if self.lost >= LOST_SYMS {
                     self.locked = false;
@@ -1053,13 +1367,81 @@ impl Channel {
 
     /// Decode the look-back again at the AFC's new frequency.
     fn replay(&mut self, afc_hz: f64, g: &Geometry, cfg: &Config, out: &mut Vec<Emit>) {
-        let noise = (self.demod.noise_n as f64 >= NOISE_TAU).then_some(self.demod.noise);
-        self.demod = Demod::new(g, afc_hz, self.ring0, noise);
-        let cx = Ctx { g, cfg, locked: true };
-        let ring: Vec<Complex32> = self.ring.iter().copied().collect();
-        for z in ring {
-            self.demod.step(z, &cx, &mut self.printed, out);
+        self.steps.clear();
+        let d = Demod::new(g, afc_hz, self.ring0, self.demod_noise());
+        self.rerun(d, g, cfg, out);
+    }
+
+    /// A step the demodulator saw: measure it on the look-back (the ring,
+    /// at the channel's nominal frequency, unmoved by the AFC), find where
+    /// it was, and decode the look-back again with it there.
+    fn follow_step(&mut self, seen: StepSeen, g: &Geometry, cfg: &Config, out: &mut Vec<Emit>) {
+        let n = self.ring.len();
+        let since = n.saturating_sub((seen.syms.max(FD_SETTLE_SYMS) * g.sps) as usize);
+        let mut hz = sq_branch(&self.ring, since, n, seen.fine_hz, cfg.baud / 2.0, step_reach(cfg), g.work);
+        // How much more the input adds up there than where the loop has it
+        // now: a step stands out, noise mistaken for one does not.
+        let gain = sq_power(&self.ring, since, n, hz, g.work) / sq_power(&self.ring, since, n, seen.loop_hz, g.work).max(1e-30);
+        // Followed when it is more than the loop holds and the input
+        // plainly adds up better there (the fine detector's own noise, which
+        // said a step had begun, says nothing more now: at PSK125 and 16 dB
+        // it is 0.85 Hz, and a step of 2.2 Hz, measured here to 0.1 Hz, went
+        // by).
+        if (hz - seen.loop_hz).abs() < FD_MIN_HZ || gain < FD_PEAK {
+            return;
         }
+        // Back to before it was seen: the matched filter's delay, the
+        // symbols since, and a few for the detector's own lag. Where it was;
+        // then the offset again from everything heard since (more than the
+        // detector had), and where again.
+        let span = (g.mf_delay + (seen.syms + STEP_SEARCH_SYMS) * g.sps) as usize;
+        let Some(lo) = n.checked_sub(span + (4.0 * g.sps) as usize) else { return };
+        let search = n - span;
+        let at = sq_step(&self.ring, lo, search, seen.loop_hz, hz, g.work);
+        hz = sq_peak(&self.ring, at, n, hz, g.work);
+        let at = sq_step(&self.ring, lo, search, seen.loop_hz, hz, g.work);
+        // The AFC that puts the loop where it was on the new carrier.
+        let nu_hz = seen.loop_hz - self.demod.afc_hz;
+        let after = (hz - nu_hz).clamp(-cfg.afc_range, cfg.afc_range);
+        self.replay_step(self.ring0 + at as u64, after, g, cfg, out);
+    }
+
+    /// Decode the look-back again with the carrier's step where it was:
+    /// the AFC as it was until the step, and where the step put it from
+    /// there on (and any steps found before it, where they were). Decoded
+    /// as it happened, the symbols around the step were read turning by up
+    /// to a radian a symbol before the detector caught it, through a
+    /// matched filter that smeared the turn over three symbols either side,
+    /// and then against a reference whose window held the bend; a
+    /// character went at PSK31 for a step of 6 Hz.
+    fn replay_step(&mut self, at: u64, after: f64, g: &Geometry, cfg: &Config, out: &mut Vec<Emit>) {
+        // A step found later but placed earlier corrects those after it.
+        let ring0 = self.ring0;
+        self.steps.retain(|&(t, _)| t > ring0 && t < at);
+        self.steps.push((at, after));
+        let mut d = Demod::new(g, self.ring_afc.front().copied().unwrap_or(self.demod.afc_hz), self.ring0, self.demod_noise());
+        d.replaying = true;
+        d.retune_at = self.steps.iter().copied().collect();
+        self.rerun(d, g, cfg, out);
+        self.demod.replaying = false;
+        self.demod.step_seen = None;
+    }
+
+    fn demod_noise(&self) -> Option<f64> {
+        (self.demod.noise_n as f64 >= NOISE_TAU).then_some(self.demod.noise)
+    }
+
+    /// Run the look-back through `d`, which then decodes on from here; the
+    /// AFC it decoded each sample at is what a later replay starts from.
+    fn rerun(&mut self, mut d: Demod, g: &Geometry, cfg: &Config, out: &mut Vec<Emit>) {
+        let cx = Ctx { g, cfg, locked: true };
+        let mut afc = VecDeque::with_capacity(self.ring.len());
+        for &z in &self.ring {
+            afc.push_back(d.afc_hz);
+            d.step(z, &cx, &mut self.printed, out);
+        }
+        self.ring_afc = afc;
+        self.demod = d;
         self.replays += 1;
     }
 

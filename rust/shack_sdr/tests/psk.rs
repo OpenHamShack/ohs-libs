@@ -646,3 +646,58 @@ fn an_over_cut_off_mid_character_prints_nothing_false() {
     }
     assert!(bad.is_empty(), "{bad:#?}");
 }
+/// The case's IQ with its frequency stepped by `hz` from `at_s` on, phase
+/// continuous: a transmitter's TX lock correcting its uplink mid-over (NB's
+/// simulator moves our echo so, its TX LO through an NCO).
+fn stepped(case: &PskCase, at_s: f64, hz: f64) -> Vec<Complex32> {
+    let mut iq = psk_iq(case);
+    let i0 = (at_s * 12_000.0) as usize;
+    for (i, z) in iq.iter_mut().enumerate().skip(i0) {
+        let ph = 2.0 * std::f64::consts::PI * hz * (i - i0) as f64 / 12_000.0;
+        *z *= Complex32::new(ph.cos() as f32, ph.sin() as f32);
+    }
+    iq
+}
+
+#[test]
+fn a_frequency_step_mid_over_costs_no_character() {
+    // NB's own echo: the TX lock moves our uplink while we send, and the
+    // tone we hear steps mid-over. The Costas loop holds less than a hertz
+    // without slipping and took seconds over a step of a few; the
+    // smoother's reference turned within its window meanwhile, the squelch
+    // closed, and characters went (36 of these 45 overs lost some). Steps
+    // within the AFC's range (15 Hz) either way, beyond what a symbol's
+    // turn can say at PSK31 (7.8 Hz), a quarter, half and three quarters
+    // of the way through the text, on a strong signal and on one 8 dB
+    // weaker (24 and 16 dB in the symbol's bandwidth: our own echo is
+    // strong, and below 12 dB a step is left to the loop, as before).
+    let msg = "CQ CQ de GM4BRI GM4BRI GM4BRI pse k\n";
+    let mut bad = Vec::new();
+    let mut n = 0;
+    for b in BAUDS {
+        let text_s = shack_sdr::psk::varicode::bits(msg).len() as f64 / *b;
+        for hz in [1.6, -3.0, 6.0, -10.0, 14.0] {
+            for (k, esn0) in [(0, 24.0), (1, 16.0), (2, 24.0)] {
+                let snr = esn0 - 10.0 * (2_500.0 / *b).log10();
+                let case = PskCase {
+                    text: msg.into(),
+                    tx: PskTx { baud: *b, ..Default::default() },
+                    centre: 0.0,
+                    snr_db: Some(snr),
+                    seed: 50 + k,
+                    ..Default::default()
+                };
+                // After the second of noise and the second of preamble.
+                let at = 2.0 + text_s * (k as f64 + 1.0) / 4.0;
+                let mut d = Psk::new();
+                d.configure(&baud(*b)).unwrap();
+                let got = text(&feed_iq(&mut d, &stepped(&case, at, hz), 1200));
+                n += 1;
+                if got != truth(msg) {
+                    bad.push(format!("{b} Bd, {hz:+} Hz at {at:.3} s, {snr:+.1} dB: {got:?}"));
+                }
+            }
+        }
+    }
+    assert!(bad.is_empty(), "{} of {n}: {bad:#?}", bad.len());
+}
