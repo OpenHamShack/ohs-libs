@@ -126,10 +126,12 @@ def test_a_session_lists_the_ensemble_and_plays_old_dab_at_radios_rate(no_faad):
         x = iq(28)
         half = 12 * 196_608
         at = feed(host, sid, x[:half])
-        st = wait(host, sid, lambda s: s["meta"] and len(s["meta"]["services"]) == 2)
+        # Labels come once a second, after the service list: wait for all of it.
+        st = wait(host, sid, lambda s: s["meta"] and s["meta"]["complete"])
         m = st["meta"]
         assert m["sync"] is True and m["why"] is None and m["playing"] is None and m["block"] == "11D"
-        assert m["ensemble"] == {"id": "C1CE", "label": "Shack Test Mux", "shortLabel": "ShackTes"}
+        assert m["ensemble"] == {"id": "C1CE", "label": "Shack Test Mux", "shortLabel": "ShackTes",
+                                 "ecc": None, "country": None, "ltoMinutes": None, "utc": None}
         assert [(s["sid"], s["label"], s["bitrate"], s["kind"]) for s in m["services"]] == [
             ("C221", "Shack MP2 Tone", 128, "dab"), ("C3A7", "Shack DAB+ Data", 64, "dab+")]
         assert m["services"][1]["why"] == "needs_codec:faad2" and m["services"][1]["needs"] == ["faad2"]
@@ -275,3 +277,34 @@ def test_the_feed_names_the_transmitters_heard(no_faad):
         assert all(0.0 <= t["confidence"] <= 1.0 for t in meta["tii"])
     with pytest.raises(ValueError):
         iq(2, sites=[(70, 0, 0.0, 0.0)])
+
+
+def test_slides_and_logos_come_as_frames_with_their_bytes(no_faad):
+    """The showcase ensemble (TxEnsemble::showcase): the playing service's
+    slide and the SPI carousel's logos reach poll() as `frame` results whose
+    `raw` is the picture, and the meta names the slide and the guide."""
+    mjd = 61_337  # 2026-10-24
+    t0 = (mjd - 40_587) * 86_400.0 + 12 * 3600.0
+    x = np.frombuffer(_native.testsig_dab(48, showcase_mjd=mjd), np.complex64)
+    with Host(cpu_max=0.0) as host:
+        sid = host.start("dab", {"service": "C221"}, "iq", dab.IQ_RATE)
+        block = int(dab.IQ_RATE / 10)
+        for k in range(0, len(x), block):
+            host.feed(sid, x[k:k + block], t0 + k / dab.IQ_RATE, k)
+        frames = []
+        end = time.monotonic() + 20
+        while time.monotonic() < end and not (any(f["frame"] == "slide" for f in frames)
+                                               and sum(f["frame"] == "logo" for f in frames) >= 4):
+            frames += [r for r in host.poll() if r["type"] == "frame"]
+            time.sleep(0.05)
+        slide = next(f for f in frames if f["frame"] == "slide")
+        assert slide["fields"]["sid"] == "C221" and slide["fields"]["contentType"] == "image/png"
+        assert slide["raw"][:8] == b"\x89PNG\r\n\x1a\n" and slide["fields"]["size"] == len(slide["raw"])
+        logos = sorted((f["fields"]["sid"], f["fields"]["variant"], f["fields"]["width"]) for f in frames if f["frame"] == "logo")
+        assert logos == [("C221", "square", 128), ("C221", "wide", 320), ("C3A7", "square", 128), ("C3A7", "wide", 320)]
+        m = host.status(sid)["meta"]
+        assert m["slide"]["name"] == "slide-c221.png"
+        c221 = next(s for s in m["services"] if s["sid"] == "C221")
+        assert c221["now"]["name"] == "Shack MP2 Tone Afternoon" and c221["pty"]["id"] == "pop_music"
+        assert c221["hasSlideshow"] is True and c221["language"] == "en"
+        assert m["dlPlus"]["itemTitle"] == "Test Card F" and m["dlPlus"]["itemArtist"] == "The Shack Band"
