@@ -1036,9 +1036,9 @@ pub fn spi_pi_file(ecc: u8, eid: u16, sid: u16, programmes: &[(&str, Vec<u8>, u1
     spi_node(0x02, &spi_node(0x21, &sched))
 }
 
-/// A picture that shows: horizontal bands of two colours inside a white
-/// border, as a PNG (rows repeat, so it deflates to a few hundred bytes)
-/// (sstv::png's encoder). The showcase's slides and logos.
+/// A picture that shows, for the showcase's slides and logos: horizontal
+/// bands of two colours inside a white border, as a PNG by sstv::png's
+/// encoder. Its rows repeat, so it deflates to a few hundred bytes.
 pub fn showcase_png(width: u32, height: u32, a: [u8; 3], b: [u8; 3]) -> Vec<u8> {
     let mut rgb = Vec::with_capacity((width * height * 3) as usize);
     for y in 0..height {
@@ -1054,8 +1054,9 @@ pub fn showcase_png(width: u32, height: u32, a: [u8; 3], b: [u8; 3]) -> Vec<u8> 
 impl TxEnsemble {
     /// The standard ensemble with everything the data side can show, for an
     /// app's simulator: a PNG slide in each service's X-PAD, programme
-    /// types, languages, country and DL Plus in the FIC and PAD, and a 32
-    /// kbit/s SPI service with both logos of each service, their service
+    /// types, languages, country and DL Plus (on C221's own label) in the
+    /// FIC and PAD, and a 32 kbit/s SPI service with both logos of each
+    /// service, their service
     /// information and a day of programmes on `mjd`, in four six-hour
     /// programmes from 00:00 UTC.
     pub fn showcase(mjd: u32) -> Self {
@@ -1072,8 +1073,11 @@ impl TxEnsemble {
             );
             s.xpad_groups = mot_header_mode(0x0100 + i as u16, &h, &body, 1024);
         }
-        e.services[0].dls = vec![(0, "Test Card F by The Shack Band".into())];
-        e.services[0].dl_plus = vec![(1, 0, 11), (4, 15, 14)];
+        // C221's first label only (an app's loop never reaches the second),
+        // with DL Plus naming parts of it: ITEM.TITLE "1 kHz left", ITEM.ARTIST
+        // "Shack MP2 Tone".
+        e.services[0].dls.truncate(1);
+        e.services[0].dl_plus = vec![(1, 22, 10), (4, 0, 14)];
         let mut objs = Vec::new();
         let mut si = Vec::new();
         let mut tid = 10u16;

@@ -307,4 +307,5 @@ def test_slides_and_logos_come_as_frames_with_their_bytes(no_faad):
         c221 = next(s for s in m["services"] if s["sid"] == "C221")
         assert c221["now"]["name"] == "Shack MP2 Tone Afternoon" and c221["pty"]["id"] == "pop_music"
         assert c221["hasSlideshow"] is True and c221["language"] == "en"
-        assert m["dlPlus"]["itemTitle"] == "Test Card F" and m["dlPlus"]["itemArtist"] == "The Shack Band"
+        assert m["dls"] == "Shack MP2 Tone - now: 1 kHz left, 1.5 kHz right"
+        assert m["dlPlus"]["itemTitle"] == "1 kHz left" and m["dlPlus"]["itemArtist"] == "Shack MP2 Tone"
