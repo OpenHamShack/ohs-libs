@@ -17,6 +17,7 @@ pub mod cpu;
 pub mod decoder;
 pub mod dsp;
 pub mod host;
+pub mod mp2;
 pub mod rtty;
 pub mod testsig;
 
