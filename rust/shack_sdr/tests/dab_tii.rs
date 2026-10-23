@@ -237,3 +237,31 @@ fn a_gap_keeps_the_list_and_a_retune_clears_it() {
     let after: Vec<Vec<Seen>> = sink.take().into_iter().filter_map(|(_, o)| if let Output::Meta { fields } = o { Some(tii_of(&fields)) } else { None }).collect();
     assert_eq!(after.last().map(|l| l.len()), Some(0), "{after:?}");
 }
+
+#[test]
+fn the_first_list_comes_soon_after_the_lock_and_survives_a_looped_signal() {
+    // About 1.5 s after the lock (eight frames of each kind), not the 3 s
+    // of a full average. And a signal looped every 24 frames, as Radio's
+    // simulator replays the model (its counters restart at the seam, and
+    // the decoder may resync there), still gets its list.
+    let iq = sfn_iq(&TxEnsemble::standard(), &[site((11, 1), 0, 0.0)], 40, &Channel { snr_db: Some(15.0), ..Default::default() });
+    let (_, m) = metas(&iq, 2_048_000.0);
+    let first = m.iter().position(|x| !tii_of(x).is_empty()).expect("a list");
+    let mut d = Dab::new();
+    let block = 204_800;
+    let mut at = None;
+    for (i, chunk) in iq.chunks(block).enumerate() {
+        let mut sink = Sink::new();
+        d.feed(Input::Iq { samples: chunk, rate: 2_048_000.0, t0: 0.0, index: (i * block) as u64 }, &mut sink).unwrap();
+        if at.is_none() && sink.take().iter().any(|(_, o)| matches!(o, Output::Meta { fields } if !tii_of(fields).is_empty())) {
+            at = Some(i);
+        }
+    }
+    eprintln!("first list in meta {first}, after {:?} s", at.map(|i| (i + 1) as f64 * 0.1));
+    assert!(at.unwrap() < 22, "first list after block {at:?}");
+
+    let one = sfn_iq(&TxEnsemble::standard(), &[site((11, 1), 0, 0.0)], 24, &Channel { snr_db: None, ..Default::default() });
+    let looped: Vec<Complex32> = one[one.len() - 24 * 196_608..].iter().cycle().take(5 * 24 * 196_608).copied().collect();
+    let seen = last_tii(&looped, 2_048_000.0);
+    assert_eq!(seen.iter().map(|s| (s.main, s.sub)).collect::<Vec<_>>(), vec![(11, 1)], "{seen:?}");
+}

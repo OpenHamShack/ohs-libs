@@ -257,8 +257,8 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
   with the ensemble's `id` they name the site), `levelDb` its share of the
   received power (0 for a lone transmitter, about -3 each for two equal
   ones; to 0.5 dB) and `confidence` 0-1 (to 0.1; two transmitters sharing
-  one sub-identifier are a fit, at most 0.7). Empty until about 3 s after
-  the lock, then looked at every 3 s, from about 3 s of averaging; a gap
+  one sub-identifier are a fit, at most 0.7). Empty until about 1.5 s
+  after the lock, then looked at every 3 s, from about 3 s of averaging; a gap
   in the samples keeps the last list, a retune or no DAB clears it.
   Several transmitters of a single-frequency network are listed (up to
   12); one 20 dB under the strongest, or 300 us late, is still found. On

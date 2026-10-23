@@ -47,8 +47,8 @@ const PAIRS: usize = 4 * COMBS * GROUPS;
 /// Each parity's averages follow about this many of its frames (16 x 192
 /// ms: 3 s), a new frame weighing 1/AVERAGE once that many are in.
 const AVERAGE: f32 = 16.0;
-/// The list is worked out every this many frames (32 x 96 ms: 3 s), once
-/// each parity has MIN_FRAMES frames in.
+/// The list is worked out when each parity first has MIN_FRAMES frames
+/// in, then every this many frames (32 x 96 ms: 3 s).
 const EVERY: u64 = 32;
 const MIN_FRAMES: u32 = 8;
 /// A group stands out when it is this many times the empty parity's median
@@ -61,6 +61,8 @@ const THRESHOLD: f32 = 2.2;
 /// At this many times the median every group of a transmitter is beyond
 /// doubt: confidence 1.
 const SURE: f32 = 6.0;
+/// The quietest noise a look assumes, dB under the signal (see `look`).
+const FLOOR_DB: f32 = -50.0;
 /// At most this many transmitters (the strongest) are listed.
 const MAX_LISTED: usize = 12;
 
@@ -181,7 +183,12 @@ impl Detector {
         self.null_power[par] += (mean(null) - self.null_power[par]) * a;
         let b = 1.0 / (self.count as f32).min(2.0 * AVERAGE);
         self.prs_power += (mean(prs) - self.prs_power) * b;
-        if self.count % EVERY == 0 && self.frames.iter().all(|&n| n >= MIN_FRAMES) {
+        // The first look as soon as each parity has MIN_FRAMES (1.5 s
+        // after a lock), so a list shows soon and a signal that makes the
+        // demodulator lock again now and then still gets one; then every
+        // EVERY frames.
+        let first = self.count == 2 * MIN_FRAMES as u64;
+        if (first || self.count % EVERY == 0) && self.frames.iter().all(|&n| n >= MIN_FRAMES) {
             self.look();
         }
     }
@@ -206,11 +213,15 @@ impl Detector {
         let on = if total(&g[0]) >= total(&g[1]) { 0 } else { 1 };
         let mut quiet = g[1 - on].clone();
         quiet.sort_by(f32::total_cmp);
-        let noise = quiet[quiet.len() / 2].max(1e-30);
         let g = &g[on];
         // The signal's power per carrier, less the noise the empty null
         // shows; a transmitter's pair figure is its own power per carrier.
         let signal = (self.prs_power - self.null_power[1 - on]).max(1e-30);
+        // A noiseless signal (a simulator's) leaves the empty null at
+        // rounding error, under which every leak of a transmitter's
+        // carriers into its neighbours' stands out: noise is taken as at
+        // least FLOOR_DB under a 0 dB transmitter's group (four pairs).
+        let noise = quiet[quiet.len() / 2].max(4.0 * signal * 10f32.powf(FLOOR_DB / 10.0)).max(1e-30);
         let mut heard = Vec::new();
         for c in 0..COMBS {
             let z: Vec<f32> = (0..GROUPS).map(|b| g[c * GROUPS + b] / noise).collect();
