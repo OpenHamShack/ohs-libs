@@ -7,8 +7,7 @@
 //! DAB's use of it (EN 300 401 §7, ETSI TS 103 466) is plain Layer II at
 //! 48 or 24 kHz with a CRC in every frame and the frame's last bytes
 //! carrying the scale-factor CRC and PAD, which the audio decoding skips:
-//! the frame's own length says where samples end. `dab_pad` hands the F-PAD
-//! and X-PAD bytes to whoever wants them.
+//! the frame's own length says where samples end (dab::pad reads the PAD).
 //!
 //! `encode` is a plain Layer II encoder (no psychoacoustic model: it spends
 //! bits where the signal is loudest) for the DAB transmitter model in the
@@ -379,13 +378,6 @@ impl Decoder {
         self.frames += 1;
         Ok(Frame { pcm, rate: h.rate, channels: nch as u8 })
     }
-}
-
-/// DAB's F-PAD: the last two bytes of every DAB audio frame (EN 300 401
-/// §7.4.1), whose indicator says how much X-PAD precedes the scale-factor
-/// CRC before it. The audio decoding never reads them.
-pub fn dab_fpad(frame: &[u8]) -> Option<[u8; 2]> {
-    (frame.len() >= 2).then(|| [frame[frame.len() - 2], frame[frame.len() - 1]])
 }
 
 #[cfg(test)]

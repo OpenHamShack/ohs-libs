@@ -9,6 +9,7 @@
 //! Receive-only code has no use for it beyond tests: nothing transmits.
 
 use super::coding;
+use super::pad::{scf_crc_len, PadEncoder};
 use super::rs;
 use super::tables::{self, Protection, CIFS, CIF_BITS, CU_BITS, K, SYMBOL_BITS, TU, GUARD, TNULL};
 use crate::dsp::Resampler;
@@ -37,6 +38,9 @@ pub struct TxService {
     pub start: u16,
     pub protection: Protection,
     pub audio: TxAudio,
+    /// Dynamic labels: (from which audio frame or AU on, text), in order.
+    /// Old DAB sends short X-PAD, DAB+ variable size.
+    pub dls: Vec<(u64, String)>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -61,6 +65,7 @@ impl TxEnsemble {
                     start: 0,
                     protection: Protection::Uep { index: 35 },
                     audio: TxAudio::Mp2 { bitrate: 128, rate: 48_000, stereo: true, tone_hz: 1000.0 },
+                    dls: vec![(0, "Shack MP2 Tone - now: 1 kHz left, 1.5 kHz right".into()), (100, "Second label for C221".into())],
                 },
                 TxService {
                     sid: 0xc3a7,
@@ -69,6 +74,7 @@ impl TxEnsemble {
                     start: 96,
                     protection: Protection::Eep { option: 0, level: 3, size: 48 },
                     audio: TxAudio::DabPlus { bitrate: 64, dac48: true, sbr: true, stereo: true, ps: false },
+                    dls: vec![(0, "DAB+ test AUs from the Shack transmitter model".into())],
                 },
             ],
         }
@@ -98,8 +104,36 @@ pub fn dabplus_aus(dac48: bool, sbr: bool) -> (usize, usize) {
     }
 }
 
+/// The data_stream_element that carries an AU's PAD (TS 102 563 §5.4.1):
+/// element ID 4, tag 0, no alignment, then its length and the bytes.
+fn dse(pad: &[u8]) -> Vec<u8> {
+    let mut v = vec![4 << 5];
+    if pad.len() >= 255 {
+        v.extend([255, (pad.len() - 255) as u8]);
+    } else {
+        v.push(pad.len() as u8);
+    }
+    v.extend_from_slice(pad);
+    v
+}
+
 /// One superframe (TS 102 563 §5.2, §6): 120 x s bytes, s = bitrate / 8.
+/// Each AU starts with its PAD when `pad` gives some, then test bytes.
 pub fn dabplus_superframe(m: u64, bitrate: u16, dac48: bool, sbr: bool, stereo: bool, ps: bool) -> Vec<u8> {
+    dabplus_superframe_pad(m, bitrate, dac48, sbr, stereo, ps, &mut |_| None)
+}
+
+/// As `dabplus_superframe`, with `pad(n)` giving AU n's PAD (X-PAD as sent, F-PAD).
+#[allow(clippy::too_many_arguments)]
+pub fn dabplus_superframe_pad(
+    m: u64,
+    bitrate: u16,
+    dac48: bool,
+    sbr: bool,
+    stereo: bool,
+    ps: bool,
+    pad: &mut dyn FnMut(usize) -> Option<(Vec<u8>, [u8; 2])>,
+) -> Vec<u8> {
     let s = bitrate as usize / 8;
     let size = 110 * s;
     let (num, start0) = dabplus_aus(dac48, sbr);
@@ -120,7 +154,12 @@ pub fn dabplus_superframe(m: u64, bitrate: u16, dac48: bool, sbr: bool, stereo: 
     a[..start0].copy_from_slice(&coding::pack(&bits)[..start0]);
     for n in 0..num {
         let end = if n + 1 < num { starts[n + 1] } else { size };
-        let au = dabplus_au(m, n, end - starts[n] - 2);
+        let mut au = match pad(n) {
+            Some((x, f)) => dse(&[x, f.to_vec()].concat()),
+            None => Vec::new(),
+        };
+        let rest = end - starts[n] - 2 - au.len();
+        au.extend(dabplus_au(m, n, rest));
         a[starts[n]..end - 2].copy_from_slice(&au);
         let c = coding::crc16_ccitt(&au);
         a[end - 2..end].copy_from_slice(&c.to_be_bytes());
@@ -144,6 +183,10 @@ pub fn dabplus_superframe(m: u64, bitrate: u16, dac48: bool, sbr: bool, stereo: 
 struct Source {
     audio: TxAudio,
     mp2: Option<Mp2Encoder>,
+    pad: PadEncoder,
+    dls: Vec<(u64, String)>,
+    /// Audio frames (MP2) or AUs (DAB+) made so far.
+    made: u64,
     pending: VecDeque<Vec<u8>>,
     frame_bytes: usize,
     t: u64,
@@ -166,13 +209,31 @@ impl Source {
                         })
                         .collect();
                     self.t += 1152;
-                    let f = enc.frame(&pcm);
+                    let mut f = enc.frame(&pcm);
+                    // PAD at the frame's end: X-PAD, the scale-factor CRC
+                    // (left zero: nothing here checks it), the F-PAD.
+                    if let Some((_, text)) = self.dls.iter().rev().find(|d| d.0 <= self.made) {
+                        self.pad.set_label(text);
+                    }
+                    let (x, fp) = self.pad.frame();
+                    let h = enc.header;
+                    let scf = scf_crc_len(h.lsf, h.bitrate, h.mode == 3);
+                    let n = f.len();
+                    f[n - 2 - scf - x.len()..n - 2 - scf].copy_from_slice(&x);
+                    f[n - 2..].copy_from_slice(&fp);
+                    self.made += 1;
                     for c in f.chunks(self.frame_bytes) {
                         self.pending.push_back(c.to_vec());
                     }
                 }
                 TxAudio::DabPlus { bitrate, dac48, sbr, stereo, ps } => {
-                    let sf = dabplus_superframe(self.superframes, bitrate, dac48, sbr, stereo, ps);
+                    let (pad, dls, made) = (&mut self.pad, &self.dls, &mut self.made);
+                    let sf = dabplus_superframe_pad(self.superframes, bitrate, dac48, sbr, stereo, ps, &mut |_| {
+                        let text = dls.iter().rev().find(|d| d.0 <= *made).map(|d| d.1.clone())?;
+                        pad.set_label(&text);
+                        *made += 1;
+                        Some(pad.frame())
+                    });
                     self.superframes += 1;
                     for c in sf.chunks(self.frame_bytes) {
                         self.pending.push_back(c.to_vec());
@@ -198,8 +259,11 @@ pub struct Transmitter {
     pub ensemble: TxEnsemble,
     subs: Vec<Sub>,
     cif: u64,
-    figs: Vec<Vec<u8>>,
-    next_fig: usize,
+    /// FIG 0/1 and 0/2, sent every frame; and the labels (FIG 1/0, 1/1),
+    /// each once a second, the repetition rate §8.1.13-14 asks for, so a
+    /// receiver's time to the full service list is measured as on air.
+    mci: Vec<Vec<u8>>,
+    labels: Vec<Vec<u8>>,
     interleave: Vec<i32>,
     prev: Vec<Complex64>,
     fft: std::sync::Arc<dyn rustfft::Fft<f64>>,
@@ -232,7 +296,6 @@ fn label16(s: &str) -> ([u8; 16], u16) {
 impl Transmitter {
     pub fn new(ensemble: TxEnsemble) -> Self {
         let mut subs = Vec::new();
-        let mut figs = Vec::new();
         // FIG 0/1: every sub-channel.
         let mut d = vec![0x01u8];
         for s in &ensemble.services {
@@ -246,7 +309,7 @@ impl Transmitter {
                 }
             }
         }
-        figs.push(fig(0, d));
+        let mut mci = vec![fig(0, d)];
         // FIG 0/2: every service, one audio component each.
         let mut d = vec![0x02u8];
         for s in &ensemble.services {
@@ -256,27 +319,35 @@ impl Transmitter {
             d.push(ascty);
             d.push(s.subch << 2 | 2);
         }
-        figs.push(fig(0, d));
+        mci.push(fig(0, d));
+        let mut labels = Vec::new();
         // FIG 1/0 and 1/1: labels, EBU Latin.
         let (lb, fl) = label16(&ensemble.label);
         let mut d = vec![0x00u8];
         d.extend(ensemble.eid.to_be_bytes());
         d.extend(lb);
         d.extend(fl.to_be_bytes());
-        figs.push(fig(1, d));
+        labels.push(fig(1, d));
         for s in &ensemble.services {
             let (lb, fl) = label16(&s.label);
             let mut d = vec![0x01u8];
             d.extend(s.sid.to_be_bytes());
             d.extend(lb);
             d.extend(fl.to_be_bytes());
-            figs.push(fig(1, d));
+            labels.push(fig(1, d));
         }
         for s in &ensemble.services {
             let p = s.protection.profile().expect("a valid profile");
             let frame_bytes = p.info_bits() / 8;
+            let short = matches!(s.audio, TxAudio::Mp2 { .. });
+            let pad = PadEncoder::new(short);
             let mp2 = match s.audio {
-                TxAudio::Mp2 { bitrate, rate, stereo, .. } => Some(Mp2Encoder::new(bitrate, rate, if stereo { 0 } else { 3 }, 0)),
+                TxAudio::Mp2 { bitrate, rate, stereo, .. } => {
+                    let mut e = Mp2Encoder::new(bitrate, rate, if stereo { 0 } else { 3 }, 0);
+                    // Room at the end for the X-PAD, the scale-factor CRC and the F-PAD.
+                    e.reserve = pad.xpad_len() + scf_crc_len(e.header.lsf, bitrate, !stereo) + 2;
+                    Some(e)
+                }
                 _ => None,
             };
             subs.push(Sub {
@@ -284,15 +355,25 @@ impl Transmitter {
                 map: coding::puncture_map(&p),
                 prbs: coding::prbs(p.info_bits()),
                 history: VecDeque::new(),
-                source: Source { audio: s.audio.clone(), mp2, pending: VecDeque::new(), frame_bytes, t: 0, superframes: 0 },
+                source: Source {
+                    audio: s.audio.clone(),
+                    mp2,
+                    pad,
+                    dls: s.dls.clone(),
+                    made: 0,
+                    pending: VecDeque::new(),
+                    frame_bytes,
+                    t: 0,
+                    superframes: 0,
+                },
             });
         }
         Transmitter {
             ensemble,
             subs,
             cif: 0,
-            figs,
-            next_fig: 0,
+            mci,
+            labels,
             interleave: tables::frequency_interleave(),
             prev: Vec::new(),
             fft: FftPlanner::new().plan_fft_inverse(TU),
@@ -313,14 +394,22 @@ impl Transmitter {
                 d.push((c % 250) as u8);
                 fib.extend(fig(0, d));
             }
-            // Fill with the other FIGs in turn while they fit.
-            for _ in 0..self.figs.len() {
-                let g = &self.figs[self.next_fig];
-                if fib.len() + g.len() > 30 {
-                    break;
+            // The frame's first FIB of each CIF carries the MCI (FIG 0/1,
+            // 0/2), the second a label when one is due: label k in frame
+            // k x 3 of every ten (each about once a second).
+            let frame = cif / 4;
+            let figs: Vec<&Vec<u8>> = match (f, cif % 4) {
+                (1, 0) => self.mci.iter().collect(),
+                (2, 0) => {
+                    let k = (frame % 10) as usize;
+                    if k % 3 == 0 { self.labels.get(k / 3).into_iter().collect() } else { vec![] }
                 }
-                fib.extend(g.iter().copied());
-                self.next_fig = (self.next_fig + 1) % self.figs.len();
+                _ => vec![],
+            };
+            for g in figs {
+                if fib.len() + g.len() <= 30 {
+                    fib.extend(g.iter().copied());
+                }
             }
             if fib.len() < 30 {
                 fib.push(0xff);

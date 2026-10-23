@@ -14,6 +14,7 @@
 //!   the service is known to be healthy and silent only for want of it.
 
 use super::coding;
+use super::pad::{self, PadDecoder};
 use super::rs;
 use crate::mp2;
 use std::collections::VecDeque;
@@ -36,7 +37,8 @@ pub struct Mp2Stream {
     buf: Vec<u8>,
     pub frames: u64,
     pub errors: u64,
-    pub fpad: Option<[u8; 2]>,
+    /// The PAD at each frame's end: the dynamic label.
+    pub pad: PadDecoder,
 }
 
 impl Default for Mp2Stream {
@@ -47,7 +49,7 @@ impl Default for Mp2Stream {
 
 impl Mp2Stream {
     pub fn new() -> Self {
-        Mp2Stream { dec: mp2::Decoder::new(), buf: Vec::new(), frames: 0, errors: 0, fpad: None }
+        Mp2Stream { dec: mp2::Decoder::new(), buf: Vec::new(), frames: 0, errors: 0, pad: PadDecoder::new() }
     }
 
     /// One logical frame's bytes; the sound of any frame it completes.
@@ -66,7 +68,12 @@ impl Mp2Stream {
                         }
                         break;
                     }
-                    self.fpad = mp2::dab_fpad(&self.buf[..len]);
+                    // The PAD is not covered by the frame's CRC: read it
+                    // anyway, its own CRCs guard the label.
+                    let scf = pad::scf_crc_len(h.lsf, h.bitrate, h.channels() == 1);
+                    if let Some((before, fpad)) = pad::mp2_pad(&self.buf[..len], scf) {
+                        self.pad.push(before, fpad);
+                    }
                     match self.dec.decode(&self.buf[..len]) {
                         Ok(f) => {
                             self.frames += 1;

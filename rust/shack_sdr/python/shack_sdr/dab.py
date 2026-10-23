@@ -19,6 +19,24 @@ holds the block is the engine's to judge before it starts a session or
 when the dial moves: `span_check` says, with the existing code
 `outside_span` (and `Host.set_outside` keeps the session).
 
+**A band scan** (5A-13F in turn) asks each block "is there an ensemble
+here, and what is in it?" without playing anything: either a session with
+no `service` (only the FIC's symbols are demodulated), stopping when its
+meta says `complete` (the ensemble's label and every service's label and
+bit rate known), or `survey(iq)` on a buffer already captured. Measured on
+the transmitter model, whose labels repeat once a second as EN 300 401
+asks: the FIC is read 0.15-0.2 s after the first frame begins (at most
+0.21 s from 24 random starting points at 9 dB), the list is complete after
+0.7-0.8 s, and a block with nothing gives `no_signal` as soon as
+`give_up_s` has passed (0.2 s of samples is enough to look; 1 s is a safe
+dwell). On air, budget about 1.5 s per block that holds an ensemble (a
+broadcaster may repeat labels more slowly), so a whole Band III scan of 41
+blocks takes about 10-25 s, mostly in the empty ones.
+
+The playing service's programme text (DLS) is the feed's `dls`: the
+latest complete label, cleared when the service changes. It needs no
+faad2, even for DAB+.
+
 Codes, never sentences (the app words them from its catalogue; the README
 suggests English for each): the feed's `why` is `no_signal`, `no_sync`,
 `fic_errors`, `service_not_found`, `needs_codec:faad2`, `codec_config`,
@@ -42,6 +60,18 @@ BLOCKS: dict[str, int] = dict(_native.dab_blocks())
 #: The feed's `why` codes, and a service's.
 WHY_CODES = ("no_signal", "no_sync", "fic_errors", "service_not_found", "needs_codec:faad2", "codec_config",
              "codec_open", "unsupported_protection")
+
+
+def survey(samples, rate: float = IQ_RATE, give_up_s: float = 1.0) -> dict:
+    """What a block holds, from IQ already captured (complex64, centred on
+    the block): {"meta": the feed as a session would give it (with
+    `complete`), "syncS": seconds of samples until the FIC was first read
+    or None, "completeS": until the list was complete or None,
+    "listenedS": how much was used}. It stops as soon as the list is
+    complete, or after `give_up_s` with no sync. No sound is decoded."""
+    import numpy as np
+    z = np.ascontiguousarray(samples, dtype=np.complex64)
+    return _native.dab_survey(z.view(np.float32), float(rate), float(give_up_s))
 
 
 def block_centre(name: str) -> int | None:

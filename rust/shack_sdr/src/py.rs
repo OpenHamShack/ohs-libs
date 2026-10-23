@@ -471,6 +471,30 @@ fn testsig_dab<'py>(
     Ok(PyBytes::new(py, &bytes))
 }
 
+/// dab::survey on complex64 samples viewed as float32: {"meta", "syncS",
+/// "completeS", "listenedS"}.
+#[pyfunction]
+#[pyo3(signature = (samples, rate=2_048_000.0, give_up_s=1.0))]
+fn dab_survey<'py>(py: Python<'py>, samples: PyBuffer<f32>, rate: f64, give_up_s: f64) -> PyResult<Bound<'py, PyDict>> {
+    let v = view(&samples)?;
+    if v.len % 2 != 0 {
+        return Err(PyValueError::new_err("IQ must be float32 pairs"));
+    }
+    let r = py.detach(|| {
+        // SAFETY: `samples` holds the buffer for this whole call (see View).
+        let x = unsafe { std::slice::from_raw_parts(v.ptr as *const Complex32, v.len / 2) };
+        crate::dab::survey(x, rate, give_up_s)
+    });
+    drop(samples);
+    let s = r.map_err(|e| DecoderError::new_err(("bad_input", e.code())))?;
+    let d = PyDict::new(py);
+    d.set_item("meta", fields_py(py, &s.meta)?)?;
+    d.set_item("syncS", s.sync_s)?;
+    d.set_item("completeS", s.complete_s)?;
+    d.set_item("listenedS", s.listened_s)?;
+    Ok(d)
+}
+
 /// The Band III blocks: [(name, centre Hz)].
 #[pyfunction]
 fn dab_blocks() -> Vec<(&'static str, u32)> {
@@ -553,5 +577,6 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(codec_use, m)?)?;
     m.add_function(wrap_pyfunction!(testsig_dab, m)?)?;
     m.add_function(wrap_pyfunction!(dab_blocks, m)?)?;
+    m.add_function(wrap_pyfunction!(dab_survey, m)?)?;
     Ok(())
 }

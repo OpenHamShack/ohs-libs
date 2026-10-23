@@ -4,7 +4,7 @@
 //! run time); tables, coding and rs underneath; tx, the transmitter model
 //! the tests use.
 
-pub use decoder::{Dab, INFO};
+pub use decoder::{survey, Dab, Survey, INFO};
 
 pub mod audio;
 pub mod coding;
@@ -12,6 +12,7 @@ pub mod decoder;
 pub mod fic;
 pub mod msc;
 pub mod ofdm;
+pub mod pad;
 pub mod rs;
 pub mod tables;
 pub mod tx;

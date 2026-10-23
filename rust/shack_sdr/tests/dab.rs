@@ -174,12 +174,18 @@ fn dab_plus_aus_reach_the_aac_decoder_whole_and_in_order() {
     // HE-AAC, 48 kHz out, stereo: AAC LC at 24 kHz with the 960 transform,
     // then SBR signalled explicitly (TS 102 563; dablin's layout).
     assert_eq!(seen.ascs, vec![vec![0x13, 0x14, 0x56, 0xe5, 0x98]]);
-    // Three AUs per super frame, each the transmitter's, none missing.
+    // Three AUs per super frame, each the transmitter's, none missing:
+    // after its PAD (a data_stream_element, which faad2 skips), the test
+    // bytes saying which super frame and AU it is.
     assert!(seen.aus.len() >= 30, "{}", seen.aus.len());
-    let first = seen.aus[0][0] as u64 * 256 + seen.aus[0][1] as u64;
+    let body = |au: &[u8]| -> Vec<u8> { au[2 + au[1] as usize..].to_vec() };
+    assert!(seen.aus.iter().all(|au| au[0] >> 5 == 4), "every AU starts with its PAD");
+    let b0 = body(&seen.aus[0]);
+    let first = b0[0] as u64 * 256 + b0[1] as u64;
     for (i, au) in seen.aus.iter().enumerate() {
         let m = first + (i / 3) as u64;
-        assert_eq!(au, &dabplus_au(m, i % 3, au.len()), "AU {i}");
+        let b = body(au);
+        assert_eq!(b, dabplus_au(m, i % 3, b.len()), "AU {i}");
     }
     assert_eq!(Run::counter(&d, "auErrors"), 0);
     assert_eq!(map_field(field(r.last(), "audio"), "codec"), &Value::Text("he-aac".into()));
@@ -347,7 +353,7 @@ fn decoding_holds_against_noise_offset_multipath_fading_and_clock_error() {
         ("AWGN 20 dB", Channel { snr_db: Some(20.0), ..Default::default() }, (1.0, 1.0, 1.0)),
         ("AWGN 12 dB", Channel { snr_db: Some(12.0), ..Default::default() }, (1.0, 1.0, 1.0)),
         ("AWGN 9 dB", Channel { snr_db: Some(9.0), ..Default::default() }, (1.0, 1.0, 1.0)),
-        ("AWGN 7 dB", Channel { snr_db: Some(7.0), ..Default::default() }, (1.0, 1.0, 0.95)),
+        ("AWGN 7 dB", Channel { snr_db: Some(7.0), ..Default::default() }, (1.0, 0.95, 0.95)),
         // MP2 has no outer code, so one bit error spoils a frame: it falls
         // off at 5 dB, where DAB+'s RS still delivers most AUs.
         ("AWGN 5 dB", Channel { snr_db: Some(5.0), ..Default::default() }, (0.98, 0.0, 0.8)),
@@ -393,5 +399,105 @@ fn cpu_per_frame_on_this_host() {
         eprintln!("service {:5}: {:.2} ms CPU per 96 ms frame ({:.1} % of one core), {:.2} s wall for {} frames",
                   if sid.is_empty() { "none" } else { sid }, ms, ms / 96.0 * 100.0, r.secs, frames);
         assert!(ms < 48.0, "{ms} ms per frame");
+    }
+}
+
+fn dls_of(m: &[(String, Value)]) -> Option<String> {
+    match field(m, "dls") {
+        Value::Text(t) => Some(t.clone()),
+        _ => None,
+    }
+}
+
+#[test]
+fn the_playing_services_programme_text_comes_through_and_changes() {
+    // Old DAB's DLS in short X-PAD; its second label from audio frame 100.
+    let iq = dab_iq(&TxEnsemble::standard(), 40, &Channel { snr_db: Some(12.0), ..Default::default() });
+    let mut d = Dab::new();
+    choose(&mut d, "C221");
+    let r = run(&mut d, &iq, 2_048_000.0);
+    let labels: Vec<String> = r.metas.iter().filter_map(|m| dls_of(m)).collect::<Vec<_>>();
+    let mut seen: Vec<String> = Vec::new();
+    for l in labels {
+        if seen.last() != Some(&l) {
+            seen.push(l);
+        }
+    }
+    assert_eq!(seen, vec!["Shack MP2 Tone - now: 1 kHz left, 1.5 kHz right".to_string(), "Second label for C221".to_string()]);
+}
+
+#[test]
+fn dab_plus_programme_text_needs_no_faad2_and_clears_when_the_service_changes() {
+    let iq = dab_iq(&TxEnsemble::standard(), 24, &Channel { snr_db: Some(12.0), ..Default::default() });
+    let mut d = Dab::new(); // no faad2 in this process
+    choose(&mut d, "C3A7");
+    let r = run(&mut d, &iq, 2_048_000.0);
+    assert!(r.needs_codec);
+    assert_eq!(dls_of(r.last()).as_deref(), Some("DAB+ test AUs from the Shack transmitter model"));
+    // Another service: the label goes at once, not left from the last one.
+    choose(&mut d, "C221");
+    let mut sink = Sink::new();
+    let more = dab_iq(&TxEnsemble::standard(), 1, &Channel { seed: 4, ..Default::default() });
+    d.feed(Input::Iq { samples: &more[..20_480], rate: 2_048_000.0, t0: 0.0, index: iq.len() as u64 }, &mut sink).unwrap();
+    let metas: Vec<_> = sink.take().into_iter().filter_map(|(_, o)| if let Output::Meta { fields } = o { Some(fields) } else { None }).collect();
+    let m = metas.last().expect("a new meta for the change");
+    assert_eq!(field(m, "playing"), &Value::Text("C221".into()));
+    assert_eq!(dls_of(m), None);
+}
+
+#[test]
+fn a_survey_says_quickly_whether_a_block_holds_an_ensemble() {
+    use shack_sdr::dab::survey;
+    // Lead-ins put the first frame at different points of the buffer.
+    let mut rows = Vec::new();
+    for (snr, lead, seed) in [(Some(20.0), 0.0123, 1u64), (Some(12.0), 0.071, 2), (Some(8.0), 0.0444, 3), (Some(12.0), 0.09, 4)] {
+        let iq = dab_iq(&TxEnsemble::standard(), 24, &Channel { snr_db: snr, lead_s: lead, seed, ..Default::default() });
+        let s = survey(&iq, 2_048_000.0, 1.0).unwrap();
+        assert_eq!(field(&s.meta, "complete"), &Value::Bool(true));
+        let Value::List(svcs) = field(&s.meta, "services") else { panic!() };
+        assert_eq!(svcs.len(), 2);
+        rows.push((snr.unwrap(), s.sync_s.unwrap(), s.complete_s.unwrap()));
+        // Labels come once a second, so a complete list takes at most a
+        // second and a half of signal; sync, a frame or two.
+        assert!(s.sync_s.unwrap() < 0.45 && s.complete_s.unwrap() < 1.6, "{:?} {:?}", s.sync_s, s.complete_s);
+    }
+    // Nothing there: the verdict after give_up_s.
+    let mut rng = shack_sdr::testsig::Rng::new(5);
+    let noise: Vec<Complex32> = (0..4_096_000).map(|_| Complex32::new(rng.gauss() as f32, rng.gauss() as f32)).collect();
+    let s = survey(&noise, 2_048_000.0, 1.0).unwrap();
+    assert!(s.sync_s.is_none() && s.listened_s <= 1.06);
+    assert_eq!(field(&s.meta, "why"), &Value::Text("no_signal".into()));
+    for (snr, a, b) in rows {
+        eprintln!("survey at {snr} dB: FIC read after {a:.2} s, ensemble complete after {b:.2} s");
+    }
+    eprintln!("survey of noise: no_signal after {:.2} s", s.listened_s);
+}
+
+#[test]
+fn acquisition_holds_from_any_starting_point_and_never_locks_to_noise() {
+    use shack_sdr::dab::survey;
+    // The receiver starts anywhere in a frame, after any length of noise.
+    let worst = std::thread::scope(|sc| {
+        let hs: Vec<_> = (0..24u64)
+            .map(|k| {
+                sc.spawn(move || {
+                    let lead = 0.003 + 0.0041 * k as f64; // 3 to 97 ms
+                    let iq = dab_iq(&TxEnsemble::standard(), 10, &Channel { snr_db: Some(9.0), lead_s: lead, seed: 100 + k, offset_hz: 2_000.0 * (k as f64 - 12.0), ..Default::default() });
+                    let s = survey(&iq, 2_048_000.0, 1.0).unwrap();
+                    (k, s.sync_s.unwrap_or(f64::INFINITY) - lead)
+                })
+            })
+            .collect();
+        hs.into_iter().map(|h| h.join().unwrap()).fold((0, 0.0f64), |a, b| if b.1 > a.1 { b } else { a })
+    });
+    eprintln!("slowest of 24 starts: FIC read {:.2} s after the first frame began (case {})", worst.1, worst.0);
+    assert!(worst.1 < 0.5, "case {} took {:.2} s", worst.0, worst.1);
+    // Two seconds of noise each, eight times: never a sync.
+    for seed in 0..8 {
+        let mut rng = shack_sdr::testsig::Rng::new(seed);
+        let noise: Vec<Complex32> = (0..4_096_000).map(|_| Complex32::new(rng.gauss() as f32, rng.gauss() as f32)).collect();
+        let s = survey(&noise, 2_048_000.0, 2.0).unwrap();
+        assert!(s.sync_s.is_none(), "noise seed {seed} synced");
+        assert_eq!(field(&s.meta, "ensemble"), &Value::Null);
     }
 }

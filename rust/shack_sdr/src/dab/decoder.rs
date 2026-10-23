@@ -37,6 +37,7 @@ use super::audio::{self, Aac, AacFactory, DabPlusFormat, Mp2Stream, Superframes}
 use super::fic::{Ensemble, FicDecoder, Subchannel};
 use super::msc::SubchannelDecoder;
 use super::ofdm::{Demod, Event};
+use super::pad::{self, PadDecoder};
 use super::tables::{self, CIF_SYMBOLS, CU_BITS, FIC_CODED_BITS, RATE, SYMBOL_BITS};
 use crate::decoder::*;
 use crate::dsp::Resampler;
@@ -64,7 +65,17 @@ pub static INFO: Info = Info {
 /// What plays.
 enum Stream {
     Mp2(Mp2Stream),
-    Plus { sf: Superframes, aac: Option<Box<dyn Aac>>, format: Option<DabPlusFormat>, why: Option<&'static str> },
+    Plus { sf: Superframes, aac: Option<Box<dyn Aac>>, format: Option<DabPlusFormat>, why: Option<&'static str>, pad: PadDecoder },
+}
+
+impl Stream {
+    /// The playing service's dynamic label (programme text), when one is whole.
+    fn dls(&self) -> Option<&str> {
+        match self {
+            Stream::Mp2(m) => m.pad.label.as_deref(),
+            Stream::Plus { pad, .. } => pad.label.as_deref(),
+        }
+    }
 }
 
 struct Player {
@@ -98,6 +109,8 @@ pub struct Dab {
     ens: Ensemble,
     player: Option<Player>,
     sync: bool,
+    /// Frames in a row whose FIC gave nothing.
+    deaf: u32,
     why: Option<String>,
     /// Frames since the ensemble's services were first seen, to give a
     /// chosen service time to appear before saying it is not there.
@@ -156,6 +169,7 @@ impl Dab {
             ens: Ensemble::default(),
             player: None,
             sync: false,
+            deaf: 0,
             why: None,
             frames_with_services: 0,
             aac_factory: None,
@@ -223,7 +237,13 @@ impl Dab {
             return;
         };
         let stream = if comp.ascty == 63 {
-            Stream::Plus { sf: Superframes::new(sub.protection.bitrate().unwrap_or(8)), aac: None, format: None, why: None }
+            Stream::Plus {
+                sf: Superframes::new(sub.protection.bitrate().unwrap_or(8)),
+                aac: None,
+                format: None,
+                why: None,
+                pad: PadDecoder::new(),
+            }
         } else {
             Stream::Mp2(Mp2Stream::new())
         };
@@ -236,6 +256,16 @@ impl Dab {
         } else {
             "dab"
         }
+    }
+
+    /// Is the ensemble fully known: its label, and every audio service's
+    /// label and sub-channel? A band scan can stop listening here.
+    pub fn complete(&self) -> bool {
+        let audio: Vec<_> = self.ens.services.values().filter(|s| s.audio().is_some()).collect();
+        self.ens.eid.is_some()
+            && self.ens.label.is_some()
+            && !audio.is_empty()
+            && audio.iter().all(|s| s.label.is_some() && self.ens.subchannels.contains_key(&s.audio().unwrap().subch))
     }
 
     /// The feed's picture of what is heard.
@@ -286,6 +316,8 @@ impl Dab {
             ("why".into(), self.why.clone().map(Value::Text).unwrap_or(Value::Null)),
             ("audio".into(), audio),
             ("block".into(), if self.block.is_empty() { Value::Null } else { Value::Text(self.block.clone()) }),
+            ("dls".into(), self.player.as_ref().and_then(|p| p.stream.dls()).map(|t| Value::Text(t.into())).unwrap_or(Value::Null)),
+            ("complete".into(), Value::Bool(self.complete())),
         ]
     }
 
@@ -327,6 +359,14 @@ impl Dab {
                 };
             }
         }
+        // The PAD at each AU's start: the label needs no faad2.
+        if let Some(Player { stream: Stream::Plus { pad: pd, .. }, .. }) = self.player.as_mut() {
+            for au in &o.aus {
+                if let Some((x, f)) = pad::dabplus_pad(au) {
+                    pd.push(x, f);
+                }
+            }
+        }
         if let Some(Player { stream: Stream::Plus { aac: Some(dec), .. }, .. }) = self.player.as_mut() {
             for au in &o.aus {
                 match dec.decode(au) {
@@ -360,6 +400,13 @@ impl Dab {
                     }
                 }
                 self.sync = good > 0;
+                // Locked but reading nothing for most of a second: the lock
+                // is wrong (or the signal gone), so look for the frame again.
+                self.deaf = if self.sync { 0 } else { self.deaf + 1 };
+                if self.deaf >= 8 {
+                    self.deaf = 0;
+                    self.demod.resync();
+                }
                 if !self.ens.services.is_empty() {
                     self.frames_with_services += 1;
                 }
@@ -509,4 +556,54 @@ impl Decoder for Dab {
             ],
         }
     }
+}
+
+/// What `survey` found in a block.
+#[derive(Clone, Debug)]
+pub struct Survey {
+    /// The feed's last picture (as the `meta` result).
+    pub meta: Fields,
+    /// Seconds of signal before the FIC was first read, and before the
+    /// ensemble was complete; None if never.
+    pub sync_s: Option<f64>,
+    pub complete_s: Option<f64>,
+    /// Seconds of the buffer it used.
+    pub listened_s: f64,
+}
+
+/// "Is there an ensemble here, and what is in it?", for a band scan: a
+/// fresh decoder with nothing playing (only the FIC's symbols are
+/// demodulated) runs on `samples` until the ensemble is complete, or until
+/// `give_up_s` of it has passed with no sync, or the samples end.
+pub fn survey(samples: &[Complex32], rate: f64, give_up_s: f64) -> Result<Survey, DecodeError> {
+    let mut d = Dab::new();
+    let block = (rate / 20.0) as usize;
+    let mut last = Vec::new();
+    let (mut sync_s, mut complete_s) = (None, None);
+    let mut used = 0usize;
+    for chunk in samples.chunks(block.max(1)) {
+        let mut sink = Sink::new();
+        d.feed(Input::Iq { samples: chunk, rate, t0: 0.0, index: used as u64 }, &mut sink)?;
+        used += chunk.len();
+        let t = used as f64 / rate;
+        for (_, o) in sink.take() {
+            if let Output::Meta { fields } = o {
+                last = fields;
+            }
+        }
+        if d.sync && sync_s.is_none() {
+            sync_s = Some(t);
+        }
+        if d.complete() {
+            complete_s = Some(t);
+            break;
+        }
+        if sync_s.is_none() && t >= give_up_s {
+            break;
+        }
+    }
+    if last.is_empty() {
+        last = d.snapshot();
+    }
+    Ok(Survey { meta: last, sync_s, complete_s, listened_s: used as f64 / rate })
 }

@@ -5,8 +5,8 @@ service list in the session's meta, a service chosen live, its sound
 pulled at Radio's 12 kHz mono, and DAB+ both without faad2 and through a
 stand-in libfaad built at test time (our own trivial C exporting faad2's
 entry points: no codec, nothing encumbered built or loaded). The stand-in
-answers each AU with a frame of its third byte, the AU's index in its
-super frame, so the test hears the AUs arrive in order."""
+answers each AU with a frame of the AU's index in its super frame (the
+third byte after its PAD), so the test hears the AUs arrive in order."""
 
 from __future__ import annotations
 
@@ -38,7 +38,9 @@ char NeAACDecInit2(void *h, unsigned char *b, unsigned long n, unsigned long *ra
 void *NeAACDecDecode(void *h, info_t *i, unsigned char *b, unsigned long n) {
     unsigned long s = dab_plus ? 1920 * 2 : 1024;
     memset(pcm, 0, sizeof pcm);
-    if (dab_plus) for (unsigned long k = 0; k < s; k++) pcm[k] = 1000 * (n > 2 ? b[2] + 1 : 0);
+    /* Past the AU's PAD (a data_stream_element), as a real decoder skips it. */
+    unsigned long o = (n > 2 && b[0] >> 5 == 4) ? 2 + b[1] : 0;
+    if (dab_plus) for (unsigned long k = 0; k < s; k++) pcm[k] = 1000 * (n > o + 2 ? b[o + 2] + 1 : 0);
     i->samples = s; i->channels = dab_plus ? 2 : 1; i->samplerate = 48000; i->error = 0; i->bytesconsumed = n;
     return pcm; }
 void NeAACDecClose(void *h) { free(h); }
@@ -231,3 +233,22 @@ def test_a_real_faad2_passes_the_probe_and_takes_dab_plus_config(monkeypatch, tm
             assert s["stats"]["codecErrors"] == s["stats"]["aus"] >= 6
     finally:
         _native.codec_use("faad2", None)
+
+
+def test_a_survey_lists_a_block_without_playing_it():
+    s = dab.survey(iq(14, snr_db=12.0))
+    assert s["meta"]["complete"] is True and s["meta"]["playing"] is None
+    assert [x["sid"] for x in s["meta"]["services"]] == ["C221", "C3A7"]
+    assert s["syncS"] < 0.45 and s["completeS"] < 1.6 and s["listenedS"] == s["completeS"]
+    rng = np.random.default_rng(1)
+    noise = (rng.standard_normal(2_048_000) + 1j * rng.standard_normal(2_048_000)).astype(np.complex64)
+    s = dab.survey(noise, give_up_s=0.5)
+    assert s["syncS"] is None and s["meta"]["why"] == "no_signal" and s["listenedS"] <= 0.55
+
+
+def test_the_feed_carries_the_playing_services_programme_text(no_faad):
+    with Host(cpu_max=0.0) as host:
+        sid = host.start("dab", {"service": "C3A7"}, "iq", dab.IQ_RATE)
+        feed(host, sid, iq(16))
+        st = wait(host, sid, lambda s: s["meta"] and s["meta"].get("dls"))
+        assert st["meta"]["dls"] == "DAB+ test AUs from the Shack transmitter model"
