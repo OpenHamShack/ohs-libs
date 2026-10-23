@@ -7,6 +7,7 @@
 pub use decoder::{survey, Dab, Survey, INFO};
 
 pub mod audio;
+pub mod codes;
 pub mod coding;
 pub mod decoder;
 pub mod fic;

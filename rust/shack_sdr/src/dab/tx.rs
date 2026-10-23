@@ -274,7 +274,7 @@ pub struct Transmitter {
 }
 
 /// The FIG header and its data.
-fn fig(ty: u8, data: Vec<u8>) -> Vec<u8> {
+pub fn fig(ty: u8, data: Vec<u8>) -> Vec<u8> {
     let mut v = vec![ty << 5 | data.len() as u8];
     v.extend(data);
     v
