@@ -12,15 +12,19 @@ GPL-3.0-or-later. Nothing here transmits.
 from shack_sdr import Host, DecoderError, catalogue, codecs, register
 
 host = Host(threads=1, cpu_max=0.25)          # also: ring_s=2.0, max_sessions=17
-catalogue()   # [{"id", "family", "inputs", "rateHz", "bandwidthHz", "outputs", "panel", "params",
-              #   "needs", "engine", "available", "why", "version", "fixed"}, ...]
+catalogue()   # [{"id", "family", "inputs", "rateHz", "bandwidthHz", "minRateHz", "outputs", "panel", "params",
+              #   "needs", "needsFor", "engine", "available", "partial", "missing", "why", "version", "fixed"}, ...]
 sid = host.start("rtty", {"baud": 45.45, "shift": 170, "reverse": False},
                  input="iq", rate=12_000, center_hz=0.0, pinned=False)   # -> "ds_3f2a"
 host.feed(sid, samples, t0, index)    # numpy complex64 (iq) or float32 (audio); copies, never blocks
 host.poll(max_items=500)              # [{"session", "rev", "t", "type", ...}], oldest first; never blocks
 host.status(sid)                      # {"id", "decoder", "input", "rate", "params", "pinned", "state", "why",
                                       #  "since", "rev", "stats": {"snrDb", "offsetHz", "baud", "sync", "cpu",
-                                      #  "fed", "dropped", ...decoder counters}}
+                                      #  "fed", "dropped", ...decoder counters},
+                                      #  "meta": the decoder's latest meta fields or None,
+                                      #  "audio": {"queued", "dropped"}}
+host.configure(sid, {"service": "C3A7"})   # live; checked at once (DecoderError("bad_params", why))
+host.audio(sid, max_s=1.0, rate=12_000, channels=1)   # [{"t", "rate", "channels", "pcm": float32 ndarray}]
 host.stats()                          # {"sessions", "threads", "cpu", "cpuMax", "queued", "lost"}
 host.sessions(); host.reset(sid); host.set_outside(sid, True); host.stop(sid); host.close()  # close -> bool
 codecs.configure(folder=None, app="openhamshack-radio", data_dir=None, bundle_dirs=(),
@@ -32,7 +36,26 @@ codecs.folder()                       # "Open codecs folder"; None on a controll
 ```
 
 - **Results.** `type` is `text` (`text`, `offsetHz`, `snrDb`), `frame`,
-  `image`, `audio`, `meta`, or `state` (`state`, `why`). `rev` rises by one
+  `image`, `meta` (`fields`: numbers, booleans, text, lists, maps and
+  nulls), or `state` (`state`, `why`).
+- **Sound is not a result.** A decoder's `Output::Audio` goes to the
+  session's own audio ring (`ring_s` seconds; the oldest is dropped and
+  counted in `status()["audio"]["dropped"]`), which the app pulls with
+  `host.audio()` at its own pace: at most `max_s` seconds, oldest first,
+  as runs of one format (`pcm` interleaved when stereo, `t` UTC from the
+  samples), converted to `rate` and `channels` when asked by a resampler
+  whose state carries from one pull to the next, so the sound is
+  unbroken. Radio takes 12 kHz mono for its ordinary audio stream. Every
+  decoder that makes sound uses this one path: DAB now; WFM, FreeDV and
+  the digital voice modes when they come.
+- **Partly available.** `needsFor` names the parts of a decoder that need
+  a codec (`{"faad2": ["dab+"]}`). With it missing the entry stays
+  `available`, with `partial: true` and `missing: ["faad2"]`; a codec in
+  `needs` but not in `needsFor` is needed for everything, and its absence
+  makes the entry unavailable (`why: "needs_codec"`, the server's 409
+  `decoder_unavailable`). `codecs.publish()` (also done by
+  `codecs.status()` and by `Host.start` for a decoder with needs) tells the
+  native decoders which probed file each codec is. `rev` rises by one
   per result per session, so a gap means something was missed. `t` is UTC
   seconds from the samples' `t0` and `index`, never the clock.
 - **States:** `starting`, `running`, `nosignal`, `synced`, `outside`,
@@ -58,6 +81,109 @@ codecs.folder()                       # "Open codecs folder"; None on a controll
 `baud` 45.45, 50, 75; `shift` 170, 425, 450, 850; `reverse`; `afc` (on);
 `afcRangeHz` 0-250 (100); `squelch` 0-20 dB (3; 0 = off); `usos` (on). Its
 status counters: `frames`, `chars`, `rejected`, `gaps`, `replays`.
+
+### DAB (`dab`)
+
+Old DAB and DAB+ from one Band III block (ETSI EN 300 401 mode I, TS
+102 563). All our own Rust: OFDM, FIC, MSC, Viterbi, RS and our own MPEG-1/2
+Layer II decoder for old DAB, which therefore plays with nothing installed.
+DAB+'s HE-AAC v2 goes through the user's own faad2, opened at run time from
+the file the codec loader's probe passed; never linked, bundled or ported.
+
+```python
+from shack_sdr import Host, dab
+dab.IQ_RATE                                   # 2_048_000
+dab.block_centre("11D")                       # 222_064_000; dab.BLOCKS, dab.block_at(freq_hz)
+dab.span_check(centre_hz, rx_centre_hz, rx_rate_hz)   # None or "outside_span"
+sid = host.start("dab", {"service": "C221", "block": "11D"}, "iq", dab.IQ_RATE)
+host.feed(sid, iq, t0, index)                 # complex64 centred on the block
+host.status(sid)["meta"]                      # the feed (below)
+host.configure(sid, {"service": "C3A7"})      # what plays, live
+host.audio(sid, rate=12_000, channels=1)      # its sound
+```
+
+- **IQ:** centred on the block at 2.048 MS/s, taken as it is, or any
+  higher rate, resampled in Rust (a Pluto's 2.4 MS/s costs about 3 ms of
+  CPU per 96 ms frame more). Lower is refused, `bad_input`/`rate`. The
+  engine judges whether its span holds the block (`dab.span_check`), and
+  answers `outside_span` as for any decoder.
+- **Parameters:** `service` (SId in hex, "" for none: the session lists
+  the ensemble without playing) and `block` (a Band III name, checked;
+  for the record). Both live.
+- **The feed** (the session's `meta`, also in `status()["meta"]`):
+
+  ```json
+  {"sync": true, "ensemble": {"id": "C1CE", "label": "Shack Test Mux", "shortLabel": "ShackTes"},
+   "services": [{"sid": "C221", "label": "Shack MP2 Tone", "shortLabel": "ShackMP2", "bitrate": 128,
+                 "kind": "dab", "subchannel": 1, "protection": "3", "why": null, "needs": []},
+                {"sid": "C3A7", "label": "Shack DAB+ Data", "shortLabel": "ShackDAB", "bitrate": 64,
+                 "kind": "dab+", "subchannel": 2, "protection": "3-A",
+                 "why": "needs_codec:faad2", "needs": ["faad2"]}],
+   "playing": "C221", "why": null, "audio": {"codec": "mp2"}, "block": "11D"}
+  ```
+
+  `ensemble` is null and `services` empty until heard; `sync` is true
+  while FIBs pass their CRC. `audio.codec` is `mp2`, `he-aac`, `he-aac-v2`
+  or `aac-lc`.
+- **Codes** (`why`, the feed's and a service's; the app words them, and
+  these are the sentences suggested for Radio's catalogue):
+
+  | Code | Suggested sentence |
+  |---|---|
+  | `no_signal` | No DAB signal on this block. |
+  | `no_sync` | A signal, but not DAB, or too weak to lock to. |
+  | `fic_errors` | DAB heard, but too weak to read the station list. |
+  | `service_not_found` | This station is not on this block. |
+  | `needs_codec:faad2` | Needs faad2: install it to hear DAB+ stations. (On a controller: ask its administrator to install faad2.) |
+  | `codec_config`, `codec_open` | faad2 could not play this station's sound. |
+  | `unsupported_protection` | This station uses a coding Radio cannot read. |
+
+- **faad2 missing:** the session still finds the ensemble and lists every
+  service, and old DAB plays. A DAB+ service chosen says
+  `needs_codec:faad2` (the session's state `running` with that `why`, the
+  feed's `why`, and the service's own `why`/`needs`); its super frames are
+  still found and counted (`stats.superframes`), so it is healthy and silent
+  only for want of faad2. Installed later, it is picked up by the playing
+  session at its next super frame once `codecs.status(rescan=True)` has
+  found it ("Look again").
+- **Counters** (`stats`): `frames`, `misses`, `resyncs`, `fibsOk`,
+  `fibsBad`, `audioFrames`, `audioErrors`, `superframes`, `rsCorrected`,
+  `rsFailed`, `aus`, `auErrors`, `codecErrors`.
+- **Measured** on the transmitter model (`tests/dab.rs`, 24 frames a case;
+  an MP2 frame counts only when its sound is the transmitted tones, a DAB+
+  AU only when it arrives whole):
+
+  | Channel | FIC | MP2 (UEP 3, 128 kbit/s) | DAB+ (EEP 3-A, 64 kbit/s) |
+  |---|---|---|---|
+  | AWGN 20, 12, 9, 7 dB | 100 % | 100 % | 100 % |
+  | AWGN 5 dB | 100 % | 10 % | 93 % |
+  | AWGN 4 dB | 98 % | 0 | 0 |
+  | AWGN 3 dB | 55 % | 0 | 0 |
+  | 12 dB, offset +1.2 / -17.3 / +35 kHz | 100 % | 100 % | 100 % |
+  | 12 dB, echo 60 us at -3 dB; first path 6 dB weaker than its echo | 100 % | 100 % | 100 % |
+  | 15 dB, 3 paths fading at 10 Hz | 98.6 % | 96 % | 100 % |
+  | 18 dB, 2 paths fading at 40 Hz | 98.9 % | 100 % | 100 % |
+  | 12 dB, clock +40 ppm at +9 kHz; -60 ppm; 2.4 MS/s input | 100 % | 100 % | 100 % |
+
+  SNR is in the block's 1.536 MHz. CPU per 96 ms frame on a Ryzen 9
+  6900HX core: 0.9 ms listing only, 3.3 ms playing MP2, 2.2 ms DAB+ before
+  faad2 (only the FIC's and the chosen sub-channel's symbols are
+  demodulated); 2.4 MS/s input adds about 3 ms.
+- **Tests without a transmitter:** `dab::tx` (and `_native.testsig_dab`)
+  is a DAB transmitter model: FIC, an MP2 service from our own encoder
+  and a DAB+ service of marked test AUs, through the whole chain to OFDM,
+  and a channel model. Our MP2 decoder is also held against FFmpeg's on
+  streams from FFmpeg's and twolame's encoders (`tests/mp2.rs`, skipped
+  where there is no ffmpeg). `SHACK_TEST_FAAD2=<a real libfaad.so.2>` runs
+  the one test against a real faad2.
+- **Read, with credit** (licence headers checked): EN 300 401 and TS 102
+  563 are the sources; welle.io's tables (GPL-2.0-or-later) cross-checked
+  ours (its UEP table has one wrong entry); dablin's AudioSpecificConfig
+  layout (GPL-3.0-or-later); FFmpeg's Layer II tables (LGPL-2.1-or-later).
+  faad2's and fdk-aac's own sources were not read.
+- **Not done yet:** DLS and slideshow from PAD, FIG 2 (extended labels),
+  data services, a multiplex reconfiguration's "next" configuration
+  (applied only once it is current), MP2's scale-factor CRC concealment.
 
 ## Sources
 
