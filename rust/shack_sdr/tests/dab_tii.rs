@@ -205,3 +205,35 @@ fn tii_in_the_null_does_not_pull_the_snr_reading_down() {
     eprintln!("lowest SNR reading: {:.1} dB without TII, {:.1} dB with", lo(&plain), lo(&tii));
     assert!(lo(&tii) > lo(&plain) - 1.5, "{} against {}", lo(&tii), lo(&plain));
 }
+
+#[test]
+fn a_gap_keeps_the_list_and_a_retune_clears_it() {
+    // A host that falls behind drops samples: the averages start again
+    // (the frame parity may have changed), but the last list stands
+    // until the next look replaces it. A retune is another block: nothing
+    // heard before holds.
+    let iq = sfn_iq(&TxEnsemble::standard(), &[site((62, 7), 0, 0.0)], 80, &Channel { snr_db: Some(15.0), ..Default::default() });
+    let mut d = Dab::new();
+    let block = 204_800;
+    let mut lists = Vec::new();
+    for (i, chunk) in iq.chunks(block).enumerate() {
+        if i == 50 {
+            continue; // 100 ms lost
+        }
+        let mut sink = Sink::new();
+        d.feed(Input::Iq { samples: chunk, rate: 2_048_000.0, t0: 0.0, index: (i * block) as u64 }, &mut sink).unwrap();
+        for (_, o) in sink.take() {
+            if let Output::Meta { fields } = o {
+                lists.push((i, tii_of(&fields)));
+            }
+        }
+    }
+    let first = lists.iter().position(|(_, l)| !l.is_empty()).expect("a list");
+    assert!(lists[first].0 < 50, "first list at block {}", lists[first].0);
+    assert!(lists[first..].iter().all(|(_, l)| l.len() == 1), "{lists:?}");
+    d.reset();
+    let mut sink = Sink::new();
+    d.feed(Input::Iq { samples: &iq[..block], rate: 2_048_000.0, t0: 0.0, index: 0 }, &mut sink).unwrap();
+    let after: Vec<Vec<Seen>> = sink.take().into_iter().filter_map(|(_, o)| if let Output::Meta { fields } = o { Some(tii_of(&fields)) } else { None }).collect();
+    assert_eq!(after.last().map(|l| l.len()), Some(0), "{after:?}");
+}

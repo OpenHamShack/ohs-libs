@@ -136,10 +136,20 @@ impl Detector {
         }
     }
 
-    /// Forget everything: a new lock (whose frame parity may differ from
-    /// the last's), a retune.
+    /// Forget everything: a retune, or no signal at all.
     pub fn clear(&mut self) {
         *self = Self::new();
+    }
+
+    /// Start the averages again, keeping the last list until the next
+    /// look replaces it: a new lock or a gap in the samples, after which
+    /// the frame parity may differ. A host that falls behind drops
+    /// samples now and then, and a list that blanked at every gap would
+    /// flicker in the app for the 3 s each restart takes.
+    pub fn restart(&mut self) {
+        let heard = std::mem::take(&mut self.heard);
+        *self = Self::new();
+        self.heard = heard;
     }
 
     /// What was heard at the last look, strongest first.

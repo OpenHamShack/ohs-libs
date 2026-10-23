@@ -520,6 +520,7 @@ impl Decoder for Dab {
     fn reset(&mut self) {
         // A retune: a new block, so nothing heard before holds.
         self.demod.reset();
+        self.demod.tii.clear();
         self.fic = FicDecoder::new();
         self.ens = Ensemble::default();
         self.player = None;

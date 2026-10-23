@@ -153,7 +153,7 @@ impl Demod {
         self.state = State::Search;
         self.offset_hz = 0.0;
         self.clock = 0.0;
-        self.tii.clear();
+        self.tii.restart();
         self.last_null = None;
     }
 
@@ -305,6 +305,8 @@ impl Demod {
             }
         }
         if best / 40.0 > 0.6 * mean {
+            // No DAB here, so no transmitter either.
+            self.tii.clear();
             // Keep the end: a null may straddle it.
             let keep = self.end().saturating_sub(TNULL as u64 + 64);
             self.drop_before(keep);
@@ -366,7 +368,7 @@ impl Demod {
         self.resyncs += 1;
         // TII alternates frame by frame, and a new lock's first frame may
         // be either kind.
-        self.tii.clear();
+        self.tii.restart();
         self.last_null = None;
         None
     }
