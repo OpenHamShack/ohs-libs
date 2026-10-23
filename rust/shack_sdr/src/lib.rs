@@ -11,6 +11,7 @@
 //! - `dsp`: the small pieces the decoders share.
 
 pub mod catalogue;
+pub mod dab;
 pub mod codecs;
 pub mod cpu;
 pub mod decoder;
