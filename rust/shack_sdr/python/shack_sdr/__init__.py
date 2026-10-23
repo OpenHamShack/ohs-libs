@@ -22,6 +22,9 @@ appear in the same catalogue, marked with the library that decodes them
 
 Broadcast FM has a stream receiver of its own for an app's receive thread
 (stereo, RDS) and the band scanner's many-carrier RDS: `shack_sdr.wfm`.
+SSTV pictures come through the Host like any decoder's; `shack_sdr.sstv`
+has its modes, codes and test transmitter, and `Host(files_dir=...)`,
+`Host.file(name)` and `Host.files()` keep and serve the finished PNGs.
 
 Receive only by construction: nothing in this package has a transmit
 method, and it imports no radio link or rig library (a test checks).
@@ -32,8 +35,8 @@ app words them from its catalog.
 from __future__ import annotations
 
 from ._native import DecoderError, __version__
-from . import codecs, dab, wfm
+from . import codecs, dab, sstv, wfm
 from .catalogue import catalogue, register
 from .host import Host
 
-__all__ = ["DecoderError", "Host", "__version__", "catalogue", "codecs", "dab", "register", "wfm"]
+__all__ = ["DecoderError", "Host", "__version__", "catalogue", "codecs", "dab", "register", "sstv", "wfm"]

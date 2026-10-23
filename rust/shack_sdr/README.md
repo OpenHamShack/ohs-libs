@@ -11,7 +11,7 @@ GPL-3.0-or-later. Nothing here transmits.
 ```python
 from shack_sdr import Host, DecoderError, catalogue, codecs, register
 
-host = Host(threads=1, cpu_max=0.25)          # also: ring_s=2.0, max_sessions=17
+host = Host(threads=1, cpu_max=0.25)          # also: ring_s=2.0, max_sessions=17, files_dir=None, files_keep=16
 catalogue()   # [{"id", "family", "inputs", "rateHz", "bandwidthHz", "minRateHz", "outputs", "panel", "params",
               #   "needs", "needsFor", "engine", "available", "partial", "missing", "why", "version", "fixed"}, ...]
 sid = host.start("rtty", {"baud": 45.45, "shift": 170, "reverse": False},
@@ -26,6 +26,8 @@ host.status(sid)                      # {"id", "decoder", "input", "rate", "para
 host.configure(sid, {"service": "C3A7"})   # live; checked at once (DecoderError("bad_params", why))
 host.audio(sid, max_s=1.0, rate=12_000, channels=1)   # [{"t", "rate", "channels", "pcm": float32 ndarray}]
 host.stats()                          # {"sessions", "threads", "cpu", "cpuMax", "queued", "lost"}
+host.file(name)                       # a decoder's file (an SSTV PNG) by name, or None: api/decoders/files?id=
+host.files()                          # [{"name", "session", "decoder", "t", "size", "path"}], oldest first
 host.sessions(); host.reset(sid); host.set_outside(sid, True); host.stop(sid); host.close()  # close -> bool
 codecs.configure(folder=None, app="openhamshack-radio", data_dir=None, bundle_dirs=(),
                  cache_path=None, probe_argv=None)
@@ -36,8 +38,18 @@ codecs.folder()                       # "Open codecs folder"; None on a controll
 ```
 
 - **Results.** `type` is `text` (`text`, `offsetHz`, `snrDb`), `frame`,
-  `image`, `meta` (`fields`: numbers, booleans, text, lists, maps and
-  nulls), or `state` (`state`, `why`).
+  `image` (`event` "start" with `width`, `height`, `format`; "lines" with
+  `from` and `rgb`, rows of 3 bytes a pixel, which may be sent again;
+  "done" with `file` and `path`), `meta` (`fields`: numbers, booleans,
+  text, lists, maps and nulls), or `state` (`state`, `why`).
+- **Files are the host's.** A decoder hands over a finished file's bytes
+  and never touches the filesystem. The host names it after the session
+  (`ds_3f2a_sstv_20261023-101500Z_martin1.png`), keeps the last
+  `files_keep` in memory and writes each whole (a temporary name, then a
+  rename) to `files_dir` if given; `file(name)` serves it from either, after
+  a restart too, and refuses any name but letters, digits and `_-.` (not
+  starting with a dot), so a client's id cannot leave the folder. A `meta`
+  naming the file names it as the host keeps it.
 - **Sound is not a result.** A decoder's `Output::Audio` goes to the
   session's own audio ring (`ring_s` seconds; the oldest is dropped and
   counted in `status()["audio"]["dropped"]`), which the app pulls with
@@ -200,6 +212,98 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
 - **Not done yet:** the slideshow (MOT) and DL Plus tags from PAD, FIG 2 (extended labels),
   data services, a multiplex reconfiguration's "next" configuration
   (applied only once it is current), MP2's scale-factor CRC concealment.
+
+### SSTV (`sstv`)
+
+Pictures in fourteen modes - Martin M1/M2, Scottie S1/S2/DX, Robot 36/72,
+PD50/90/120/160/180/240/290 - from a VIS header, or from a train of line
+syncs when the header was missed (a picture joined part way). It replaces
+openhamshack-nb `ohscore/modes/sstv.py` (Robot 36, Martin M1, Scottie S1,
+PD120) and is the one SSTV decoder (GUIDE §1): OpenHamShack Icom has a
+second, pure-Python one in `app/sstv`, and Flex vendors sstv.py; both
+should move to this.
+
+```python
+from shack_sdr import Host, sstv
+host = Host(files_dir=pictures)
+sid = host.start("sstv", {}, "audio", 12_000)   # any rate from 6 kHz; or "iq" from 4 kHz,
+host.feed(sid, audio, t0, index)                #   centred on sstv.IQ_CENTRE_HZ (dial + 1900)
+host.poll()            # image start / lines / done, and meta (python/shack_sdr/sstv.py)
+host.file(name)        # the PNG
+sstv.modes(); sstv.testsig("martin1", snr_db=10.0); sstv.score(sent, got); sstv.png_rgb(png)
+```
+
+- **Parameters:** `mode` ("" for every mode, or one mode's id), `syncStart`
+  (on: start from line syncs without a header), `afcRangeHz` (0-150, 150:
+  how far off tune a header is looked for).
+- **The feed** (`meta`, also `status()["meta"]`): `state` (`receiving`
+  every sixteen lines, `done`, `lost`; `unsupported` or `bad_vis` for a
+  header not decoded), `mode`, `vis`, `partial`, `width`, `height`,
+  `rows`, `started` (UTC from the samples), `slantPpm` (the sender's sound
+  card, ppm fast), `snrDb` (in 2.5 kHz), `offsetHz`, `syncs`, `missed`,
+  `corrected` (the final straightening moved a row), `file`. The codes and
+  suggested sentences are in python/shack_sdr/sstv.py.
+- **How** (src/sstv/mod.rs says why for each): baseband from a 1750 Hz
+  mix; VIS by sstv.py's template against detectors at 25 Hz steps (found to
+  +-150 Hz off tune, the offset measured to a hertz and followed), placed to
+  a fraction of a sample by matching the decoded header, parity mending a
+  faded bit; line syncs by a filter matched to the pulse and the tones
+  around it; the line clock a weighted straight-line fit through the syncs,
+  its span chosen by cross-validation, and the whole picture read again
+  from the fit when it ends (rows that move are re-sent); pixels the mean
+  frequency over their exact span through a filter as narrow as the SNR
+  asks (550 Hz either side at 8 dB, 2 kHz clean), less the filtered noise's
+  known pull; Robot 36's colour from both lines of its pair. A header heard
+  inside a picture ends it only if the picture's syncs stopped under it.
+- **Measured** against sstv.py on the same 116 fixtures (`tests/sstv.rs`;
+  the test card, 12 kHz audio in 0.1 s blocks, SNR in 2.5 kHz; fading the
+  mean of eight pictures). PSNR, Python / Rust, dB (rows within a pixel of
+  their place, Python / Rust):
+
+  | Channel | Robot 36 | Martin M1 | Scottie S1 | PD120 |
+  |---|---|---|---|---|
+  | clean | 24.3 / 27.1 (100 / 100 %) | 32.5 / 36.2 (100 / 100 %) | 31.5 / 36.3 (100 / 100 %) | 30.6 / 31.2 (100 / 100 %) |
+  | 30 dB | 23.3 / 25.0 (100 / 100 %) | 31.6 / 34.6 (100 / 100 %) | 31.0 / 33.8 (100 / 100 %) | 27.3 / 27.7 (100 / 100 %) |
+  | 20 dB | 18.9 / 21.5 (100 / 100 %) | 27.0 / 28.6 (100 / 100 %) | 26.9 / 28.1 (100 / 100 %) | 19.9 / 23.5 (99 / 99 %) |
+  | 15 dB | 15.1 / 19.9 (95 / 100 %) | 23.3 / 25.7 (100 / 100 %) | 23.0 / 25.4 (100 / 100 %) | 15.4 / 21.4 (86 / 96 %) |
+  | 10 dB | 11.1 / 17.9 (63 / 93 %) | 18.8 / 22.9 (99 / 100 %) | 18.4 / 22.8 (98 / 100 %) | 11.2 / 19.2 (50 / 70 %) |
+  | 6 dB | 8.3 / 15.4 (33 / 81 %) | 14.7 / 20.2 (83 / 100 %) | 14.3 / 20.2 (82 / 100 %) | 8.4 / 16.0 (25 / 59 %) |
+  | 3 dB | none / 12.5 (- / 57 %) | none / 17.1 (- / 95 %) | none / 17.0 (- / 93 %) | none / 12.8 (- / 43 %) |
+  | 40 Hz high, 20 dB | 16.3 / 21.6 (100 / 100 %) | 23.9 / 28.6 (100 / 100 %) | 23.9 / 28.1 (100 / 100 %) | 16.3 / 23.8 (69 / 100 %) |
+  | 100 Hz low, 20 dB | none / 21.6 (- / 100 %) | none / 27.9 (- / 100 %) | none / 27.8 (- / 100 %) | none / 23.3 (- / 100 %) |
+  | clock +200 ppm, 20 dB | 18.8 / 21.5 (100 / 100 %) | 27.2 / 28.2 (100 / 100 %) | 26.9 / 27.9 (100 / 100 %) | 19.6 / 23.6 (91 / 100 %) |
+  | clock -200 ppm, 20 dB | 19.0 / 21.4 (100 / 100 %) | 26.6 / 27.8 (100 / 100 %) | 26.6 / 28.0 (100 / 100 %) | 19.9 / 23.6 (96 / 100 %) |
+  | joined 40 % in, 20 dB | 18.5 / 21.4 (99 / 100 %) | 26.5 / 28.1 (100 / 100 %) | 26.4 / 27.3 (100 / 100 %) | 19.9 / 23.5 (98 / 100 %) |
+  | no header, 20 dB | 18.9 / 21.3 (100 / 100 %) | 27.4 / 28.1 (100 / 100 %) | 16.6 / 28.0 (98 / 100 %) | 19.9 / 23.6 (100 / 100 %) |
+  | Watterson good, 25 dB | 18.1 / 20.0 (90 / 90 %) | 22.6 / 24.0 (97 / 97 %) | 21.8 / 22.8 (92 / 95 %) | 17.6 / 20.1 (54 / 67 %) |
+  | Watterson moderate, 25 dB | 15.6 / 17.9 (46 / 46 %) | 20.1 / 21.9 (62 / 73 %) | 20.6 / 21.9 (66 / 69 %) | 16.8 / 19.9 (23 / 25 %) |
+
+  The ten modes sstv.py never had: clean 27.8-44.6 dB, every row in
+  place; 10 dB 18.8-27.7 dB; +-200 ppm and 100 Hz off tune as at 20 dB;
+  joined part way, every row in place (`sweep` prints them). Fading is
+  random: through ten fades Robot 36's rows in place ranged 55-95 % for
+  one decoder, so it is judged on means. Under multipath the channel's
+  delay differs between 1200 Hz (the syncs) and the picture's tones, so
+  no decoder keeps every row in place there.
+- **CPU**, thread time on one Ryzen 9 6900HX core: 0.3-0.5 % of a core at
+  12 kHz (PD120, the most pixels a second: 0.33 %), 0.46 % at 48 kHz.
+  Memory: a picture's baseband is kept until it ends (8 bytes a sample at
+  about 12 kHz: 11 MB for Martin M1, 28 MB for PD290).
+- **Tests without a transmitter:** `sstv::tx` (`_native.testsig_sstv`,
+  `sstv.testsig`) sends any picture in any mode through AWGN, a tuning
+  offset, the sender's clock error (modelled in the sender's time, not
+  resampled) and Watterson fading; `tx::test_card` and `tx::score` are the
+  picture and the measure. The fixtures (`testdata/sstv/`) are recipes for
+  it pinned by sha256, `golden.json` what sstv.py did on them
+  (`tools/sstv_golden.py`).
+- **Read, with credit:** JL Barber (N7CXI), "Proposal for SSTV Mode
+  Specifications" (Dayton, 2000), through sstv.py's transcription; OpenHamShack
+  Icom's `app/sstv/modes.py` table and its line-clock fit (both ours); QSSTV's
+  picture times as that table quotes them, as a check (facts, no code read).
+  slowrx (ISC) and QSSTV (GPL) were not read.
+- **Not done yet:** Wraase SC2, Pasokon, AVT, the MMSSTV MP/MR/ML family
+  and the black-and-white Robots (named when heard, not decoded); FSK ID
+  after a picture; a real-air corpus (iqlib has no SSTV recording yet).
 
 ### Broadcast FM (`wfm`): stereo, RDS and the band scan
 
@@ -450,6 +554,12 @@ Two more there have no rtty.py figure: an over through a receiver's AGC
 shape captured from openhamshack-nb's own-echo test) must print nothing
 after the over, and 40 strong overs each followed by 8 s of noise may
 print at most 5 false characters between them.
+
+The SSTV fixtures (`testdata/sstv/`) are the same idea: recipes for
+`sstv::tx` pinned by sha256, `golden.json` what openhamshack-nb's
+`sstv.py` did on them (`tools/sstv_golden.py`), and `tests/sstv.rs` holds
+the Rust decoder to never worse, case by case and on the mean of each
+fading condition's eight pictures.
 
 ## Packet's switch-over (for the Packet session; nothing here changes shack_packet)
 
