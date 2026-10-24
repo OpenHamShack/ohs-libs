@@ -253,6 +253,8 @@ struct Assembly {
 /// What `MotDecoder` counts.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct MotCounts {
+    /// Data groups whose CRC held, and those that failed it or were cut off.
+    pub groups_ok: u64,
     pub groups_bad: u64,
     pub objects: u64,
     pub oversize: u64,
@@ -348,7 +350,10 @@ impl MotDecoder {
     /// One data group's bytes (CRC unchecked), at sample time `t`.
     pub fn push_bytes(&mut self, g: &[u8], t: f64) -> Vec<MotObject> {
         match parse_data_group(g) {
-            Ok(dg) => self.push(&dg, t),
+            Ok(dg) => {
+                self.counts.groups_ok += 1;
+                self.push(&dg, t)
+            }
             Err(_) => {
                 self.counts.groups_bad += 1;
                 Vec::new()

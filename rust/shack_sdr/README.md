@@ -352,7 +352,7 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
 - **Counters** (`stats`): `frames`, `misses`, `resyncs`, `fibsOk`,
   `fibsBad`, `audioFrames`, `audioErrors`, `superframes`, `rsCorrected`,
   `rsFailed`, `aus`, `auErrors`, `codecErrors`, `slides`, `logos`,
-  `motObjects`, `motErrors`, `motRefused`, `packetErrors`, `spiCpuMs`.
+  `motGroups`, `motObjects`, `motErrors`, `motRefused`, `packetErrors`, `spiCpuMs`.
 - **Measured** on the transmitter model (`tests/dab.rs`, 24 frames a case;
   an MP2 frame counts only when its sound is the transmitted tones, a DAB+
   AU only when it arrives whole):

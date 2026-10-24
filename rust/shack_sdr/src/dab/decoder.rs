@@ -882,6 +882,7 @@ impl Decoder for Dab {
                 ("codecErrors", c.codec_errors),
                 ("slides", self.slides),
                 ("logos", self.logos),
+                ("motGroups", self.player.iter().map(|p| p.slides.counts.groups_ok).chain(self.pipes.iter().map(|d| d.mot.counts.groups_ok)).sum()),
                 ("motObjects", self.player.iter().map(|p| p.slides.counts.objects).chain(self.pipes.iter().map(|d| d.mot.counts.objects)).sum()),
                 ("motErrors", self.player.iter().map(|p| p.slides.counts.groups_bad).chain(self.pipes.iter().map(|d| d.mot.counts.groups_bad)).sum()),
                 ("motRefused", self.player.iter().map(|p| p.slides.counts.oversize).chain(self.pipes.iter().map(|d| d.mot.counts.oversize)).sum()),

@@ -331,3 +331,125 @@ fn the_showcase_ensemble_shows_everything_within_an_apps_loop() {
         assert_eq!(get(field(m, "spi"), "state"), &text("resting"));
     }
 }
+
+/// One of the 23/10/2026 captures of the local blocks (ohs-box's RSPdx,
+/// 2.4 MS/s, 62 s each, 600 MB, never committed), in SHACK_DAB_DIR (default
+/// ~/build/dab11b): the first `secs` seconds.
+fn capture(name: &str, secs: f64) -> Vec<Complex32> {
+    let dir = std::env::var("SHACK_DAB_DIR").unwrap_or(format!("{}/build/dab11b", std::env::var("HOME").unwrap_or_default()));
+    let path = format!("{dir}/{name}.sigmf-data");
+    let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("{path}: {e} (set SHACK_DAB_DIR)"));
+    let n = ((secs * 2_400_000.0) as usize * 4).min(bytes.len() / 4 * 4);
+    bytes[..n]
+        .chunks_exact(4)
+        .map(|c| Complex32::new(i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0, i16::from_le_bytes([c[2], c[3]]) as f32 / 32768.0))
+        .collect()
+}
+
+/// `sid` played from a capture, in 100 ms blocks at 2.4 MS/s.
+fn play_capture(iq: &[Complex32], sid: &str, t0: f64) -> (Dab, Run) {
+    let mut d = Dab::new();
+    choose(&mut d, sid);
+    let rate = 2_400_000.0;
+    let block = 240_000;
+    let mut r = Run::default();
+    for (i, chunk) in iq.chunks(block).enumerate() {
+        let mut sink = Sink::new();
+        let _ = d.feed(Input::Iq { samples: chunk, rate, t0: t0 + (i * block) as f64 / rate, index: (i * block) as u64 }, &mut sink);
+        for (_, o) in sink.take() {
+            match o {
+                Output::Meta { fields } => r.metas.push(fields),
+                Output::Frame { kind, fields, raw } => r.frames.push((kind, fields, raw)),
+                _ => {}
+            }
+        }
+    }
+    (d, r)
+}
+
+/// Write the pictures a run gave into SHACK_DAB_SAVE, when it is set, for a
+/// person to look at: `<prefix>-<sid>-<kind>-<n>.<jpg|png>`.
+fn save_pictures(r: &Run, prefix: &str) {
+    let Ok(dir) = std::env::var("SHACK_DAB_SAVE") else { return };
+    for (n, (kind, f, raw)) in r.frames.iter().enumerate() {
+        let (Some(raw), Value::Text(sid)) = (raw, field(f, "sid")) else { continue };
+        let ext = if raw.starts_with(&[0xff, 0xd8]) { "jpg" } else { "png" };
+        std::fs::write(format!("{dir}/{prefix}-{sid}-{kind}-{n}.{ext}"), raw).unwrap();
+    }
+}
+
+fn counter(d: &Dab, k: &str) -> u64 {
+    d.status().counters.iter().find(|c| c.0 == k).map(|c| c.1).unwrap()
+}
+
+/// Block 12B, BBC National DAB: its SPI service ("BBC Guide", E1C79E5E) is
+/// packet mode on a 16 kbit/s sub-channel with the packet FEC (FIG 0/14),
+/// the only SPI heard locally. Playing Radio 4 (C224, MP2) for the whole
+/// capture: logos and programme guides come out of it. Run with --ignored
+/// --nocapture to see what came.
+#[test]
+#[ignore]
+fn spi_logos_and_the_guide_from_bbc_national_on_12b() {
+    let iq = capture("20261023-234145Z-225.648MHz", 62.0);
+    // Recorded from 2026-10-23T23:41:45Z.
+    let (d, r) = play_capture(&iq, "C224", mjd_utc(61_336, 23, 41, 45));
+    save_pictures(&r, "12B");
+    let logos: Vec<String> = r.of("logo").iter().map(|(_, f, raw)| {
+        format!("{:?} {:?} {:?}x{:?} {} bytes", field(f, "sid"), field(f, "variant"), field(f, "width"), field(f, "height"), raw.as_ref().map(|b| b.len()).unwrap_or(0))
+    }).collect();
+    println!("logos: {logos:#?}");
+    println!("schedules: {}", r.of("schedule").len());
+    println!("counters: {:?}", d.status().counters);
+    let m = r.metas.last().unwrap();
+    println!("spi: {:?}", field(m, "spi"));
+    println!("C224 now: {:?}", get(service(m, "C224"), "now"));
+    assert_eq!(get(field(m, "spi"), "sid"), &text("E1C79E5E"));
+    assert!(counter(&d, "packetErrors") < 50, "packet CRC errors: {}", counter(&d, "packetErrors"));
+    assert!(counter(&d, "motObjects") > 0, "no MOT object in 62 s of SPI");
+    assert!(!r.of("logo").is_empty(), "no logo from BBC National's SPI");
+    // Radio 1's square and wide logos, the first pictures its carousel sends.
+    let c221: Vec<(Value, Value)> =
+        r.of("logo").iter().filter(|(_, f, _)| field(f, "sid") == &text("C221")).map(|(_, f, _)| (field(f, "variant").clone(), field(f, "width").clone())).collect();
+    assert!(c221.contains(&(text("square"), Value::Num(128.0))) && c221.contains(&(text("wide"), Value::Num(320.0))), "{c221:?}");
+    // The programme guide: schedules out, and what Radio 4 has on now.
+    assert!(r.of("schedule").len() >= 10, "schedules: {}", r.of("schedule").len());
+    let now = get(service(m, "C224"), "now");
+    assert_ne!(now, &Value::Null);
+    assert_ne!(get(service(m, "C224"), "next"), &Value::Null);
+}
+
+/// Blocks 9A and 9B: SlideShow on every service (FIG 0/13), all DAB+, whose
+/// PAD needs no faad2. Every slide that completes must be a real picture
+/// of its declared type. Run with --ignored --nocapture to see them.
+#[test]
+#[ignore]
+fn slides_from_the_dab_plus_services_on_9a_and_9b() {
+    for (name, sids) in [
+        ("20261023-233340Z-202.928MHz", &["CCF1", "CDC2"][..]),
+        ("20261023-233449Z-204.640MHz", &["C0C8", "CD89"][..]),
+    ] {
+        let iq = capture(name, 62.0);
+        for sid in sids {
+            let (d, r) = play_capture(&iq, sid, mjd_utc(61_336, 23, 34, 0));
+            save_pictures(&r, &name[..15]);
+            let slides: Vec<String> = r.of("slide").iter().map(|(_, f, raw)| {
+                format!("{:?} {:?} {:?}x{:?} {} bytes {:?}", field(f, "name"), field(f, "contentType"), field(f, "width"), field(f, "height"), raw.as_ref().map(|b| b.len()).unwrap_or(0), field(f, "categoryTitle"))
+            }).collect();
+            let m = r.metas.last().unwrap();
+            println!("{name} {sid}: {} slides {slides:#?}\n   dls {:?}\n   dl+ {:?}\n   mot {} groups, {} objects, {} errors", slides.len(), field(m, "dls"), field(m, "dlPlus"), counter(&d, "motGroups"), counter(&d, "motObjects"), counter(&d, "motErrors"));
+            // SlideShow's share of a DAB+ X-PAD here is about 100 bytes a
+            // second, so a picture can take longer than the capture: what
+            // must hold is that its data groups arrive whole and correct.
+            assert!(counter(&d, "motGroups") > 0, "{name} {sid}: no MOT data group in 62 s");
+            assert_eq!(counter(&d, "motErrors"), 0, "{name} {sid}: data groups failing their CRC");
+            assert!(field(m, "dls") != &Value::Null, "{name} {sid}: no programme text");
+            for (_, f, raw) in r.of("slide") {
+                let raw = raw.as_ref().unwrap();
+                let jpeg = raw.starts_with(&[0xff, 0xd8]);
+                let png = raw.starts_with(b"\x89PNG");
+                assert!(jpeg || png, "a real picture");
+                assert_eq!(field(f, "contentType"), &text(if jpeg { "image/jpeg" } else { "image/png" }));
+            }
+        }
+    }
+}
