@@ -418,15 +418,15 @@ fn spi_logos_and_the_guide_from_bbc_national_on_12b() {
     assert_ne!(get(service(m, "C224"), "next"), &Value::Null);
 }
 
-/// Blocks 9A and 9B: SlideShow on every service (FIG 0/13), all DAB+, whose
-/// PAD needs no faad2. Every slide that completes must be a real picture
+/// Blocks 9A and 9B: SlideShow on every service (FIG 0/13), DAB+ but
+/// CelticMusicRadio (MP2), and DL Plus on three of them; PAD needs no faad2. Every slide that completes must be a real picture
 /// of its declared type. Run with --ignored --nocapture to see them.
 #[test]
 #[ignore]
 fn slides_from_the_dab_plus_services_on_9a_and_9b() {
     for (name, sids) in [
         ("20261023-233340Z-202.928MHz", &["CCF1", "CDC2"][..]),
-        ("20261023-233449Z-204.640MHz", &["C0C8", "CD89"][..]),
+        ("20261023-233449Z-204.640MHz", &["C0C8", "CD89", "CAF9", "CCC1"][..]),
     ] {
         let iq = capture(name, 62.0);
         for sid in sids {
@@ -443,6 +443,11 @@ fn slides_from_the_dab_plus_services_on_9a_and_9b() {
             assert!(counter(&d, "motGroups") > 0, "{name} {sid}: no MOT data group in 62 s");
             assert_eq!(counter(&d, "motErrors"), 0, "{name} {sid}: data groups failing their CRC");
             assert!(field(m, "dls") != &Value::Null, "{name} {sid}: no programme text");
+            // WILD Country and HeartSong Live send DL Plus: title and artist.
+            if ["CAF9", "CCC1"].contains(sid) {
+                let dl = field(m, "dlPlus");
+                assert!(matches!(get(dl, "itemTitle"), Value::Text(_)) && matches!(get(dl, "itemArtist"), Value::Text(_)), "{sid}: {dl:?}");
+            }
             for (_, f, raw) in r.of("slide") {
                 let raw = raw.as_ref().unwrap();
                 let jpeg = raw.starts_with(&[0xff, 0xd8]);

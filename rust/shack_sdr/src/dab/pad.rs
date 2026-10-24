@@ -408,7 +408,13 @@ impl PadDecoder {
         self.apply_dl_plus()
     }
 
-    /// Cut the tags out of the label they name. True when what is shown changed.
+    /// Cut the tags out of the label they name. True when what is shown
+    /// changed. A tag that runs past the label's end is cut at it: WILD
+    /// Country on 9B sends each length marker as the length itself, not
+    /// less one as TS 102 980 says (its last tag, the artist, then ends one
+    /// character past the label, and its title takes the space after it,
+    /// which the trim removes), where HeartSong Live on the same block sends
+    /// them as specified; both read right this way.
     fn apply_dl_plus(&mut self) -> bool {
         let (Some(cmd), Some(label)) = (&self.dl_command, &self.label) else { return false };
         if self.label_toggle != Some(cmd.link) {
@@ -418,8 +424,8 @@ impl PadDecoder {
         let tags = cmd
             .tags
             .iter()
-            .filter(|(_, at, len)| at + len <= chars.len())
-            .map(|&(ct, at, len)| DlTag { content_type: ct, text: chars[at..at + len].iter().collect::<String>().trim().to_string() })
+            .filter(|(_, at, _)| *at < chars.len())
+            .map(|&(ct, at, len)| DlTag { content_type: ct, text: chars[at..(at + len).min(chars.len())].iter().collect::<String>().trim().to_string() })
             .collect();
         let new = DlPlus { item_toggle: cmd.item_toggle, item_running: cmd.item_running, tags };
         if self.dl_plus.as_ref() == Some(&new) {
@@ -717,6 +723,17 @@ mod tests {
         let d = dec.dl_plus.clone().expect("DL Plus");
         assert_eq!((d.get(1), d.get(4)), (Some("Blue Monday"), Some("New Order")));
         assert!(d.item_running && d.item_toggle);
+        // Lengths sent as the length, not less one (WILD Country's encoder):
+        // the last tag runs a character past the label, and is cut there.
+        let text = "Now playing: I Go Back by Kenny Chesney";
+        enc.set_label(text);
+        enc.set_dl_plus(&[(1, 13, 10), (4, 26, 14)], false, true);
+        for _ in 0..40 {
+            let (x, f) = enc.frame();
+            dec.push(&x, f);
+        }
+        let d = dec.dl_plus.clone().expect("DL Plus");
+        assert_eq!((d.get(1), d.get(4)), (Some("I Go Back"), Some("Kenny Chesney")));
         // A new label with no tags of its own clears them: the old tags
         // name another label's characters.
         enc.set_label("Traffic and travel");
