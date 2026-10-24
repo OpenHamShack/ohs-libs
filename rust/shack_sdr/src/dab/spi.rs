@@ -28,7 +28,13 @@
 //! **Programme information** files (one per service and day) give the
 //! schedule: each programme's start (UTC), duration, name (long, else
 //! medium, else short) and short description; the decoder works out now
-//! and next from the ensemble's clock.
+//! and next from the ensemble's clock. Which service a file is for comes,
+//! first found, from a programme's own location bearer, the MOT ScopeID
+//! parameter, the schedule's scope, an element of tag 0x05 directly under
+//! `epg` holding a bearer id, or a ContentName naming the SId after a "d"
+//! (`w20261024dC224c0.EHB`). BBC National's carousel on 12B uses only the
+//! last two: no ScopeID and no bearer in its locations; the 0x05 element
+//! is marked "not used" in TS 102 371 V3.2.1 but its carousel sends it.
 //!
 //! Only what is above is read; genres, links, group information, the
 //! "advanced" profile's compressed files and on-demand entries are not.
@@ -57,6 +63,8 @@ const T_MULTIMEDIA: u8 = 0x2b;
 const T_TIME: u8 = 0x2c;
 const T_LOC_BEARER: u8 = 0x2d;
 const CDATA: u8 = 0x01;
+/// Tag 0x05 under epg: "not used" in V3.2.1, a bearer id in BBC's files.
+const T_EPG_BEARER: u8 = 0x05;
 /// The MOT parameter giving a programme information file's service.
 pub const P_SCOPE_ID: u8 = 0x27;
 
@@ -235,7 +243,10 @@ pub fn parse_pi(b: &[u8], scope: Option<u32>) -> Option<BTreeMap<u32, Vec<Progra
     let epg = top.iter().find(|n| n.tag == T_EPG)?;
     let mut tok = BTreeMap::new();
     let mut out: BTreeMap<u32, Vec<Programme>> = BTreeMap::new();
-    for n in nodes(epg.data) {
+    let parts = nodes(epg.data);
+    // A bearer id straight under epg (module docs).
+    let scope = scope.or_else(|| parts.iter().find(|n| n.tag == T_EPG_BEARER).and_then(|n| bearer_sid(n.data)).map(|x| x.1));
+    for n in parts {
         match n.tag {
             T_TOKENS => tok = tokens(n.data),
             T_SCHEDULE => {
@@ -291,6 +302,20 @@ pub fn parse_pi(b: &[u8], scope: Option<u32>) -> Option<BTreeMap<u32, Vec<Progra
         }
     }
     Some(out)
+}
+
+/// The SId a programme information file's ContentName gives after a "d"
+/// (`w20261024dC224c0.EHB`, as BBC National names them).
+fn sid_in_name(name: &str) -> Option<u32> {
+    let b = name.as_bytes();
+    (0..b.len()).find_map(|i| {
+        let hex = |r: std::ops::Range<usize>| b.get(r.clone()).filter(|x| x.iter().all(u8::is_ascii_hexdigit)).map(|_| &name[r]);
+        if b[i] != b'd' {
+            return None;
+        }
+        hex(i + 1..i + 9).filter(|h| h.starts_with(['e', 'E', 'f', 'F'])).or_else(|| hex(i + 1..i + 5))
+            .and_then(|h| u32::from_str_radix(h, 16).ok())
+    })
 }
 
 /// What the SPI decoder found: a logo, or a service's schedule changed.
@@ -374,7 +399,7 @@ impl Spi {
                 self.choose(services)
             }
             1 => {
-                let scope = h.param(P_SCOPE_ID).and_then(bearer_sid).map(|x| x.1);
+                let scope = h.param(P_SCOPE_ID).and_then(bearer_sid).map(|x| x.1).or_else(|| h.content_name().and_then(|n| sid_in_name(&n)));
                 let Some(pi) = parse_pi(&obj.body, scope) else { return Vec::new() };
                 self.pi_files += 1;
                 let mut out = Vec::new();
@@ -583,6 +608,33 @@ mod tests {
         assert!(got.contains(&(0xc221, "square", 128, 128)), "{got:?}");
         assert!(got.contains(&(0xc3a7, "square", 128, 128)), "{got:?}");
         assert!(!got.iter().any(|g| g.0 == 0xc221 && g.2 == 32), "the 32x32 is never the choice");
+    }
+
+    #[test]
+    fn a_file_shaped_as_bbc_nationals_names_its_service_and_local_times() {
+        use crate::dab::tx::spi_node;
+        // As 12B's: the service in a 0x05 element under epg, no bearer in
+        // the location, the short form of the time with an LTO byte (+1 h).
+        let time = {
+            let v: u32 = 61_336 << 14 | 1 << 12 | 23 << 6; // 23:00 UTC, LTO present
+            let mut t = v.to_be_bytes().to_vec();
+            t.push(0x02);
+            t
+        };
+        let prog = [
+            spi_node(0x11, &spi_node(0x01, b"Midnight News")),
+            spi_node(0x19, &spi_node(0x2c, &[spi_node(0x80, &time), spi_node(0x81, &1800u16.to_be_bytes())].concat())),
+        ]
+        .concat();
+        let sched = [spi_node(0x80, &[0, 1]), spi_node(0x1c, &prog)].concat();
+        let body = spi_node(0x02, &[spi_node(0x05, &spi_bearer(ECC, 0xce15, 0xc224)), spi_node(0x21, &sched)].concat());
+        let got = parse_pi(&body, None).unwrap();
+        let p = &got[&0xc224][0];
+        assert_eq!((p.name.as_str(), p.duration_s), ("Midnight News", 1800));
+        assert_eq!(crate::dab::codes::iso_utc(p.start), "2026-10-23T23:00:00Z");
+        // With no 0x05 element either, the ContentName names it.
+        assert_eq!(sid_in_name("w20261024dC224c0.EHB"), Some(0xc224));
+        assert_eq!(sid_in_name("si.dat"), None);
     }
 
     #[test]
