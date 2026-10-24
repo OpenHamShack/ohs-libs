@@ -7,7 +7,7 @@
 //! and spi (logos and the programme guide); tables, coding and rs
 //! underneath; tx, the transmitter model the tests use.
 
-pub use decoder::{survey, Dab, Survey, INFO};
+pub use decoder::{survey, survey_details, Dab, Survey, INFO};
 
 pub mod audio;
 pub mod codes;

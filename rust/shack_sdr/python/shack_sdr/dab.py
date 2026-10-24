@@ -62,16 +62,19 @@ WHY_CODES = ("no_signal", "no_sync", "fic_errors", "service_not_found", "needs_c
              "codec_open", "unsupported_protection")
 
 
-def survey(samples, rate: float = IQ_RATE, give_up_s: float = 1.0) -> dict:
+def survey(samples, rate: float = IQ_RATE, give_up_s: float = 1.0, wait_s: float = 0.0) -> dict:
     """What a block holds, from IQ already captured (complex64, centred on
     the block): {"meta": the feed as a session would give it (with
     `complete`), "syncS": seconds of samples until the FIC was first read
     or None, "completeS": until the list was complete or None,
-    "listenedS": how much was used}. It stops as soon as the list is
-    complete, or after `give_up_s` with no sync. No sound is decoded."""
+    "detailsS": until every service's programme type had come too (with
+    `wait_s`) or None, "listenedS": how much was used}. It stops as soon as
+    the list is complete - or, with `wait_s`, when every service has its
+    programme type or `wait_s` more has passed - or after `give_up_s` with
+    no sync. No sound is decoded."""
     import numpy as np
     z = np.ascontiguousarray(samples, dtype=np.complex64)
-    return _native.dab_survey(z.view(np.float32), float(rate), float(give_up_s))
+    return _native.dab_survey(z.view(np.float32), float(rate), float(give_up_s), float(wait_s))
 
 
 def block_centre(name: str) -> int | None:

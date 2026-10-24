@@ -309,3 +309,14 @@ def test_slides_and_logos_come_as_frames_with_their_bytes(no_faad):
         assert c221["hasSlideshow"] is True and c221["language"] == "en"
         assert m["dls"] == "Shack MP2 Tone - now: 1 kHz left, 1.5 kHz right"
         assert m["dlPlus"]["itemTitle"] == "1 kHz left" and m["dlPlus"]["itemArtist"] == "Shack MP2 Tone"
+
+
+def test_a_survey_can_wait_for_every_services_programme_type():
+    # The test ensemble sends no FIG 0/17, so with a wait the survey listens
+    # on to the wait's end and says the types never all came.
+    x = iq(30, snr_db=15.0)
+    s = dab.survey(x)
+    assert s["completeS"] is not None and s["detailsS"] is None
+    w = dab.survey(x, wait_s=1.0)
+    assert w["detailsS"] is None
+    assert abs(w["listenedS"] - (w["completeS"] + 1.0)) < 0.1

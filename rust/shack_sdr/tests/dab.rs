@@ -549,3 +549,36 @@ fn a_fading_empty_block_at_2_4_ms_never_holds_the_decoder() {
         }
     }
 }
+
+#[test]
+fn a_survey_can_wait_for_every_programme_type_after_the_labels() {
+    use shack_sdr::dab::{survey, survey_details};
+    use shack_sdr::dab::tx::fig;
+    // FIG 0/17 for both services from frame 15 (1.4 s), after the labels
+    // have made the list complete (0.7-0.8 s).
+    let mut ens = TxEnsemble::standard();
+    ens.figs = vec![fig(0, vec![0x11, 0xc2, 0x21, 0x00, 0x0a, 0xc3, 0xa7, 0x00, 0x09])];
+    ens.figs_from_frame = 15;
+    let iq = dab_iq(&ens, 40, &Channel { snr_db: Some(15.0), ..Default::default() });
+    let pty = |m: &[(String, Value)]| -> Vec<Value> {
+        match field(m, "services") {
+            Value::List(l) => l.iter().map(|s| map_field(s, "pty").clone()).collect(),
+            _ => vec![],
+        }
+    };
+    // Stopping at `complete`, as the band scan did: no genre.
+    let s = survey(&iq, 2_048_000.0, 1.0).unwrap();
+    assert!(pty(&s.meta).iter().all(|p| *p == Value::Null));
+    // Waiting: both, soon after they are sent, and well inside the wait.
+    let s = survey_details(&iq, 2_048_000.0, 1.0, 2.5).unwrap();
+    assert!(pty(&s.meta).iter().all(|p| *p != Value::Null), "{:?}", pty(&s.meta));
+    let (c, d) = (s.complete_s.unwrap(), s.details_s.unwrap());
+    assert!(d > c && d < 2.2, "complete {c:.2} s, types {d:.2} s");
+    // A service that never sends its type costs the whole wait, no more.
+    ens.figs = vec![fig(0, vec![0x11, 0xc2, 0x21, 0x00, 0x0a])];
+    let iq = dab_iq(&ens, 40, &Channel { snr_db: Some(15.0), ..Default::default() });
+    let s = survey_details(&iq, 2_048_000.0, 1.0, 1.5).unwrap();
+    assert_eq!(s.details_s, None);
+    let c = s.complete_s.unwrap();
+    assert!((s.listened_s - (c + 1.5)).abs() < 0.1, "listened {:.2} s, complete at {c:.2}", s.listened_s);
+}

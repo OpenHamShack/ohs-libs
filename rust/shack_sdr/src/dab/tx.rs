@@ -84,6 +84,10 @@ pub struct TxEnsemble {
     /// More FIGs (each whole, its header first), sent in turn in the FIBs
     /// the model leaves free: about 30 a second.
     pub figs: Vec<Vec<u8>>,
+    /// The transmission frame from which `figs` (and the data services'
+    /// FIGs) are sent, 0 from the start: to test a receiver that hears a
+    /// FIG later than the labels.
+    pub figs_from_frame: u64,
 }
 
 impl TxEnsemble {
@@ -119,6 +123,7 @@ impl TxEnsemble {
             ],
             data: vec![],
             figs: vec![],
+            figs_from_frame: 0,
         }
     }
 
@@ -578,7 +583,7 @@ impl Transmitter {
                     let k = (frame % 10) as usize;
                     if k % 3 == 0 { self.labels.get(k / 3).cloned().into_iter().collect() } else { vec![] }
                 }
-                (_, 1..=3) if !self.extra.is_empty() => {
+                (_, 1..=3) if !self.extra.is_empty() && frame >= self.ensemble.figs_from_frame => {
                     // As many of the extra FIGs, in turn, as fit.
                     let mut v = Vec::new();
                     let mut room = 30;

@@ -513,6 +513,11 @@ impl Dab {
             && audio.iter().all(|s| s.best_label().is_some() && self.ens.subchannels.contains_key(&s.audio().unwrap().subch))
     }
 
+    /// Has every listed (audio) service its programme type yet?
+    fn all_typed(&self) -> bool {
+        self.ens.services.values().filter(|s| s.audio().is_some_and(|c| c.tmid == 0)).all(|s| s.pty.is_some())
+    }
+
     /// The feed's picture of what is heard.
     fn snapshot(&self) -> Fields {
         let text = |s: &Option<String>| s.clone().map(Value::Text).unwrap_or(Value::Null);
@@ -902,6 +907,9 @@ pub struct Survey {
     /// ensemble was complete; None if never.
     pub sync_s: Option<f64>,
     pub complete_s: Option<f64>,
+    /// Seconds until every listed service's programme type had come too
+    /// (`survey_details` only); None if not within the wait.
+    pub details_s: Option<f64>,
     /// Seconds of the buffer it used.
     pub listened_s: f64,
 }
@@ -911,10 +919,25 @@ pub struct Survey {
 /// demodulated) runs on `samples` until the ensemble is complete, or until
 /// `give_up_s` of it has passed with no sync, or the samples end.
 pub fn survey(samples: &[Complex32], rate: f64, give_up_s: f64) -> Result<Survey, DecodeError> {
+    survey_details(samples, rate, give_up_s, 0.0)
+}
+
+/// As `survey`, and once the list is complete it listens up to `wait_s`
+/// more for every listed service's programme type (FIG 0/17), which a
+/// station list shows as its genre. 0/17 is sent once a second, like the
+/// labels, but on a busy ensemble it is spread over several FIGs that come
+/// round after the labels: beta.8's scan, which stopped at `complete`,
+/// kept the genre of 116 of 128 local services. Only the programme type
+/// is waited for. Language (0/5) and user applications (0/13) are optional:
+/// most ensembles send no 0/5 and 0/13 only for services with data, so a
+/// wait for them would run to its end on nearly every block; they are
+/// kept when they have come. A service that never sends a type (three on
+/// 12B) costs its block the whole wait.
+pub fn survey_details(samples: &[Complex32], rate: f64, give_up_s: f64, wait_s: f64) -> Result<Survey, DecodeError> {
     let mut d = Dab::new();
     let block = (rate / 20.0) as usize;
     let mut last = Vec::new();
-    let (mut sync_s, mut complete_s) = (None, None);
+    let (mut sync_s, mut complete_s, mut details_s) = (None, None, None);
     let mut used = 0usize;
     for chunk in samples.chunks(block.max(1)) {
         let mut sink = Sink::new();
@@ -929,9 +952,17 @@ pub fn survey(samples: &[Complex32], rate: f64, give_up_s: f64) -> Result<Survey
         if d.sync && sync_s.is_none() {
             sync_s = Some(t);
         }
-        if d.complete() {
+        if d.complete() && complete_s.is_none() {
             complete_s = Some(t);
-            break;
+        }
+        if let Some(c) = complete_s {
+            if d.all_typed() {
+                details_s = Some(t);
+                break;
+            }
+            if t - c >= wait_s {
+                break;
+            }
         }
         if sync_s.is_none() && t >= give_up_s {
             break;
@@ -940,7 +971,7 @@ pub fn survey(samples: &[Complex32], rate: f64, give_up_s: f64) -> Result<Survey
     if last.is_empty() {
         last = d.snapshot();
     }
-    Ok(Survey { meta: last, sync_s, complete_s, listened_s: used as f64 / rate })
+    Ok(Survey { meta: last, sync_s, complete_s, details_s, listened_s: used as f64 / rate })
 }
 
 /// A programme for the feed.

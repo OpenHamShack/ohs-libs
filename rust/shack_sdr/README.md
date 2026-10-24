@@ -348,9 +348,13 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
 - **A band scan** asks each block "is there an ensemble here, and what is
   in it?" without playing: a session with no `service` (only the FIC's
   symbols are demodulated) until its meta says `complete`, or
-  `dab.survey(iq, rate, give_up_s=1.0)` on captured IQ, which returns
-  `{"meta", "syncS", "completeS", "listenedS"}` and stops as soon as it
-  knows. Measured with labels repeated once a second (EN 300 401's rate):
+  `dab.survey(iq, rate, give_up_s=1.0, wait_s=0.0)` on captured IQ, which
+  returns `{"meta", "syncS", "completeS", "detailsS", "listenedS"}` and
+  stops as soon as it knows; with `wait_s` it listens on after `complete`
+  until every service has its programme type (`detailsS`) or `wait_s` has
+  passed. On the local blocks' captures the types come with the labels
+  (0.35-1.4 s); only the programme type is waited for, since language and
+  user applications are optional and most ensembles never send them. Measured with labels repeated once a second (EN 300 401's rate):
   FIC read 0.15-0.2 s after the first frame begins (at most 0.21 s from 24
   random starting points at 9 dB), list complete after 0.7-0.8 s, and
   noise never syncs. Budget about 1.5 s per block that holds an ensemble

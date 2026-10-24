@@ -540,10 +540,11 @@ fn testsig_dab<'py>(
 }
 
 /// dab::survey on complex64 samples viewed as float32: {"meta", "syncS",
-/// "completeS", "listenedS"}.
+/// "completeS", "detailsS", "listenedS"}; `wait_s` listens on after the
+/// list is complete for every service's programme type (survey_details).
 #[pyfunction]
-#[pyo3(signature = (samples, rate=2_048_000.0, give_up_s=1.0))]
-fn dab_survey<'py>(py: Python<'py>, samples: PyBuffer<f32>, rate: f64, give_up_s: f64) -> PyResult<Bound<'py, PyDict>> {
+#[pyo3(signature = (samples, rate=2_048_000.0, give_up_s=1.0, wait_s=0.0))]
+fn dab_survey<'py>(py: Python<'py>, samples: PyBuffer<f32>, rate: f64, give_up_s: f64, wait_s: f64) -> PyResult<Bound<'py, PyDict>> {
     let v = view(&samples)?;
     if v.len % 2 != 0 {
         return Err(PyValueError::new_err("IQ must be float32 pairs"));
@@ -551,7 +552,7 @@ fn dab_survey<'py>(py: Python<'py>, samples: PyBuffer<f32>, rate: f64, give_up_s
     let r = py.detach(|| {
         // SAFETY: `samples` holds the buffer for this whole call (see View).
         let x = unsafe { std::slice::from_raw_parts(v.ptr as *const Complex32, v.len / 2) };
-        crate::dab::survey(x, rate, give_up_s)
+        crate::dab::survey_details(x, rate, give_up_s, wait_s)
     });
     drop(samples);
     let s = r.map_err(|e| DecoderError::new_err(("bad_input", e.code())))?;
@@ -559,6 +560,7 @@ fn dab_survey<'py>(py: Python<'py>, samples: PyBuffer<f32>, rate: f64, give_up_s
     d.set_item("meta", fields_py(py, &s.meta)?)?;
     d.set_item("syncS", s.sync_s)?;
     d.set_item("completeS", s.complete_s)?;
+    d.set_item("detailsS", s.details_s)?;
     d.set_item("listenedS", s.listened_s)?;
     Ok(d)
 }
