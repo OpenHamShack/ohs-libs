@@ -675,7 +675,7 @@ impl Dab {
         if let Some(Player { stream: Stream::Plus { pad: pd, .. }, .. }) = self.player.as_mut() {
             for au in &o.aus {
                 if let Some((x, f)) = pad::dabplus_pad(au) {
-                    pd.push(x, f);
+                    pd.push_xpad(x, f);
                 }
             }
         }

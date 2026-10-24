@@ -201,6 +201,23 @@ impl PadDecoder {
     /// One frame's PAD: `before` ends with the X-PAD (in the order sent),
     /// `fpad` its two F-PAD bytes. True when the label changed.
     pub fn push(&mut self, before: &[u8], fpad: [u8; 2]) -> bool {
+        self.push_in(before, fpad, false)
+    }
+
+    /// One DAB+ AU's PAD: `xpad` is the X-PAD exactly (its data_stream_element
+    /// bounds it), which a frame without contents indicators continues whole.
+    pub fn push_xpad(&mut self, xpad: &[u8], fpad: [u8; 2]) -> bool {
+        self.push_in(xpad, fpad, true)
+    }
+
+    /// A variable X-PAD with no contents indicators continues the last
+    /// sub-field (§7.4.2): in old DAB, where the X-PAD's end is not marked,
+    /// it is as long as the previous X-PAD was, its indicators included; in
+    /// DAB+ it is the whole X-PAD. Taking only the previous sub-fields'
+    /// length, as the first version did, cut every such frame short: no
+    /// programme text and no slide from 9A's or 9B's DAB+ services, whose
+    /// encoders send most frames that way.
+    fn push_in(&mut self, before: &[u8], fpad: [u8; 2], exact: bool) -> bool {
         if fpad[0] >> 6 != 0 {
             return false; // an F-PAD type we do not know
         }
@@ -237,7 +254,6 @@ impl PadDecoder {
                         lens.push((app, len));
                     }
                     let mut at = k;
-                    let mut total = 0;
                     for (app, len) in lens {
                         if at + len > r.len() {
                             break;
@@ -245,12 +261,14 @@ impl PadDecoder {
                         subs.push((app, &r[at..at + len], true));
                         self.last_app = app;
                         at += len;
-                        total += len;
                     }
-                    self.last_len = total;
-                } else if self.last_len > 0 && self.last_len <= r.len() {
-                    // The same length as last time, continuing the last sub-field's application.
-                    subs.push((self.last_app, &r[..self.last_len], false));
+                    self.last_len = at;
+                } else {
+                    // Continuing the last sub-field's application (push_in's docs).
+                    let n = if exact { r.len() } else { self.last_len };
+                    if n > 0 && n <= r.len() {
+                        subs.push((self.last_app, &r[..n], false));
+                    }
                 }
             }
             _ => return false,
@@ -641,6 +659,46 @@ mod tests {
         let mut dec = PadDecoder::new();
         assert!(!dec.push(&x, f));
         assert_eq!((dec.groups_bad, dec.label.clone()), (1, None));
+    }
+
+    /// A DLS data group for `text` (one segment, first and last).
+    fn dls_group(text: &[u8]) -> Vec<u8> {
+        let mut g = vec![0x60 | (text.len() as u8 - 1), 0];
+        g.extend_from_slice(text);
+        let crc = crc16_ccitt(&g);
+        g.extend(crc.to_be_bytes());
+        g
+    }
+
+    #[test]
+    fn x_pad_frames_without_contents_indicators_continue_the_group_whole() {
+        // 9A's DAB+ X-PAD: one 10-byte X-PAD with a CI (8 data bytes), the
+        // rest of the group in 10-byte X-PADs with none.
+        let g = dls_group(b"Nation 60s - Ha"); // 2 + 15 + 2 = 19 bytes
+        let mut frames = Vec::new();
+        let mut first = vec![2 << 5 | 2, 0];
+        first.extend(&g[..8]);
+        frames.push((first, [0x20, 0x02]));
+        for chunk in g[8..].chunks(10) {
+            let mut c = chunk.to_vec();
+            c.resize(10, 0);
+            frames.push((c, [0x20, 0x00]));
+        }
+        let rev = |x: &[u8]| x.iter().rev().copied().collect::<Vec<u8>>();
+        let mut dec = PadDecoder::new();
+        for (x, f) in &frames {
+            dec.push_xpad(&rev(x), *f);
+        }
+        assert_eq!(dec.label.as_deref(), Some("Nation 60s - Ha"));
+        // Old DAB: audio bytes before the X-PAD, so the continuation's
+        // length is the previous X-PAD's, its CI list included.
+        let mut dec = PadDecoder::new();
+        for (x, f) in &frames {
+            let mut before = vec![0x77; 40];
+            before.extend(rev(x));
+            dec.push(&before, *f);
+        }
+        assert_eq!(dec.label.as_deref(), Some("Nation 60s - Ha"));
     }
 
     #[test]
