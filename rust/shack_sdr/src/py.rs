@@ -503,14 +503,14 @@ fn testsig_dab<'py>(
 ) -> PyResult<Bound<'py, PyBytes>> {
     use crate::dab::tx::{sfn_iq, Channel, Path, Site, TxEnsemble};
     let sites: Vec<Site> = match sites {
-        None => vec![Site { tii: None, delay: 0, gain: 1.0 }],
+        None => vec![Site { tii: None, delay: 0, gain: 1.0, im3: 0.0 }],
         Some(v) => v
             .into_iter()
             .map(|(main, sub, delay_us, gain_db)| {
                 if crate::dab::tii::carriers(main, sub).is_none() || !(0.0..=1000.0).contains(&delay_us) {
                     return Err(PyValueError::new_err("a site is (main 0-69, sub 0-23, delay_us 0-1000, gain_db)"));
                 }
-                Ok(Site { tii: Some((main, sub)), delay: (delay_us * 2.048).round() as usize, gain: 10f64.powf(gain_db / 20.0) })
+                Ok(Site { tii: Some((main, sub)), delay: (delay_us * 2.048).round() as usize, gain: 10f64.powf(gain_db / 20.0), im3: 0.0 })
             })
             .collect::<PyResult<_>>()?,
     };

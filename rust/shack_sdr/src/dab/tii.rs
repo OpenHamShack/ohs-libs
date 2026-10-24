@@ -24,8 +24,17 @@
 //! median group), which sets the detection threshold whatever the SNR.
 //! A group's figure is the sum over the four quarters of its pair's
 //! magnitude (so frequency-selective fading in one quarter costs only that
-//! quarter), and a transmitter is a pattern whose four groups all stand
-//! above the threshold in one comb.
+//! quarter; one quarter far over the rest is a spur's, and left out), and
+//! a transmitter is a pattern whose four groups all stand above the
+//! threshold in one comb.
+//!
+//! **What real signals added** (nine Band III blocks recorded on ohs-box,
+//! 23/10/2026; tests/dab_tii_real.rs holds the detector to them): a
+//! transmitter's amplifier mixes its own TII carriers, putting products
+//! about 30 dB under it on its comb's other groups and, in its pattern, on
+//! the combs either side; a weak transmitter beside a loud one cannot be
+//! told from those, so it is listed at low confidence; and receivers have
+//! spurs. `look` says how each is handled.
 //!
 //! **Its level** is its carriers' power against the phase reference's
 //! carriers (less the noise the empty null shows): the share of the block's
@@ -63,6 +72,15 @@ const THRESHOLD: f32 = 2.2;
 const SURE: f32 = 6.0;
 /// The quietest noise a look assumes, dB under the signal (see `look`).
 const FLOOR_DB: f32 = -50.0;
+/// How far under a transmitter its own amplifier's products may reach,
+/// dB (see `look`): measured about 30 under, so 22 leaves room.
+const IM_DB: f32 = 22.0;
+/// A transmitter this much weaker than one within two combs of it may be
+/// that one's products (see `look`): its confidence is at most SUSPECT.
+const NEAR_DB: f32 = 25.0;
+/// A quarter this many times the median of a group's four is a spur's.
+const OUTLIER: f32 = 4.0;
+const SUSPECT: f32 = 0.3;
 /// At most this many transmitters (the strongest) are listed.
 const MAX_LISTED: usize = 12;
 
@@ -118,6 +136,7 @@ pub struct Detector {
     prs_power: f32,
     count: u64,
     heard: Vec<Heard>,
+    margin: (f32, u8, u8),
 }
 
 impl Default for Detector {
@@ -135,6 +154,7 @@ impl Detector {
             prs_power: 0.0,
             count: 0,
             heard: Vec::new(),
+            margin: (0.0, 0, 0),
         }
     }
 
@@ -193,17 +213,50 @@ impl Detector {
         }
     }
 
-    /// Each group's figure for one parity: its four quarters' magnitudes.
+    /// For measuring on recordings: each pair's complex average (by
+    /// quarter, comb, group) in the TII parity and in the empty one, and
+    /// the signal's power per carrier. None before both have frames.
+    pub fn probe(&self) -> Option<(Vec<Complex32>, Vec<Complex32>, f32)> {
+        if self.frames.iter().any(|&n| n == 0) {
+            return None;
+        }
+        let g = [self.groups(0), self.groups(1)];
+        let on = if g[0].iter().sum::<f32>() >= g[1].iter().sum::<f32>() { 0 } else { 1 };
+        Some((self.pairs[on].clone(), self.pairs[1 - on].clone(), self.prs_power - self.null_power[1 - on]))
+    }
+
+    /// Each group's figure for one parity: the sum of its four quarters'
+    /// magnitudes, but with one quarter far over the others (over
+    /// OUTLIER times their median) left out and the other three scaled
+    /// to four. On real receivers the "noise" in a null is not white: a
+    /// spur or an interferer near one carrier pair lifts that pair alone,
+    /// in one quarter, 10-15 dB over the rest (ohs-box, 23/10/2026: up to
+    /// 4.8 times the median group with all four summed, where white noise
+    /// stays under 1.8). A transmitter is in all four quarters. Always
+    /// leaving out the largest was tried, and cost two transmitters
+    /// sharing a comb their told-apart: where both send, the quarters
+    /// differ with the two delays, and the largest is theirs.
     fn groups(&self, par: usize) -> Vec<f32> {
         let mut g = vec![0.0; COMBS * GROUPS];
-        for q in 0..4 {
-            for c in 0..COMBS {
-                for b in 0..GROUPS {
-                    g[c * GROUPS + b] += self.pairs[par][pair_index(q, c, b)].norm();
-                }
+        for c in 0..COMBS {
+            for b in 0..GROUPS {
+                let m: [f32; 4] = std::array::from_fn(|q| self.pairs[par][pair_index(q, c, b)].norm());
+                let mut sorted = m;
+                sorted.sort_by(f32::total_cmp);
+                let mid = 0.5 * (sorted[1] + sorted[2]);
+                g[c * GROUPS + b] = if sorted[3] > OUTLIER * mid { (sorted[0] + sorted[1] + sorted[2]) * 4.0 / 3.0 } else { sorted.iter().sum() };
             }
         }
         g
+    }
+
+    /// The nearest miss since the last restart: the best a comb with
+    /// nothing listed came to (its best pattern's weakest group over the
+    /// noise median, against THRESHOLD), and that pattern and comb. For
+    /// measuring on recordings: on ohs-box's nine blocks it was a real
+    /// transmitter just too weak every time, up to 2.19.
+    pub fn nearest_miss(&self) -> (f32, u8, u8) {
+        self.margin
     }
 
     fn look(&mut self) {
@@ -222,65 +275,223 @@ impl Detector {
         // carriers into its neighbours' stands out: noise is taken as at
         // least FLOOR_DB under a 0 dB transmitter's group (four pairs).
         let noise = quiet[quiet.len() / 2].max(4.0 * signal * 10f32.powf(FLOOR_DB / 10.0)).max(1e-30);
-        let mut heard = Vec::new();
+        let im = 10f32.powf(-IM_DB / 10.0);
+        let level = |figure: f32| 10.0 * ((figure - noise).max(1e-30) / 4.0 / signal).log10();
+        let z_of = |c: usize| -> Vec<f32> { (0..GROUPS).map(|b| g[c * GROUPS + b] / noise).collect() };
+        let weakest_in = |z: &[f32], mask: u8| (0..GROUPS).filter(|b| mask >> b & 1 == 1).map(|b| z[b]).fold(f32::INFINITY, f32::min);
+        let best_of = |z: &[f32]| (0..PATTERNS as u8).filter_map(|p| pattern(p).map(|m| (p, m))).max_by(|a, b| weakest_in(z, a.1).total_cmp(&weakest_in(z, b.1))).unwrap();
+        // A transmitter's amplifier mixes its own 32 carriers, and the
+        // products land on its comb's other groups and, in its own
+        // pattern, on the combs beside it, about 30 dB under it (Brown
+        // Carrick Hill's 64/14 on 11B and 12B, ohs-box 23/10/2026: comb
+        // 14's other groups and groups 0, 1, 3, 4 of combs 13 and 15 at
+        // -28 to -43 dB, in the TII frames only; combs 12 and 16 clean).
+        // Read as transmitters, that was 5/14, 64/13 and 64/15. So each
+        // comb first learns what its loud neighbours could have put on it:
+        // their pattern, up to IM_DB under them.
+        let loud: Vec<(usize, u8, f32)> = (0..COMBS)
+            .map(|c| {
+                let z = z_of(c);
+                let (_, m) = best_of(&z);
+                (c, m, weakest_in(&z, m))
+            })
+            .filter(|&(_, _, w)| w * im >= THRESHOLD)
+            .collect();
+        let mut heard: Vec<Heard> = Vec::new();
+        let mut margin = (0f32, 0u8, 0u8);
         for c in 0..COMBS {
-            let z: Vec<f32> = (0..GROUPS).map(|b| g[c * GROUPS + b] / noise).collect();
+            let z = z_of(c);
+            let weakest = |mask: u8| weakest_in(&z, mask);
+            let (p, m) = best_of(&z);
             let strong: u8 = (0..GROUPS).filter(|&b| z[b] >= THRESHOLD).fold(0, |m, b| m | 1 << b);
             if strong.count_ones() < 4 {
+                if weakest(m) > margin.0 {
+                    margin = (weakest(m), p, c as u8);
+                }
                 continue;
             }
-            let weakest = |mask: u8| (0..GROUPS).filter(|b| mask >> b & 1 == 1).map(|b| z[b]).fold(f32::INFINITY, f32::min);
-            let within: Vec<(u8, u8)> = (0..PATTERNS as u8).filter_map(|p| pattern(p).map(|m| (p, m))).filter(|&(_, m)| m & strong == m).collect();
-            if strong.count_ones() == 4 {
-                // One transmitter: its pairs, less what noise adds, over 16.
-                let (p, m) = within[0];
-                let mine: f32 = (0..GROUPS).filter(|b| m >> b & 1 == 1).map(|b| g[c * GROUPS + b] - noise).sum::<f32>() / 16.0;
-                let confidence = ((weakest(m) - THRESHOLD) / (SURE - THRESHOLD)).clamp(0.0, 1.0);
-                heard.push(Heard { main: p, sub: c as u8, level_db: 10.0 * (mine.max(1e-30) / signal).log10(), confidence });
-                continue;
-            }
-            // More than four: two transmitters share this comb (as two
-            // regions' transmitters with one sub-identifier can), and
-            // their patterns usually share groups too. Each pair of
-            // patterns covering the strong groups is fitted to the comb's
-            // eight figures as noise (1) plus each one's own level where
-            // it sends, the levels by least squares; the pair that fits
-            // best wins. A group both send reads about the sum, one only
-            // sends reads its own, so the right pair fits far better than
-            // a pair that puts a shared group where only one sends.
-            let mut best: Option<(f32, (u8, u8), (u8, u8), f32, f32)> = None;
-            for (i, &(p1, m1)) in within.iter().enumerate() {
-                for &(p2, m2) in &within[i + 1..] {
-                    if m1 | m2 != strong {
-                        continue;
-                    }
-                    let x = |b: usize| z[b] - 1.0;
-                    let ind = |m: u8, b: usize| (m >> b & 1) as f32;
-                    let o = (m1 & m2).count_ones() as f32;
-                    let s1: f32 = (0..GROUPS).map(|b| ind(m1, b) * x(b)).sum();
-                    let s2: f32 = (0..GROUPS).map(|b| ind(m2, b) * x(b)).sum();
-                    let det = 16.0 - o * o;
-                    let l1 = (4.0 * s1 - o * s2) / det;
-                    let l2 = (4.0 * s2 - o * s1) / det;
-                    let res: f32 = (0..GROUPS).map(|b| (x(b) - l1 * ind(m1, b) - l2 * ind(m2, b)).powi(2)).sum();
-                    if best.as_ref().is_none_or(|bst| res < bst.0) {
-                        best = Some((res, (p1, m1), (p2, m2), l1, l2));
-                    }
+            // The louder neighbour, in the comb either side, whose products
+            // could reach this comb: (its pattern, the most they can read
+            // here). Not two combs off: products were never seen there, and
+            // a network's transmitters often share one main identifier, so
+            // a real one two combs from a loud one has its pattern too
+            // (Sergeant Law's 63/3 beside Darvel's 63/5 on 11C, 26 dB under).
+            let near = loud
+                .iter()
+                .filter(|&&(c2, _, _)| c2.abs_diff(c) == 1)
+                .max_by(|a, b| a.2.total_cmp(&b.2))
+                .map(|&(_, m2, w2)| (m2, w2 * im));
+            if let Some((m2, cap)) = near {
+                if strong & !m2 == 0 && weakest(strong) <= cap {
+                    continue; // only a neighbour's products
                 }
             }
-            let Some((_, (p1, _), (p2, _), l1, l2)) = best else { continue };
-            for (p, l) in [(p1, l1), (p2, l2)] {
-                // A level in noise medians; a group figure is four pairs.
-                let mine = l * noise / 4.0;
+            // The other strong groups, if any, are a second transmitter
+            // only when they are not far under this one: in its own comb a
+            // transmitter's products are on the groups it does not send.
+            let rest = strong & !m;
+            let rest_max = (0..GROUPS).filter(|b| rest >> b & 1 == 1).map(|b| z[b]).fold(0.0, f32::max);
+            if rest == 0 || rest_max < weakest(m) * im {
+                if near.is_some_and(|(m2, cap)| m2 == m && weakest(m) <= cap) {
+                    continue; // the neighbour's products in its own pattern
+                }
+                let confidence = ((weakest(m) - THRESHOLD) / (SURE - THRESHOLD)).clamp(0.0, 1.0);
+                let fig: f32 = (0..GROUPS).filter(|b| m >> b & 1 == 1).map(|b| g[c * GROUPS + b]).sum::<f32>() / 4.0;
+                heard.push(Heard { main: p, sub: c as u8, level_db: level(fig), confidence });
+                continue;
+            }
+            for (p, l, fitted) in explain(&z, strong, near) {
+                let confidence = ((1.0 + l - THRESHOLD) / (SURE - THRESHOLD)).clamp(0.0, 1.0);
                 // Which four groups are whose is a fit, not a reading.
-                let confidence = 0.7 * ((1.0 + l - THRESHOLD) / (SURE - THRESHOLD)).clamp(0.0, 1.0);
-                heard.push(Heard { main: p, sub: c as u8, level_db: 10.0 * (mine.max(1e-30) / signal).log10(), confidence });
+                let confidence = if fitted { 0.7 * confidence } else { confidence };
+                heard.push(Heard { main: p, sub: c as u8, level_db: level(l * noise + noise), confidence });
+            }
+        }
+        // What remains beside a much louder transmitter may still be its
+        // products: they fall on particular groups of the combs beside it
+        // (third-order mixing of its four groups), not evenly, so a
+        // pattern can stand out of them. Measured 28-44 dB under the loud
+        // one (ohs-box: 2/9 beside Darvel's 64/10 on 12A, 22/15 beside
+        // Brown Carrick Hill's 64/14) - but so is a real weak transmitter
+        // beside it (Rothesay's 57/13, 30 dB under 64/14 on 12B). Nothing
+        // in the null tells them apart, so such a one is listed with its
+        // confidence at most SUSPECT, for the app to weigh against what it
+        // knows of the network.
+        let all = heard.clone();
+        for h in heard.iter_mut() {
+            if all.iter().any(|o| o.sub.abs_diff(h.sub) <= 2 && o.sub != h.sub && o.level_db - h.level_db >= NEAR_DB) {
+                h.confidence = h.confidence.min(SUSPECT);
             }
         }
         heard.sort_by(|a, b| b.level_db.total_cmp(&a.level_db));
         heard.truncate(MAX_LISTED);
         self.heard = heard;
+        if margin.0 > self.margin.0 {
+            self.margin = margin;
+        }
     }
+}
+
+/// Least squares with levels never under zero: `need` components (a
+/// mask of groups each) that must be there with a level of their own, and
+/// `may` components that may be there or not (a neighbour's products);
+/// each subset of `may` is tried and the closest feasible fit wins. The
+/// levels (of `need` then `may`, zero where left out; z over noise, less
+/// noise's 1) and the residual.
+fn fit_nonneg(z: &[f32], need: &[u8], may: &[u8]) -> Option<(Vec<f32>, f32)> {
+    let mut best: Option<(Vec<f32>, f32)> = None;
+    for set in 0u32..(1 << may.len()) {
+        let used: Vec<usize> = (0..may.len()).filter(|i| set >> i & 1 == 1).collect();
+        let comps: Vec<u8> = need.iter().copied().chain(used.iter().map(|&i| may[i])).collect();
+        let Some((l, res)) = fit(z, &comps) else { continue };
+        if best.as_ref().is_none_or(|b| res < b.1) {
+            let mut all = l[..need.len()].to_vec();
+            all.extend((0..may.len()).map(|i| used.iter().position(|&u| u == i).map(|k| l[need.len() + k]).unwrap_or(0.0)));
+            best = Some((all, res));
+        }
+    }
+    best
+}
+
+/// Least squares: the levels (z over noise, less noise's 1) of each
+/// component (a mask of groups) that best make the comb's eight figures,
+/// and the residual; None if a level comes out under zero or the
+/// components cannot be told apart.
+fn fit(z: &[f32], comps: &[u8]) -> Option<(Vec<f32>, f32)> {
+    let n = comps.len();
+    let ind = |m: u8, b: usize| (m >> b & 1) as f64;
+    let mut a = vec![vec![0f64; n + 1]; n];
+    for i in 0..n {
+        for j in 0..n {
+            a[i][j] = (0..GROUPS).map(|b| ind(comps[i], b) * ind(comps[j], b)).sum();
+        }
+        a[i][n] = (0..GROUPS).map(|b| ind(comps[i], b) * (z[b] as f64 - 1.0)).sum();
+    }
+    for col in 0..n {
+        let piv = (col..n).max_by(|&x, &y| a[x][col].abs().total_cmp(&a[y][col].abs()))?;
+        if a[piv][col].abs() < 1e-9 {
+            return None;
+        }
+        a.swap(col, piv);
+        for r in 0..n {
+            if r != col {
+                let f = a[r][col] / a[col][col];
+                for k in col..=n {
+                    a[r][k] -= f * a[col][k];
+                }
+            }
+        }
+    }
+    let l: Vec<f32> = (0..n).map(|i| (a[i][n] / a[i][i]) as f32).collect();
+    if l.iter().any(|&v| v < 0.0) {
+        return None;
+    }
+    let res = (0..GROUPS)
+        .map(|b| {
+            let model: f32 = comps.iter().zip(&l).map(|(&m, &v)| v * ind(m, b) as f32).sum();
+            (z[b] - 1.0 - model).powi(2)
+        })
+        .sum();
+    Some((l, res))
+}
+
+/// What a comb with more than one thing on it holds: (main, level, fitted).
+///
+/// Two transmitters can share a comb (two regions' with one
+/// sub-identifier), or one can sit on a loud neighbour's products
+/// (Rothesay's 57/13 beside Brown Carrick Hill's 64/14 on 12B, ohs-box):
+/// their patterns usually share groups. Each explanation is fitted to the
+/// comb's eight figures by least squares, with `near`'s products (if any)
+/// as two more components - its pattern, and its other groups lower - that
+/// may never be fitted louder than `near` allows and are never listed. One
+/// transmitter is the answer unless a second one makes the fit at least
+/// four times closer: a group both send reads about the sum, one only
+/// sends reads its own, so the right pair fits far better than one
+/// transmitter does, while products and noise give a second pattern
+/// little to explain.
+fn explain(z: &[f32], strong: u8, near: Option<(u8, f32)>) -> Vec<(u8, f32, bool)> {
+    let extra: Vec<u8> = near.map(|(m2, _)| vec![m2, !m2]).unwrap_or_default();
+    let cap = near.map(|n| n.1).unwrap_or(f32::INFINITY);
+    let within: Vec<(u8, u8)> = (0..PATTERNS as u8).filter_map(|p| pattern(p).map(|m| (p, m))).filter(|&(_, m)| m & strong == m).collect();
+    let covers = |m: u8| m | if near.is_some() { 0xff } else { 0 };
+    let ok = |l: &[f32], k: usize| l[k..].iter().all(|&v| v <= cap);
+    let mut one: Option<(f32, u8, f32)> = None;
+    for &(p, m) in &within {
+        if near.is_none() && covers(m) & strong != strong {
+            continue;
+        }
+        if let Some((l, res)) = fit_nonneg(z, &[m], &extra) {
+            if ok(&l, 1) && one.as_ref().is_none_or(|o| res < o.0) {
+                one = Some((res, p, l[0]));
+            }
+        }
+    }
+    let mut two: Option<(f32, u8, u8, f32, f32)> = None;
+    for (i, &(p1, m1)) in within.iter().enumerate() {
+        for &(p2, m2) in &within[i + 1..] {
+            if near.is_none() && m1 | m2 != strong {
+                continue;
+            }
+            if let Some((l, res)) = fit_nonneg(z, &[m1, m2], &extra) {
+                if ok(&l, 2) && l[0] >= THRESHOLD - 1.0 && l[1] >= THRESHOLD - 1.0 && two.as_ref().is_none_or(|t| res < t.0) {
+                    two = Some((res, p1, p2, l[0], l[1]));
+                }
+            }
+        }
+    }
+    let mut out = match (one, two) {
+        (Some(o), Some(t)) if t.0 * 4.0 > o.0 => vec![(o.1, o.2, near.is_some())],
+        (_, Some(t)) => vec![(t.1, t.3, true), (t.2, t.4, true)],
+        (Some(o), None) => vec![(o.1, o.2, near.is_some())],
+        (None, None) => vec![],
+    };
+    // A listed pattern that is the neighbour's own, no louder than its
+    // products can be, is its products.
+    if let Some((m2, cap)) = near {
+        out.retain(|&(p, l, _)| !(pattern(p) == Some(m2) && l + 1.0 <= cap));
+    }
+    out.retain(|&(_, l, _)| l + 1.0 >= THRESHOLD);
+    out
 }
 
 /// The feed's `tii` list: `[{"main", "sub", "levelDb", "confidence"}]`,

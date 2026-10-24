@@ -62,7 +62,7 @@ fn last_tii(iq: &[Complex32], rate: f64) -> Vec<Seen> {
 }
 
 fn site(tii: (u8, u8), delay: usize, gain_db: f64) -> Site {
-    Site { tii: Some(tii), delay, gain: 10f64.powf(gain_db / 20.0) }
+    Site { tii: Some(tii), delay, gain: 10f64.powf(gain_db / 20.0), im3: 0.0 }
 }
 
 #[test]
@@ -264,4 +264,58 @@ fn the_first_list_comes_soon_after_the_lock_and_survives_a_looped_signal() {
     let looped: Vec<Complex32> = one[one.len() - 24 * 196_608..].iter().cycle().take(5 * 24 * 196_608).copied().collect();
     let seen = last_tii(&looped, 2_048_000.0);
     assert_eq!(seen.iter().map(|s| (s.main, s.sub)).collect::<Vec<_>>(), vec![(11, 1)], "{seen:?}");
+}
+
+/// `x` with Gaussian noise for an SNR of `snr_db` in the block.
+fn with_noise(mut x: Vec<Complex32>, snr_db: f64, seed: u64) -> Vec<Complex32> {
+    let mut rng = shack_sdr::testsig::Rng::new(seed);
+    let sigma = ((2_048_000.0 / 1_536_000.0) / 10f64.powf(snr_db / 10.0) / 2.0).sqrt();
+    for v in x.iter_mut() {
+        *v += Complex32::new((sigma * rng.gauss()) as f32, (sigma * rng.gauss()) as f32);
+    }
+    x
+}
+
+#[test]
+fn a_transmitters_own_intermodulation_names_no_one() {
+    // A transmitter's amplifier mixes its 32 TII carriers, and the
+    // products land on its comb's other groups and in its own pattern on
+    // the combs beside it, 30 dB or so under it: ohs-box's 11B listed
+    // 5/14, 64/13 and 64/15 beside Brown Carrick Hill's 64/14 that way
+    // (and gave 64/14 itself only 0.7, as two transmitters in one comb).
+    // None may be named with any confidence, and the strong one is sure;
+    // a real one 12 dB under in a comb further off still is too. im3 0.06
+    // puts the products on comb 14's other groups about 28 dB under (0.15,
+    // 20 dB under, is past what a detector can tell from a transmitter
+    // sharing the comb). Before, 64/14 came out at 0.7 here.
+    let mut strong = site((64, 14), 0, 0.0);
+    strong.im3 = 0.06;
+    let sites = [strong, site((63, 7), 300, -12.0)];
+    let seen = last_tii(&sfn_iq(&TxEnsemble::standard(), &sites, 60, &Channel { snr_db: Some(25.0), ..Default::default() }), 2_048_000.0);
+    eprintln!("intermodulation: {seen:?}");
+    let sure: Vec<(u8, u8, f64)> = seen.iter().filter(|s| s.confidence > 0.3).map(|s| (s.main, s.sub, s.confidence)).collect();
+    assert_eq!(sure, vec![(64, 14, 1.0), (63, 7, 1.0)], "{seen:?}");
+}
+
+#[test]
+fn a_receivers_own_spurs_name_no_one() {
+    // Birdies 48 kHz apart (a receiver's clock harmonics), one between
+    // each pair of comb 9's groups 0-3 in the lowest quarter, 15 dB over
+    // the noise in a carrier, on a signal whose only transmitter is in
+    // comb 2. With every quarter summed, the four groups stood out and
+    // named 0/9 (patterns from spurs listed at 0.7 on ohs-box's 11A).
+    let x = sfn_iq(&TxEnsemble::standard(), &[site((40, 2), 0, 0.0)], 60, &Channel { snr_db: None, ..Default::default() });
+    let mut x = with_noise(x, 20.0, 5);
+    let noise_per_carrier = (2_048_000.0 / 1_536_000.0) / 100.0 / 2048.0;
+    let amp = (noise_per_carrier * 10f64.powf(1.5) * 2048.0).sqrt() as f32 / 2048.0_f32.sqrt();
+    for b in 0..4 {
+        let k = -768.0 + 18.0 + 48.0 * b as f64 + 0.5;
+        let w = 2.0 * std::f64::consts::PI * k / 2048.0;
+        for (n, v) in x.iter_mut().enumerate() {
+            *v += Complex32::from_polar(amp, (w * n as f64) as f32);
+        }
+    }
+    let seen = last_tii(&x, 2_048_000.0);
+    eprintln!("spurs: {seen:?}");
+    assert_eq!(seen.iter().filter(|s| s.confidence > 0.3).map(|s| (s.main, s.sub)).collect::<Vec<_>>(), vec![(40, 2)], "{seen:?}");
 }

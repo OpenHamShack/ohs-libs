@@ -573,7 +573,7 @@ mod tii_cost {
     // tests/dab.rs cpu_per_frame_on_this_host.
     #[test]
     fn tii_costs_a_small_part_of_a_frame() {
-        let iq = sfn_iq(&TxEnsemble::standard(), &[Site { tii: Some((3, 4)), delay: 0, gain: 1.0 }], 2, &Channel { snr_db: Some(20.0), ..Default::default() });
+        let iq = sfn_iq(&TxEnsemble::standard(), &[Site { tii: Some((3, 4)), delay: 0, gain: 1.0, im3: 0.0 }], 2, &Channel { snr_db: Some(20.0), ..Default::default() });
         let mut d = Demod::new();
         d.push(&iq);
         let prs = d.carriers(TNULL as u64 + 1000, 0.0);

@@ -279,16 +279,22 @@ host.audio(sid, rate=12_000, channels=1)      # its sound
   0-23 as numbers (Ofcom's list writes both in hex: "3E"/"07" is 62/7;
   with the ensemble's `id` they name the site), `levelDb` its share of the
   received power (0 for a lone transmitter, about -3 each for two equal
-  ones; to 0.5 dB) and `confidence` 0-1 (to 0.1; two transmitters sharing
-  one sub-identifier are a fit, at most 0.7). Empty until about 1.5 s
-  after the lock, then looked at every 3 s, from about 3 s of averaging; a gap
-  in the samples keeps the last list, a retune or no DAB clears it.
-  Several transmitters of a single-frequency network are listed (up to
-  12); one 20 dB under the strongest, or 300 us late, is still found. On
-  the transmitter model it costs 16 us of CPU per 96 ms frame (one FFT
-  more and the averaging), and nothing it lists was not sent, from 4 dB
-  SNR to 40. The SNR is read from the empty nulls, so TII does not lower
-  it. `_native.testsig_dab(..., sites=[(main, sub, delay_us, gain_db)],
+  ones; to 0.5 dB) and `confidence` 0-1 (to 0.1). Confidence is at most
+  0.7 for two transmitters fitted into one comb, and at most 0.3 for one
+  within two combs of a transmitter 25 dB or more louder: a transmitter's
+  own amplifier puts products about 30 dB under it there, which nothing in
+  the null tells from a weak real one. An app should weigh a low
+  confidence against the transmitters it knows for the ensemble. Empty
+  until about 1.5 s after the lock, then looked at every 3 s, from about
+  3 s of averaging; a gap in the samples keeps the last list, a retune or
+  no DAB clears it. Up to 12 listed. On nine real Band III blocks
+  (tests/dab_tii_real.rs, ignored: the recordings are 600 MB each)
+  everything at 0.5 or more was a transmitter that is there, and every
+  false one at 0.3 or less; on the transmitter model one 20 dB under the
+  strongest, or 300 us late, is still found, and nothing is listed from
+  noise. 35 us of CPU per 96 ms frame (one FFT more, the averaging, and a
+  look every 3 s). The SNR is read from the empty nulls, so TII does not
+  lower it. `_native.testsig_dab(..., sites=[(main, sub, delay_us, gain_db)],
   eid=0xCE15)` makes such a network for an app's tests.
 - **Pictures and the guide are `frame` results** with the bytes in `raw`
   (never in the feed's text), so the app keeps them as it likes:

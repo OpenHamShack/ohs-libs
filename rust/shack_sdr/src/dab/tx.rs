@@ -379,6 +379,8 @@ pub struct Transmitter {
     /// This transmitter's TII (main, sub), sent in the null symbol of the
     /// frames that hold CIFs 0-3 mod 8; None sends a silent null.
     pub tii: Option<(u8, u8)>,
+    /// Its amplifier's distortion of the TII signal (Site::im3).
+    pub tii_im3: f64,
 }
 
 /// The FIG header and its data.
@@ -548,6 +550,7 @@ impl Transmitter {
             prev: Vec::new(),
             fft: FftPlanner::new().plan_fft_inverse(TU),
             tii: None,
+            tii_im3: 0.0,
         }
     }
 
@@ -668,7 +671,12 @@ impl Transmitter {
         }
         self.fft.process(&mut buf);
         let scale = 1.0 / (K as f64).sqrt();
-        (0..TNULL).map(|n| buf[(n + TU - (TNULL - TU)) % TU] * scale).collect()
+        let out: Vec<Complex64> = (0..TNULL).map(|n| buf[(n + TU - (TNULL - TU)) % TU] * scale).collect();
+        if self.tii_im3 == 0.0 {
+            return out;
+        }
+        let mean = out.iter().map(|v| v.norm_sqr()).sum::<f64>() / out.len() as f64;
+        out.iter().map(|&v| v * (1.0 - self.tii_im3 * v.norm_sqr() / mean)).collect()
     }
 
     /// The next 96 ms transmission frame, 196 608 samples at 2.048 MS/s, with
@@ -773,7 +781,7 @@ impl Fader {
 
 /// `frames` transmission frames of `ensemble` through `ch`.
 pub fn dab_iq(ensemble: &TxEnsemble, frames: usize, ch: &Channel) -> Vec<Complex32> {
-    sfn_iq(ensemble, &[Site { tii: None, delay: 0, gain: 1.0 }], frames, ch)
+    sfn_iq(ensemble, &[Site { tii: None, delay: 0, gain: 1.0, im3: 0.0 }], frames, ch)
 }
 
 /// One transmitter of a single-frequency network, as the receiver has it:
@@ -783,6 +791,12 @@ pub struct Site {
     pub tii: Option<(u8, u8)>,
     pub delay: usize,
     pub gain: f64,
+    /// Its amplifier's third-order distortion of the TII signal: each
+    /// null sample z becomes z (1 - im3 |z|^2 / mean |z|^2). Real
+    /// transmitters put their TII carriers' mixing products about 30 dB
+    /// under them (Brown Carrick Hill, 23/10/2026), on their comb's other
+    /// groups and the combs beside it; 0 is a perfect amplifier.
+    pub im3: f64,
 }
 
 /// `frames` frames of `ensemble` from every site of a single-frequency
@@ -795,6 +809,7 @@ pub fn sfn_iq(ensemble: &TxEnsemble, sites: &[Site], frames: usize, ch: &Channel
     for site in sites {
         let mut tx = Transmitter::new(ensemble.clone());
         tx.tii = site.tii;
+        tx.tii_im3 = site.im3;
         let mut n = lead + site.delay;
         for _ in 0..frames {
             for v in tx.frame() {
