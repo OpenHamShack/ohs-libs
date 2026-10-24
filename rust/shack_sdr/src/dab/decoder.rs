@@ -794,6 +794,7 @@ impl Decoder for Dab {
                 }
                 for d in &mut self.pipes {
                     d.sub.reset();
+                    d.reader.reset();
                 }
             }
             if (rate - self.rate).abs() > 1e-6 || self.resampler.is_none() && (rate - RATE).abs() > 1.0 {
