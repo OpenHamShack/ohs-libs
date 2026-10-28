@@ -6,12 +6,19 @@
     {"id": "renew-nothing-held", "def": "renew", "message": {"client": "remote-7f3a", "app": "shack-radio"}, "valid": true},
     {"id": "renew-no-client", "def": "renew", "message": {"app": "shack-radio"}, "valid": false},
     {"id": "renew-duplicate-hold", "def": "renew", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "dab"]}, "valid": false},
+    {"id": "renew-with-device-info", "def": "renew", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"], "deviceId": "dev_K4M2Q7Z9XW3A", "deviceName": "Brian's iPad", "kind": "phone"}, "valid": true, "note": "optional device identification"},
+    {"id": "renew-with-user", "def": "renew", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"], "user": "brian"}, "valid": true, "note": "optional user identity"},
+    {"id": "renew-with-timestamps", "def": "renew", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"], "since": "2026-10-28T10:15:02Z", "lastSeen": "2026-10-28T10:15:02Z"}, "valid": true, "note": "optional timestamp fields"},
+    {"id": "renew-empty-screen", "def": "renew", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": ""}, "valid": true, "note": "screen may be empty string"},
     {"id": "lease-plan", "def": "lease", "message": {"leaseS": 30, "renewEveryS": 10}, "valid": true},
     {"id": "list", "def": "list", "message": {"clients": [{"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"]}]}, "valid": true},
+    {"id": "list-with-full-details", "def": "list", "message": {"clients": [{"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"], "deviceId": "dev_K4M2Q7Z9XW3A", "deviceName": "Brian's iPad", "kind": "phone", "user": "brian", "since": "2026-10-28T10:15:02Z", "lastSeen": "2026-10-28T10:15:02Z"}]}, "valid": true, "note": "list entries with all optional fields"},
     {"id": "arrived", "def": "arrived", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"]}, "valid": true},
     {"id": "moved", "def": "moved", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/fm", "holds": ["audio"]}, "valid": true},
+    {"id": "moved-with-previous", "def": "moved", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/fm", "holds": ["audio"], "previous": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"]}}, "valid": true, "note": "moved event with previous location"},
     {"id": "gone-goodbye", "def": "gone", "message": {"client": "remote-7f3a", "why": "goodbye"}, "valid": true},
     {"id": "gone-expired", "def": "gone", "message": {"client": "remote-7f3a", "why": "expired"}, "valid": true},
+    {"id": "gone-with-details", "def": "gone", "message": {"client": "remote-7f3a", "why": "goodbye", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab"], "deviceId": "dev_K4M2Q7Z9XW3A", "user": "brian"}, "valid": true, "note": "gone event with optional context fields"},
     {"id": "gone-kicked", "def": "gone", "message": {"client": "remote-7f3a", "why": "kicked"}, "valid": false, "note": "why is goodbye or expired"}
   ]
 }

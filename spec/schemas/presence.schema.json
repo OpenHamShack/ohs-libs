@@ -13,7 +13,23 @@
         "client": {"$ref": "#/$defs/client"},
         "app": {"type": "string", "minLength": 1},
         "screen": {"type": "string"},
-        "holds": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true, "default": []}
+        "holds": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true, "default": []},
+        "deviceId": {"type": "string", "minLength": 1},
+        "deviceName": {"type": "string"},
+        "kind": {"type": "string"},
+        "user": {"type": "string"},
+        "since": {"type": "string", "format": "date-time"},
+        "lastSeen": {"type": "string", "format": "date-time"}
+      }
+    },
+    "previous": {
+      "type": "object",
+      "required": ["client"],
+      "properties": {
+        "client": {"$ref": "#/$defs/client"},
+        "app": {"type": "string", "minLength": 1},
+        "screen": {"type": "string"},
+        "holds": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
       }
     },
     "lease": {
@@ -30,13 +46,34 @@
       "properties": {"clients": {"type": "array", "items": {"$ref": "#/$defs/renew"}}}
     },
     "arrived": {"$ref": "#/$defs/renew"},
-    "moved": {"$ref": "#/$defs/renew"},
+    "moved": {
+      "type": "object",
+      "required": ["client", "app"],
+      "properties": {
+        "client": {"$ref": "#/$defs/client"},
+        "app": {"type": "string", "minLength": 1},
+        "screen": {"type": "string"},
+        "holds": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true, "default": []},
+        "deviceId": {"type": "string", "minLength": 1},
+        "deviceName": {"type": "string"},
+        "kind": {"type": "string"},
+        "user": {"type": "string"},
+        "since": {"type": "string", "format": "date-time"},
+        "lastSeen": {"type": "string", "format": "date-time"},
+        "previous": {"$ref": "#/$defs/previous"}
+      }
+    },
     "gone": {
       "type": "object",
       "required": ["client", "why"],
       "properties": {
         "client": {"$ref": "#/$defs/client"},
-        "why": {"enum": ["goodbye", "expired"]}
+        "why": {"enum": ["goodbye", "expired"]},
+        "app": {"type": "string", "minLength": 1},
+        "screen": {"type": "string"},
+        "holds": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+        "deviceId": {"type": "string", "minLength": 1},
+        "user": {"type": "string"}
       }
     }
   }
