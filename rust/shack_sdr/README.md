@@ -644,6 +644,89 @@ _native.testsig_ais([{"t": 0.1, "channel": "B", "fields": {...}}], rate=2_400_00
   tools/ais_golden.py with pyais as the oracle (never a dependency).
   `SHACK_AIS_DIR` runs real captures (tests/ais.rs says the format).
 
+### ADS-B (`adsb`): aircraft on 1090 MHz
+
+Mode S on 1090 MHz (ICAO Annex 10 Vol IV, DO-260B): the extended squitters
+(DF17/18) that carry ADS-B, with what the other replies add (DF11, and
+DF4/5/20/21's altitude and squawk), from complex IQ at 2 MS/s or more
+anywhere within the band (the demodulator works on the magnitude, so
+1090 MHz need not be at DC). One `frame` per aircraft, at most every
+`everyS` seconds while it changes, and only for an aircraft that has
+earned it (below). `src/adsb/`.
+
+```python
+sid = host.start("adsb", {"refLat": 55.509, "refLon": -4.594}, "iq", 6_000_000)
+host.feed(sid, iq, t0, index)
+host.poll()   # {"type": "frame", "frame": "adsb", "fields": {...the aircraft...}}
+_native.adsb_encode({"kind": "airborne", "icao": 0x4CA7B2, "alt_ft": 4000, "odd": False,
+                     "lat": 55.55, "lon": -4.62})                         # message bytes
+_native.adsb_parse(message)   # one message's fields, its parity remainder reported, not judged
+_native.testsig_adsb([{"t": 0.01, "payload": message, "level_db": 0.0, "offset_hz": 0.0}],
+                     rate=6_000_000.0, duration_s=0.1, snr_db=20.0, if_bw_hz=5e6)   # complex64 bytes
+```
+
+- **Parameters:** `refLat`, `refLon` (the station: the range check and
+  surface positions), `maxRangeKm` (500), `correct` (true: mend one bit of
+  a strong DF17), `everyS` (1).
+- **Each frame's fields:** `icao` (hex; `~` first for a non-ICAO DF18
+  address), `source` (`adsb`, `adsr`, `tisb`), `callsign`, `category`
+  ("A3"), `squawk`, `emergency` (`none`, `general`, `lifeguard`,
+  `minfuel`, `nordo`, `unlawful`, `downed`, from TC 28 or the squawk),
+  `lat`, `lon`, `posT` (when that position was heard), `altBaro`, `altGeo`
+  (ft), `gs` (kn), `track`, `heading` (deg), `airspeed`, `airspeedType`
+  (`ias`/`tas`), `vrate` (ft/min), `vrateSource` (`baro`/`geo`),
+  `onGround`, `adsbVersion`, `messages`, `rssiDb` (dB full scale),
+  `firstT`; `null` until heard.
+- **What it believes.** Every message's parity is checked. DF17/18 only
+  with a remainder of zero (one bit of a DF17 may be mended, only from a
+  preamble 12 dB over the floor and only where the syndrome names one of
+  the message's two least certain bits); DF11 with zero, or a small
+  interrogator code for an aircraft already confirmed; DF4/5/20/21, whose
+  parity *is* the address, only for an address confirmed on DF17. An
+  aircraft is shown only with an address confirmed by two clean DF17s, a
+  position from an even/odd CPR pair within 10 s (25 s on the surface,
+  where the station picks the quadrant) that the next position confirms,
+  within `maxRangeKm` of the station, at under 1000 kn between fixes; a
+  speed over 1000 kn or an altitude outside -2000 to 65 000 ft is dropped.
+  This is the AIS lesson (openhamshack GUIDE §5): on real air the parity
+  alone passes enough noise to invent traffic.
+- **Status counters:** `aircraft` (shown now), `messages`, `df17`,
+  `df11`, `surveillance`, `corrected`, `preambles`, `crcBad`, and the
+  plausibility rejections `rejectedRange`, `rejectedJump`, `rejectedSpeed`,
+  `rejectedAltitude`, `rejectedFirstFix`.
+- **Rate and bandwidth matter more than anything else here.** Mode S's
+  bits differ around ±1 MHz from the carrier. Through a sharp 1.536 MHz
+  IF filter, which an SDRplay RSP chooses for any rate under 5 MS/s, some
+  bit patterns read wrong at any SNR. A real capture made so (ohs-box,
+  28/10/2026, 07:56: 2.4 MS/s, 1090 MHz 300 kHz off centre, an X7000) gave
+  no DF17 to this decoder or to a brute-force search of every burst at
+  every timing, only 26 DF11s in five minutes, and so no aircraft at all.
+  At 6 MS/s the RSP opens 5 MHz and the worst bit's margin more than
+  triples (0.27 to 0.89, noise-free). An RTL-SDR, which has no such
+  filter, works at 2.4 MS/s, as dump1090 shows.
+- **Measured** (tests/adsb.rs, 28/10/2026, SNR = a pulse's power over the
+  noise in the sample band): a 112-bit reply is read 38 % of the time at
+  12 dB and 2.4 MS/s, 89 % at 15, all at 20 (slicing at the exact timing,
+  which no receiver knows, gets 37 % at 12: the detector's limit). At 8
+  MS/s through 5 MHz, 81 % at 7 dB and all from 10 - for the same air,
+  about 5 dB better. A transponder error to ±400 kHz costs nothing; a
+  reply 12 dB over another is read. A minute of noise with 3000 Mode A/C
+  replies and 300 random Mode S replies a second shows no aircraft. One
+  core's CPU a second of input on shack: about 30 ms at 2.4 MS/s, 67 at 6,
+  87 at 8.
+- **Bit-exact against pyModeS:** testdata/adsb/golden.json, written by
+  tools/adsb_golden.py with pyModeS 3 as the oracle (never a dependency):
+  "The 1090MHz Riddle"'s examples, pyModeS's corpus of real traffic, CPR
+  pairs, a real 2000-message stream run through the tracker, and our own
+  writer's output read by pyModeS. That last caught GNSS height (TC 20-22),
+  which is metres, not the barometric code: our writer and reader agreed
+  with each other and both were wrong. `SHACK_ADSB_DIR` runs real captures
+  (tests/adsb_real.rs).
+- **Not done:** MLAT, ACARS, VDL2; Comm-B contents (DF20/21's BDS
+  registers); TCAS (DF0/16) and TC 29 target state. A first fix more than
+  180 NM from where the aircraft really is cannot happen (it comes from a
+  pair), but a surface position needs the station.
+
 ### DMR (`dmr`): Tier II, both timeslots at once
 
 A 12.5 kHz channel's IQ (any rate from 16 kS/s; Radio's 48 kS/s is the
