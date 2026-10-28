@@ -690,6 +690,14 @@ _native.testsig_dmr(rate=48_000, snr_db=None, offset_hz=0, mode="bs", cc=1, slot
   carriers 1.5 kHz off; 24, 48 and 62.5 kS/s; a minute of noise starts no
   call. CPU on shack (release, one thread): 0.43 % of a core at 48 kS/s
   with both slots busy, 0.46 % searching noise, 0.80 % at 240 kS/s.
+- **On the air** (28/10/2026): ten minutes of GB7IR (430.9125 MHz,
+  Brandmeister, CC 6) recorded on ohs-box at about 5 dB over the floor,
+  2-6 % BER: every over on TS2 talkgroup 2355 found with its IDs and talker
+  alias, none flagged encrypted, and with mbelib the overs play as speech.
+  It found four things the model never showed (talker alias in 8-bit
+  coding starts an octet later; burst F's PI is not privacy; the embedded
+  LC's checksum needs a repeat to be believed; fades want a one-second
+  call timeout) - the commit that fixed them says how.
 - **mbelib's sound** is mbelib's float output times 7, as its own
   `mbe_floattoshort` does. It draws unvoiced phases from `rand()`, so two
   decodes of the same frames never match sample for sample: compare
@@ -706,8 +714,9 @@ _native.testsig_dmr(rate=48_000, snr_db=None, offset_hz=0, mode="bs", cc=1, slot
   (ISC). The unit tests hold our codes to known answers from them.
 - **Not done yet:** rate 1 data, confirmed data's CRC-9 and responses,
   CSBKs and Tier III trunking, the CACH's short LC, GPS in the embedded LC,
-  and real recordings (the ignored `dmr_real` test reads them from
-  SHACK_DMR_DIR when they exist).
+  short messages and TS1 on the air (the GB7IR recording had neither; the
+  ignored `dmr_real` test reads recordings from SHACK_DMR_DIR, each with a
+  `.channel` and a `.expect` beside it, kept out of the repository).
 
 ## Sources
 
