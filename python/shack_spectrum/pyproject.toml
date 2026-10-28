@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shack-spectrum"
+version = "0.2.0"
+description = "OpenHamShack spectrum/1: the binary waterfall row, per-client decimation, the server's levels window and latest-wins sending"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "GPL-3.0-or-later"
+authors = [{ name = "Brian Henderson, GM4BRI" }]
+# numpy, as shack_dsp and shack_cw: a row is a few thousand bins at up to
+# 25 fps per client, and every app that has a waterfall already ships numpy.
+dependencies = ["numpy>=1.24"]
+
+[project.optional-dependencies]
+# jsonschema only for the tests: they also check the overlay/1 vectors,
+# which ride the same socket, against spec/schemas/overlay.schema.json.
+test = ["pytest>=8", "jsonschema>=4.18"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
