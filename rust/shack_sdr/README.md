@@ -636,6 +636,79 @@ _native.testsig_ais([{"t": 0.1, "channel": "B", "fields": {...}}], rate=2_400_00
   tools/ais_golden.py with pyais as the oracle (never a dependency).
   `SHACK_AIS_DIR` runs real captures (tests/ais.rs says the format).
 
+### DMR (`dmr`): Tier II, both timeslots at once
+
+A 12.5 kHz channel's IQ (any rate from 16 kS/s; Radio's 48 kS/s is the
+working rate) to calls, IDs, talkgroups, talker alias, encryption flags and
+short messages, all in our own Rust (`src/dmr/`, written from ETSI TS 102
+361-1/-2); and voice, only through the user's own mbelib, opened at run
+time like faad2 (never linked, bundled or ported: RADIO-SDR-PLAN §9.2).
+
+```python
+sid = host.start("dmr", {"slot": "both"}, "iq", 48_000)   # slot: "1", "2" or "both" (mixed); live
+host.poll()          # frames: call_start, call_end, talker_alias, sms, data (each with "slot": 1 | 2)
+host.status(sid)["meta"]   # {"mode": "bs" | "ms" | "direct", "cc", "slots": [{...}, {...}]}
+host.audio(sid, rate=12_000, channels=1)   # 8 kHz mono from the decoder, converted as asked
+_native.testsig_dmr(rate=48_000, snr_db=None, offset_hz=0, mode="bs", cc=1, slots=None)   # complex64 bytes
+```
+
+- **Results** (Output::Frame), each with `slot`:
+  - `call_start`: `src`, `dst` (null until known on a late entry),
+    `callType` ("group" | "private"), `cc`, `encrypted`, `emergency`,
+    `lateEntry`;
+  - `call_end`: the same less `lateEntry`, plus `alias`, `durationS`,
+    `ber` (bits corrected over bits checked) and `rssiDb` (channel power,
+    dB full scale);
+  - `talker_alias`: `src`, `alias`, once complete;
+  - `sms`: `src`, `dst`, `group`, `text`, `sap`, `srcPort`, `dstPort`,
+    `octets`; a message in which no text is found is `data`, the same
+    without `text`.
+- **Meta**, whenever a slot changes and each second during a call:
+  `mode`, `cc` and `slots`, each `{"slot", "state" ("idle" | "voice" |
+  "data"), "src", "dst", "callType", "cc", "alias", "encrypted",
+  "emergency", "callStart", "lastHeard", "rssiDb", "ber"}`. An idle slot
+  keeps its last call's IDs, alias and flags, for "last heard".
+- **Status**: `sync` (locked to the slot clock), `snrDb` (the eye's, Es/N0
+  of the symbols: about 7 dB above C/N in the channel), `offsetHz` (the
+  carrier's), and the counters `bursts`, `syncs`, `misses`, `calls`,
+  `voiceFrames`, `lcOk`, `lcBad`, `dataMessages`.
+- **Codes**: `needs_codec:mbelib` while a call's voice goes unheard for
+  want of mbelib; everything else still decodes. Encrypted calls (the LC's
+  privacy option, a PI header or the EMB's PI bit) are flagged and their
+  voice never reaches mbelib, whatever is installed.
+- **How it hears.** Channel filter, FM discriminator and the receive half
+  of the RRC pair at ten samples a symbol; each sync (repeater, radio, TDMA
+  direct slot 1 and 2; a data sync is the voice sync negated) is found by
+  correlation with its mean taken out, so a carrier 2 kHz off is no
+  different, and fitted for gain and DC; the 30 ms slot clock is then
+  followed through voice bursts B-F. A repeater's CACH says which slot
+  each burst is; direct mode's syncs name theirs. Late entry starts a call
+  from its first superframe and names it from the embedded LC.
+- **Measured** (tests/dmr.rs, dmr_real.rs): both slots' every AMBE+2
+  vector bit for bit from 15 dB C/N in 12.5 kHz, and the IDs exact down to
+  9 dB (where C2/C3, unprotected in any AMBE+2 radio, take a few errors);
+  carriers 1.5 kHz off; 24, 48 and 62.5 kS/s; a minute of noise starts no
+  call. CPU on shack (release, one thread): 0.43 % of a core at 48 kS/s
+  with both slots busy, 0.46 % searching noise, 0.80 % at 240 kS/s.
+- **mbelib's sound** is mbelib's float output times 7, as its own
+  `mbe_floattoshort` does. It draws unvoiced phases from `rand()`, so two
+  decodes of the same frames never match sample for sample: compare
+  envelopes. Tests that need it read SHACK_TEST_MBELIB (a developer's own
+  build; never in the repository) and skip without it.
+- **Tests without a transmitter:** `dmr::tx` builds valid bursts (headers,
+  PI headers, superframes with embedded LC and alias, data at rate 1/2 and
+  3/4, idle bursts, CACH) as a repeater, a radio or a direct pair, with
+  noise and offset, and returns every voice vector it sent. Its showcase
+  (`slots=None`) is the simulator's repeater, under country code 999.
+- **Read, with credit, for checking constants only:** MMDVMHost and the
+  MMDVM firmware (G4KLX, GPL-2.0-or-later), DSD's AMBE interleave table
+  and mbelib's Golay and whitening (ISC), dsd-fme's CRC-32 byte order
+  (ISC). The unit tests hold our codes to known answers from them.
+- **Not done yet:** rate 1 data, confirmed data's CRC-9 and responses,
+  CSBKs and Tier III trunking, the CACH's short LC, GPS in the embedded LC,
+  and real recordings (the ignored `dmr_real` test reads them from
+  SHACK_DMR_DIR when they exist).
+
 ## Sources
 
 `shack_sdr.sources`: `IqSource`, `IqBlock`, `SdrError`, `REASONS`,
