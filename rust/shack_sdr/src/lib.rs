@@ -13,10 +13,12 @@
 //! - `wfm`: broadcast FM: stereo, RDS and the band scanner's many-carrier RDS.
 //! - `sstv`: SSTV pictures, every common mode, with the test transmitter.
 //! - `ais`: ships' AIS, both channels, with the test transmitter.
+//! - `dmr`: DMR Tier II, both slots; voice only through the user's mbelib.
 
 pub mod ais;
 pub mod catalogue;
 pub mod dab;
+pub mod dmr;
 pub mod codecs;
 pub mod cpu;
 pub mod decoder;
