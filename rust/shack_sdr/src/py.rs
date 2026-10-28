@@ -652,6 +652,7 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     crate::psk::py::register(m)?;
     crate::sstv::py::register(m)?;
     crate::ais::py::register(m)?;
+    crate::adsb::py::register(m)?;
     crate::dmr::py::register(m)?;
     Ok(())
 }
