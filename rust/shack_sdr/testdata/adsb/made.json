@@ -1,0 +1,96 @@
+{
+  "cases": [
+    {
+      "hex": "8D4CA2B3230815F1CB38202C85E2",
+      "name": "ident A3"
+    },
+    {
+      "hex": "8D400A1B11189485C60820DB7808",
+      "name": "ident C1"
+    },
+    {
+      "hex": "8D4CA2B358C3810001281BCBB884",
+      "name": "airborne even"
+    },
+    {
+      "hex": "8D4CA2B358C38462232EA66F5F6C",
+      "name": "airborne odd"
+    },
+    {
+      "hex": "8D4CA2B34801149E8D36636632A3",
+      "name": "airborne low"
+    },
+    {
+      "hex": "8D4CA2B3A017D13D7130168B5EBD",
+      "name": "airborne gnss"
+    },
+    {
+      "hex": "8C4CA2B33A9A100624A18E4C2486",
+      "name": "surface even"
+    },
+    {
+      "hex": "8C4CA2B33A9A158E94BBB01D783B",
+      "name": "surface odd"
+    },
+    {
+      "hex": "8C4CA2B34000000624A18E0F5D73",
+      "name": "surface still"
+    },
+    {
+      "hex": "8D4CA2B39904791F78680D158F50",
+      "name": "velocity nw"
+    },
+    {
+      "hex": "8D4CA2B399012D8520BC871F47F0",
+      "name": "velocity se"
+    },
+    {
+      "hex": "8D4CA2B39A012D0030040073C341",
+      "name": "velocity fast"
+    },
+    {
+      "hex": "8D4CA2B39B06B6AF189400F3380D",
+      "name": "airspeed tas"
+    },
+    {
+      "hex": "8D4CA2B39B041E16B00000B0F1E0",
+      "name": "airspeed ias"
+    },
+    {
+      "hex": "8D4CA2B3E112B600000000191588",
+      "name": "status"
+    },
+    {
+      "hex": "8D4CA2B3E1AAA200000000EB022A",
+      "name": "hijack"
+    },
+    {
+      "hex": "8D4CA2B3E12AAA00000000629325",
+      "name": "mayday"
+    },
+    {
+      "hex": "8D4CA2B3F8000000004000FB2613",
+      "name": "opstatus"
+    },
+    {
+      "hex": "5D4CA2B3956CDB",
+      "name": "all-call"
+    },
+    {
+      "hex": "200018385D21E8",
+      "name": "df4"
+    },
+    {
+      "hex": "A100021C000000000000008DDA43",
+      "name": "df20"
+    },
+    {
+      "hex": "2A000AAA51FCDC",
+      "name": "df5"
+    },
+    {
+      "hex": "A80008080000000000000088089B",
+      "name": "df21"
+    }
+  ]
+}
