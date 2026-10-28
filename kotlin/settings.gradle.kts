@@ -18,4 +18,4 @@ dependencyResolutionManagement {
     }
 }
 
-include("shack-client", "shack-i18n")
+include("shack-client", "shack-i18n", "shack-ui-contracts")
