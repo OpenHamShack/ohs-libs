@@ -3,14 +3,27 @@
 //! receiver runs on each slicer's bits.
 //!
 //! **Bit order.** The message definitions number their bits from the most
-//! significant end (a 6-bit message ID first, MSB first), but HDLC sends
-//! every octet least significant bit first. So the payload is cut into
-//! octets as the tables read, and each octet goes on air reversed; the FCS
-//! is the usual HDLC/X.25 CRC (reflected 0x1021, preset 0xFFFF, inverted),
-//! sent low octet first, which the receiver checks by the CRC over data
-//! and FCS together leaving 0xF0B8. Getting this wrong shows at once
-//! against any real sentence: the type-1 test in tests/ais.rs holds the
-//! bits to a published one.
+//! significant end (a 6-bit message ID first, MSB first). HDLC sends every
+//! octet least significant bit first. The payload is cut into octets as the
+//! tables read, each octet's *value* has the table's first bit as its most
+//! significant, and HDLC sends that value LSB first - so the table's eighth
+//! bit of each octet goes on air first and its first bit last. An HDLC
+//! receiver assembling octets LSB first therefore reads the table's bits
+//! MSB first from each octet: Direwolf's AIS decoder (hdlc_rec.c builds
+//! octets with `oacc >>= 1; oacc |= 0x80`, ais.c reads `get_field` with
+//! the mask 0x80 first) and every real transponder do. The FCS is the
+//! usual HDLC/X.25 CRC (reflected 0x1021, preset 0xFFFF, inverted) over the
+//! on-air bit stream, sent low octet first, checked by the CRC over data
+//! and FCS together leaving 0xF0B8.
+//!
+//! The first version had each octet the other way round (the table's first
+//! bit on air first). Our transmitter and receiver agreed, so every test
+//! passed, and the CRC - a property of the on-air bits, not of how they are
+//! grouped - passed real frames too: on real air (Store Radio beta.13,
+//! ohs-box, 28/10/2026) every real ship came out as a scrambled message,
+//! random MMSIs and positions thousands of kilometres away. tests/ais.rs now
+//! reads our own bursts with Direwolf's convention, independently of
+//! `unpack`, so the two can never again agree on a mistake.
 
 /// The HDLC flag, 01111110, as sent (it reads the same either way round).
 pub const FLAG: u8 = 0x7E;
@@ -40,25 +53,18 @@ pub fn fcs(bytes: &[u8]) -> [u8; 2] {
 }
 
 /// A message's bits (MSB-first, as the tables number them) as the octets
-/// HDLC carries, each reversed so its first bit goes on air first. A
-/// message whose length is not a whole octet is padded with zeros at the
-/// end, as the standard says (§3.3.7: "fill bits").
+/// HDLC carries: each octet's value with the table's first bit most
+/// significant (module docstring, "Bit order"). A message whose length is
+/// not a whole octet is padded with zeros at the end (§3.3.7: "fill bits").
 pub fn pack(bits: &[u8]) -> Vec<u8> {
     bits.chunks(8)
-        .map(|c| {
-            let mut v = 0u8;
-            for (i, &b) in c.iter().enumerate() {
-                // Bit i of the table goes on air i-th: bit i of the octet.
-                v |= (b & 1) << i;
-            }
-            v
-        })
+        .map(|c| c.iter().enumerate().fold(0u8, |v, (i, &b)| v | ((b & 1) << (7 - i))))
         .collect()
 }
 
 /// The reverse of `pack`: octets as HDLC carried them to the message's bits.
 pub fn unpack(bytes: &[u8]) -> Vec<u8> {
-    bytes.iter().flat_map(|&v| (0..8).map(move |i| (v >> i) & 1)).collect()
+    bytes.iter().flat_map(|&v| (0..8).rev().map(move |i| (v >> i) & 1)).collect()
 }
 
 /// The on-air bits of `octets` (LSB first), with a 0 stuffed after every
@@ -303,7 +309,8 @@ mod tests {
     fn pack_and_unpack_are_each_others_reverse() {
         let bits: Vec<u8> = (0..168).map(|i| ((i * 7 + 3) % 5 == 0) as u8).collect();
         assert_eq!(unpack(&pack(&bits)), bits);
-        // The table's first bit is the first sent: bit 0 of the first octet.
-        assert_eq!(pack(&[1, 0, 0, 0, 0, 0, 0, 0]), vec![1]);
+        // The table's first bit is the octet's most significant, sent last.
+        assert_eq!(pack(&[1, 0, 0, 0, 0, 0, 0, 0]), vec![0x80]);
+        assert_eq!(stuff(&pack(&[1, 0, 0, 0, 0, 0, 0, 0])), vec![0, 0, 0, 0, 0, 0, 0, 1]);
     }
 }
