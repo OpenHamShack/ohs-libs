@@ -2,17 +2,23 @@
 //! recordings are too big for the repository, and timing is a measurement,
 //! not a check.
 //!
-//! Recordings of local repeaters (SigMF, ci16_le or cf32_le, centred on the
-//! channel at any rate from 16 kS/s) go in SHACK_DMR_DIR (default
-//! ~/build/dmr-real). Each file is decoded whole and what it held printed.
-//! A `<name>.expect` beside it holds the calls it must find, one
-//! `slot src dst` a line (`#` comments); without one a file need only lock.
+//! Recordings of local repeaters (SigMF, ci16_le or cf32_le, at the
+//! device's rate) go in SHACK_DMR_DIR (default ~/build/dmr-real). The
+//! channel is `<name>.channel` beside the file (its frequency in Hz), else
+//! SHACK_DMR_CHANNEL_HZ, else the capture's own centre (`core:frequency`):
+//! it is mixed down from the capture's centre and cut to 48 kS/s, as
+//! Radio's bank does, streamed in 100 ms blocks so a ten-minute capture at
+//! 2.4 MS/s (5.8 GB) never sits in memory. SHACK_DMR_SECONDS limits how
+//! much is read. Each file's results are printed. A `<name>.expect` beside
+//! it holds the calls it must find, one `slot src dst` a line (`#`
+//! comments); without one a file need only lock.
 //!
 //!     SHACK_DMR_DIR=... cargo test --release --test dmr_real -- --ignored --nocapture
 use rustfft::num_complex::Complex32;
 use shack_sdr::decoder::{Decoder, Input, Output, Sink, Value};
 use shack_sdr::dmr::tx::{dmr_iq, showcase, DmrCase};
 use shack_sdr::dmr::Dmr;
+use shack_sdr::dsp::{lowpass, Decimator};
 use std::path::{Path, PathBuf};
 
 fn meta_value(meta: &str, key: &str) -> Option<String> {
@@ -22,20 +28,44 @@ fn meta_value(meta: &str, key: &str) -> Option<String> {
     Some(v[..end].trim().trim_matches('"').to_string())
 }
 
-fn read(path: &Path) -> (Vec<Complex32>, f64) {
-    let meta = std::fs::read_to_string(path.with_extension("sigmf-meta")).expect("a .sigmf-meta beside it");
-    let rate: f64 = meta_value(&meta, "core:sample_rate").expect("core:sample_rate").parse().unwrap();
-    let dt = meta_value(&meta, "core:datatype").unwrap_or_else(|| "ci16_le".into());
-    let raw = std::fs::read(path).unwrap();
-    let x = match dt.as_str() {
-        "cf32_le" => raw.chunks_exact(8).map(|c| Complex32::new(f32::from_le_bytes(c[..4].try_into().unwrap()), f32::from_le_bytes(c[4..].try_into().unwrap()))).collect(),
-        "ci16_le" => raw
-            .chunks_exact(4)
-            .map(|c| Complex32::new(i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0, i16::from_le_bytes([c[2], c[3]]) as f32 / 32768.0))
-            .collect(),
-        other => panic!("{}: datatype {other} not read here", path.display()),
-    };
-    (x, rate)
+/// A capture, read block by block: its rate, centre, and the next block.
+struct Capture {
+    file: std::io::BufReader<std::fs::File>,
+    rate: f64,
+    centre: Option<f64>,
+    cf32: bool,
+}
+
+impl Capture {
+    fn open(path: &Path) -> Capture {
+        let meta = std::fs::read_to_string(path.with_extension("sigmf-meta")).expect("a .sigmf-meta beside it");
+        let rate: f64 = meta_value(&meta, "core:sample_rate").expect("core:sample_rate").parse().unwrap();
+        let centre = meta_value(&meta, "core:frequency").and_then(|v| v.parse().ok());
+        let dt = meta_value(&meta, "core:datatype").unwrap_or_else(|| "ci16_le".into());
+        assert!(dt == "ci16_le" || dt == "cf32_le", "{}: datatype {dt} not read here", path.display());
+        Capture { file: std::io::BufReader::new(std::fs::File::open(path).unwrap()), rate, centre, cf32: dt == "cf32_le" }
+    }
+
+    fn block(&mut self, n: usize) -> Vec<Complex32> {
+        use std::io::Read;
+        let size = if self.cf32 { 8 } else { 4 };
+        let mut raw = vec![0u8; n * size];
+        let mut got = 0;
+        while got < raw.len() {
+            match self.file.read(&mut raw[got..]) {
+                Ok(0) | Err(_) => break,
+                Ok(k) => got += k,
+            }
+        }
+        raw.truncate(got - got % size);
+        if self.cf32 {
+            raw.chunks_exact(8).map(|c| Complex32::new(f32::from_le_bytes(c[..4].try_into().unwrap()), f32::from_le_bytes(c[4..].try_into().unwrap()))).collect()
+        } else {
+            raw.chunks_exact(4)
+                .map(|c| Complex32::new(i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0, i16::from_le_bytes([c[2], c[3]]) as f32 / 32768.0))
+                .collect()
+        }
+    }
 }
 
 fn field(f: &[(String, Value)], k: &str) -> String {
@@ -60,17 +90,54 @@ fn recordings_of_local_repeaters() {
     if files.is_empty() {
         eprintln!("skipping: no .sigmf-data in {}", dir.display());
     }
+    let limit: f64 = std::env::var("SHACK_DMR_SECONDS").ok().and_then(|v| v.parse().ok()).unwrap_or(f64::INFINITY);
     for path in files {
-        let (x, rate) = read(&path);
-        let mut d = Dmr::new();
+        let mut cap = Capture::open(&path);
+        let rate = cap.rate;
+        let channel = std::fs::read_to_string(path.with_extension("channel"))
+            .ok()
+            .and_then(|t| t.trim().parse::<f64>().ok())
+            .or_else(|| std::env::var("SHACK_DMR_CHANNEL_HZ").ok().and_then(|v| v.parse().ok()))
+            .or(cap.centre);
+        let shift = match (channel, cap.centre) {
+            (Some(ch), Some(c)) => ch - c,
+            _ => 0.0,
+        };
+        // Down to the channel, then to about 48 kS/s by a whole decimation,
+        // as Radio's bank cuts a channel (the decoder resamples the rest).
+        let d = ((rate / 48_000.0).floor() as usize).max(1);
+        let mut dec = Decimator::new(lowpass(8 * d + 1, 7_000.0, rate), d);
+        let mut phase = 0f64;
+        let step = -2.0 * std::f64::consts::PI * shift / rate;
+        let mut d_dmr = Dmr::new();
         let mut sink = Sink::new();
         let block = (rate / 10.0) as usize;
-        for (k, b) in x.chunks(block).enumerate() {
-            let index = (k * block) as u64;
-            let _ = d.feed(Input::Iq { samples: b, rate, t0: index as f64 / rate, index }, &mut sink);
+        let (mut index, mut read) = (0u64, 0usize);
+        let mut out = Vec::new();
+        loop {
+            let x = cap.block(block);
+            if x.is_empty() || read as f64 / rate >= limit {
+                break;
+            }
+            read += x.len();
+            let mixed: Vec<Complex32> = x
+                .iter()
+                .map(|z| {
+                    let r = Complex32::new(phase.cos() as f32, phase.sin() as f32);
+                    phase = (phase + step) % (2.0 * std::f64::consts::PI);
+                    z * r
+                })
+                .collect();
+            out.clear();
+            dec.process(&mixed, &mut out);
+            let r = rate / d as f64;
+            let _ = d_dmr.feed(Input::Iq { samples: &out, rate: r, t0: index as f64 / r, index }, &mut sink);
+            index += out.len() as u64;
         }
+        let d = d_dmr;
+        let x_len = read;
         let mut calls = Vec::new();
-        println!("== {} ({:.1} s at {rate} S/s)", path.display(), x.len() as f64 / rate);
+        println!("== {} ({:.1} s at {rate} S/s, channel {channel:?}, {shift:+.0} Hz from the centre)", path.display(), x_len as f64 / rate);
         for (t, o) in sink.take() {
             if let Output::Frame { kind, fields, .. } = o {
                 let line = format!(
