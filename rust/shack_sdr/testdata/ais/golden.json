@@ -1,0 +1,683 @@
+{
+ "pyais": "3.3.1",
+ "cases": [
+  {
+   "kind": "heard",
+   "sentences": [
+    "!AIVDM,1,1,,A,15RTgt0PAso;90TKcjM8h6g208CQ,0*4A"
+   ],
+   "fields": {
+    "type": 1,
+    "repeat": 0,
+    "mmsi": 371798000,
+    "navStatus": 0,
+    "turnRaw": -127,
+    "speed": 12.3,
+    "accuracy": true,
+    "lon": -123.395383,
+    "lat": 48.381633,
+    "course": 224.0,
+    "heading": 215,
+    "second": 33,
+    "maneuver": 0,
+    "raim": false,
+    "radio": 34017
+   }
+  },
+  {
+   "kind": "heard",
+   "sentences": [
+    "!AIVDM,2,1,1,A,55?MbV02;H;s<HtKR20EHE:0@T4@Dn2222222216L961O5Gf0NSQEp6ClRp8,0*1C",
+    "!AIVDM,2,2,1,A,88888888880,2*25"
+   ],
+   "fields": {
+    "type": 5,
+    "repeat": 0,
+    "mmsi": 351759000,
+    "aisVersion": 0,
+    "imo": 9134270,
+    "callsign": "3FOF8",
+    "shipName": "EVER DIADEM",
+    "shipType": 70,
+    "toBow": 225,
+    "toStern": 70,
+    "toPort": 1,
+    "toStarboard": 31,
+    "epfd": 1,
+    "etaMonth": 5,
+    "etaDay": 15,
+    "etaHour": 14,
+    "etaMinute": 0,
+    "draught": 12.2,
+    "destination": "NEW YORK",
+    "dte": false
+   }
+  },
+  {
+   "kind": "heard",
+   "sentences": [
+    "!AIVDM,1,1,,A,B5NJ;PP005l4ot5Isbl03wsUkP06,0*76"
+   ],
+   "fields": {
+    "type": 18,
+    "repeat": 0,
+    "mmsi": 367430530,
+    "speed": 0.0,
+    "accuracy": false,
+    "lon": -122.26732,
+    "lat": 37.785035,
+    "course": 0.0,
+    "heading": null,
+    "second": 55,
+    "cs": true,
+    "display": false,
+    "dsc": true,
+    "band": true,
+    "msg22": true,
+    "assigned": false,
+    "raim": false,
+    "radio": 917510
+   }
+  },
+  {
+   "kind": "heard",
+   "sentences": [
+    "!AIVDM,1,1,,A,403OviQuMGCqWrRO9>E6fE700@GO,0*4D"
+   ],
+   "fields": {
+    "type": 4,
+    "repeat": 0,
+    "mmsi": 3669702,
+    "year": 2007,
+    "month": 5,
+    "day": 14,
+    "hour": 19,
+    "minute": 57,
+    "second": 39,
+    "accuracy": true,
+    "lon": -76.352362,
+    "lat": 36.883767,
+    "epfd": 7,
+    "raim": false,
+    "radio": 67039
+   }
+  },
+  {
+   "kind": "heard",
+   "sentences": [
+    "!AIVDM,1,1,,B,C5N3SRgPEnJGEBT>NhWAwwo862PaLELTBJ:V00000000S0D:R220,0*0B"
+   ],
+   "fields": {
+    "type": 19,
+    "repeat": 0,
+    "mmsi": 367059850,
+    "speed": 8.7,
+    "accuracy": false,
+    "lon": -88.810392,
+    "lat": 29.543695,
+    "course": 335.9,
+    "heading": null,
+    "second": 46,
+    "shipName": "CAPT.J.RIMES",
+    "shipType": 70,
+    "toBow": 5,
+    "toStern": 21,
+    "toPort": 4,
+    "toStarboard": 4,
+    "epfd": 1,
+    "raim": false,
+    "dte": false,
+    "assigned": false
+   }
+  },
+  {
+   "kind": "heard",
+   "sentences": [
+    "!AIVDM,1,1,,B,E>kb9O9aS@7PUh10dh19@;0Tah2cWrfP:l?M`00003vP100,0*01"
+   ],
+   "fields": {
+    "type": 21,
+    "repeat": 0,
+    "mmsi": 993692028,
+    "aidType": 19,
+    "name": "SF OAK BAY BR VAIS E",
+    "accuracy": false,
+    "lon": -122.369867,
+    "lat": 37.805622,
+    "toBow": 0,
+    "toStern": 0,
+    "toPort": 0,
+    "toStarboard": 0,
+    "epfd": 7,
+    "second": null,
+    "offPosition": false,
+    "raim": false,
+    "virtualAid": true,
+    "assigned": false
+   }
+  },
+  {
+   "kind": "heard",
+   "sentences": [
+    "!AIVDM,1,1,,A,H52KMeDU653hhhi0000000000000,0*1A"
+   ],
+   "fields": {
+    "type": 24,
+    "repeat": 0,
+    "mmsi": 338091445,
+    "partNo": 1,
+    "shipType": 37,
+    "vendorId": "FEC",
+    "model": 12,
+    "serial": 199729,
+    "callsign": null,
+    "toBow": 0,
+    "toStern": 0,
+    "toPort": 0,
+    "toStarboard": 0
+   }
+  },
+  {
+   "kind": "heard",
+   "sentences": [
+    "!AIVDM,1,1,,B,K815>P8=5EikdUet,0*6B"
+   ],
+   "fields": {
+    "type": 27,
+    "repeat": 0,
+    "mmsi": 538005120,
+    "accuracy": true,
+    "raim": false,
+    "navStatus": 0,
+    "lon": -79.641667,
+    "lat": 24.681667,
+    "speed": 11.0,
+    "course": 223.0,
+    "latency": false
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type1",
+   "raw": {
+    "type": 1,
+    "repeat": 1,
+    "mmsi": 235012345,
+    "status": 7,
+    "turn": 16,
+    "speed": 137,
+    "accuracy": 1,
+    "lon": -2947380,
+    "lat": 33259260,
+    "course": 2713,
+    "heading": 270,
+    "second": 41,
+    "maneuver": 1,
+    "raim": 1,
+    "radio": 81234
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,1CP80vG429waPnHOevw:VHMBRCmB,0*5C"
+   ],
+   "fields": {
+    "type": 1,
+    "repeat": 1,
+    "mmsi": 235012345,
+    "navStatus": 7,
+    "turnRaw": 16,
+    "speed": 13.7,
+    "accuracy": true,
+    "lon": -4.9123,
+    "lat": 55.4321,
+    "course": 271.3,
+    "heading": 270,
+    "second": 41,
+    "maneuver": 1,
+    "raim": true,
+    "radio": 81234
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type2",
+   "raw": {
+    "type": 2,
+    "repeat": 2,
+    "mmsi": 232004567,
+    "status": 5,
+    "turn": -26,
+    "speed": 4,
+    "accuracy": 0,
+    "lon": -3037500,
+    "lat": 33412500,
+    "course": 126,
+    "heading": 13,
+    "second": 7,
+    "maneuver": 2,
+    "raim": 0,
+    "radio": 3
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,2SM@KmmqP4O`ln8OoEU0OPJ?0003,0*68"
+   ],
+   "fields": {
+    "type": 2,
+    "repeat": 2,
+    "mmsi": 232004567,
+    "navStatus": 5,
+    "turnRaw": -26,
+    "speed": 0.4,
+    "accuracy": false,
+    "lon": -5.0625,
+    "lat": 55.6875,
+    "course": 12.6,
+    "heading": 13,
+    "second": 7,
+    "maneuver": 2,
+    "raim": false,
+    "radio": 3
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type3",
+   "raw": {
+    "type": 3,
+    "repeat": 0,
+    "mmsi": 503123456,
+    "status": 1,
+    "turn": 0,
+    "speed": 1022,
+    "accuracy": 1,
+    "lon": 90725580,
+    "lat": -20321280,
+    "course": 3599,
+    "heading": 359,
+    "second": 59,
+    "maneuver": 0,
+    "raim": 1,
+    "radio": 524287
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,37Ol>010?vbl;VIdWd0>3s?n3www,0*61"
+   ],
+   "fields": {
+    "type": 3,
+    "repeat": 0,
+    "mmsi": 503123456,
+    "navStatus": 1,
+    "turnRaw": 0,
+    "speed": 102.2,
+    "accuracy": true,
+    "lon": 151.2093,
+    "lat": -33.8688,
+    "course": 359.9,
+    "heading": 359,
+    "second": 59,
+    "maneuver": 0,
+    "raim": true,
+    "radio": 524287
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type4",
+   "raw": {
+    "type": 4,
+    "repeat": 0,
+    "mmsi": 2320771,
+    "year": 2026,
+    "month": 10,
+    "day": 28,
+    "hour": 13,
+    "minute": 47,
+    "second": 9,
+    "accuracy": 1,
+    "lon": -2767380,
+    "lat": 33514020,
+    "epfd": 7,
+    "raim": 1,
+    "radio": 49153
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,402=aPivbf=g9wbpgHOuR9702<01,0*77"
+   ],
+   "fields": {
+    "type": 4,
+    "repeat": 0,
+    "mmsi": 2320771,
+    "year": 2026,
+    "month": 10,
+    "day": 28,
+    "hour": 13,
+    "minute": 47,
+    "second": 9,
+    "accuracy": true,
+    "lon": -4.6123,
+    "lat": 55.8567,
+    "epfd": 7,
+    "raim": true,
+    "radio": 49153
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type5",
+   "raw": {
+    "type": 5,
+    "repeat": 0,
+    "mmsi": 235087654,
+    "ais_version": 2,
+    "imo": 9387421,
+    "callsign": "MBFL7",
+    "shipname": "ISLE OF ARRAN",
+    "shiptype": 60,
+    "to_bow": 64,
+    "to_stern": 21,
+    "to_port": 8,
+    "to_starboard": 9,
+    "epfd": 1,
+    "month": 10,
+    "day": 29,
+    "hour": 6,
+    "minute": 45,
+    "draught": 32,
+    "destination": "BRODICK",
+    "dte": 1
+   },
+   "sentences": [
+    "!AIVDM,2,1,0,A,53P<W9`2??Ill8HkL00U<hF0tJ05984p0000000t80E896fVe80TSi2@jh00,0*29",
+    "!AIVDM,2,2,0,A,00000000008,2*2C"
+   ],
+   "fields": {
+    "type": 5,
+    "repeat": 0,
+    "mmsi": 235087654,
+    "aisVersion": 2,
+    "imo": 9387421,
+    "callsign": "MBFL7",
+    "shipName": "ISLE OF ARRAN",
+    "shipType": 60,
+    "toBow": 64,
+    "toStern": 21,
+    "toPort": 8,
+    "toStarboard": 9,
+    "epfd": 1,
+    "etaMonth": 10,
+    "etaDay": 29,
+    "etaHour": 6,
+    "etaMinute": 45,
+    "draught": 3.2,
+    "destination": "BRODICK",
+    "dte": true
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type18",
+   "raw": {
+    "type": 18,
+    "repeat": 0,
+    "mmsi": 235112233,
+    "speed": 64,
+    "accuracy": 1,
+    "lon": -2928780,
+    "lat": 33301020,
+    "course": 2015,
+    "heading": 202,
+    "second": 18,
+    "cs": 1,
+    "display": 0,
+    "dsc": 1,
+    "band": 1,
+    "msg22": 1,
+    "assigned": 0,
+    "raim": 1,
+    "radio": 917510
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,B3P>7:@0@?rJNr7t8QiuuU95oP06,0*1C"
+   ],
+   "fields": {
+    "type": 18,
+    "repeat": 0,
+    "mmsi": 235112233,
+    "speed": 6.4,
+    "accuracy": true,
+    "lon": -4.8813,
+    "lat": 55.5017,
+    "course": 201.5,
+    "heading": 202,
+    "second": 18,
+    "cs": true,
+    "display": false,
+    "dsc": true,
+    "band": true,
+    "msg22": true,
+    "assigned": false,
+    "raim": true,
+    "radio": 917510
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type19",
+   "raw": {
+    "type": 19,
+    "repeat": 0,
+    "mmsi": 235998877,
+    "speed": 213,
+    "accuracy": 0,
+    "lon": -3150060,
+    "lat": 33180120,
+    "course": 455,
+    "heading": 44,
+    "second": 31,
+    "shipname": "SEA HAWK",
+    "shiptype": 37,
+    "to_bow": 9,
+    "to_stern": 3,
+    "to_port": 2,
+    "to_starboard": 2,
+    "epfd": 1,
+    "raim": 1,
+    "dte": 0,
+    "assigned": 1
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,C3Q4>W@0mGqwN:7rBMPLLF?PV:30@2fF000000000000BPT1Q13@,0*18"
+   ],
+   "fields": {
+    "type": 19,
+    "repeat": 0,
+    "mmsi": 235998877,
+    "speed": 21.3,
+    "accuracy": false,
+    "lon": -5.2501,
+    "lat": 55.3002,
+    "course": 45.5,
+    "heading": 44,
+    "second": 31,
+    "shipName": "SEA HAWK",
+    "shipType": 37,
+    "toBow": 9,
+    "toStern": 3,
+    "toPort": 2,
+    "toStarboard": 2,
+    "epfd": 1,
+    "raim": true,
+    "dte": false,
+    "assigned": true
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type21",
+   "raw": {
+    "type": 21,
+    "repeat": 0,
+    "mmsi": 992351234,
+    "aid_type": 20,
+    "name": "LADY ISLE LIGHTHOUS",
+    "accuracy": 1,
+    "lon": -2839020,
+    "lat": 33313020,
+    "to_bow": 5,
+    "to_stern": 5,
+    "to_port": 5,
+    "to_starboard": 5,
+    "epfd": 7,
+    "second": 60,
+    "off_position": 0,
+    "raim": 0,
+    "virtual_aid": 0,
+    "assigned": 0
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,E>jHD0b60R<h4aV2h64ST:47baPOm:pD?p`OP50``cv00000000000000000,4*67"
+   ],
+   "fields": {
+    "type": 21,
+    "repeat": 0,
+    "mmsi": 992351234,
+    "aidType": 20,
+    "name": "LADY ISLE LIGHTHOUS",
+    "accuracy": true,
+    "lon": -4.7317,
+    "lat": 55.5217,
+    "toBow": 5,
+    "toStern": 5,
+    "toPort": 5,
+    "toStarboard": 5,
+    "epfd": 7,
+    "second": null,
+    "offPosition": false,
+    "raim": false,
+    "virtualAid": false,
+    "assigned": false
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type24a",
+   "raw": {
+    "type": 24,
+    "repeat": 0,
+    "mmsi": 235445566,
+    "partno": 0,
+    "shipname": "WEE BREEZE"
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,H3PRM?QLDF098DE`D00000000000,0*16"
+   ],
+   "fields": {
+    "type": 24,
+    "repeat": 0,
+    "mmsi": 235445566,
+    "partNo": 0,
+    "shipName": "WEE BREEZE"
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type24b",
+   "raw": {
+    "type": 24,
+    "repeat": 0,
+    "mmsi": 235445566,
+    "partno": 1,
+    "shiptype": 36,
+    "vendorid": "SRT",
+    "model": 3,
+    "serial": 654321,
+    "callsign": "2ABC4",
+    "to_bow": 7,
+    "to_stern": 3,
+    "to_port": 1,
+    "to_starboard": 2
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,H3PRM?TTCBD>Ogij123l000p3120,0*61"
+   ],
+   "fields": {
+    "type": 24,
+    "repeat": 0,
+    "mmsi": 235445566,
+    "partNo": 1,
+    "shipType": 36,
+    "vendorId": "SRT",
+    "model": 3,
+    "serial": 654321,
+    "callsign": "2ABC4",
+    "toBow": 7,
+    "toStern": 3,
+    "toPort": 1,
+    "toStarboard": 2
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type24b_aux",
+   "raw": {
+    "type": 24,
+    "repeat": 0,
+    "mmsi": 982351234,
+    "partno": 1,
+    "shiptype": 31,
+    "vendorid": "ABC",
+    "model": 1,
+    "serial": 7,
+    "callsign": "TENDR",
+    "mothership_mmsi": 235012345
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,H>`muPTO1234007D5>4B00>0P3q0,0*45"
+   ],
+   "fields": {
+    "type": 24,
+    "repeat": 0,
+    "mmsi": 982351234,
+    "partNo": 1,
+    "shipType": 31,
+    "vendorId": "ABC",
+    "model": 1,
+    "serial": 7,
+    "callsign": "TENDR",
+    "mothershipMmsi": 235012345
+   }
+  },
+  {
+   "kind": "made",
+   "name": "type27",
+   "raw": {
+    "type": 27,
+    "repeat": 3,
+    "mmsi": 235007001,
+    "accuracy": 1,
+    "raim": 0,
+    "status": 0,
+    "lon": -2970,
+    "lat": 33270,
+    "speed": 11,
+    "course": 223,
+    "gnss": 1
+   },
+   "sentences": [
+    "!AIVDM,1,1,,A,KkP7d6H?lIT3s5ev,0*53"
+   ],
+   "fields": {
+    "type": 27,
+    "repeat": 3,
+    "mmsi": 235007001,
+    "accuracy": true,
+    "raim": false,
+    "navStatus": 0,
+    "lon": -4.95,
+    "lat": 55.45,
+    "speed": 11.0,
+    "course": 223.0,
+    "latency": true
+   }
+  }
+ ]
+}
