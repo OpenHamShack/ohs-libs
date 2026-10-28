@@ -353,7 +353,13 @@ impl Dmr {
             }
             None => {
                 if self.slots[si].expects_voice() {
-                    if let Some((e, _)) = burst::emb(&bits).filter(|(e, _)| self.cc.is_none_or(|c| c == e.cc)) {
+                    if let Some((mut e, errs)) = burst::emb(&bits).filter(|(e, _)| self.cc.is_none_or(|c| c == e.cc)) {
+                        // A corrected EMB's PI bit is not trusted (slot.rs);
+                        // nor burst F's (LCSS 0, a single-burst field): on
+                        // GB7IR (Brandmeister, 28/10/2026) F carried PI in
+                        // plain calls while B-E never did.
+                        e.pi &= errs == 0 && e.lcss != 0;
+                        self.slots[si].emb_dirty = errs > 0;
                         valid = true;
                         self.ensure_vocoder(si);
                         voice = self.slots[si].voice_burst(&bits, Some(e), Some(e.cc), t, &mut ev);

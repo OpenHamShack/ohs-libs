@@ -191,7 +191,12 @@ impl TalkerAlias {
             }
             self.format = format;
             self.len = len;
-            self.parts[0] = Some(all[7..].to_vec());
+            // 7-bit text starts in the header octet's last bit, so the
+            // header holds 49 bits; 8- and 16-bit text starts at the next
+            // octet, and that bit is unused. Read the 7-bit way, GB7IR's
+            // aliases (28/10/2026) came out every character shifted one bit
+            // ("&" for "M").
+            self.parts[0] = Some(all[if format == TA_7BIT { 7 } else { 8 }..].to_vec());
         } else {
             self.parts[(f - FLCO_ALIAS_HEADER) as usize] = Some(all);
         }
@@ -243,20 +248,28 @@ pub fn alias_lcs(alias: &str) -> Vec<Lc> {
     } else {
         (TA_UTF8, alias.len(), bits(alias.as_bytes()))
     };
-    let total = 49 + 3 * 56;
+    // 7-bit text starts in the header octet's last bit; 8- and 16-bit text
+    // at the next octet (TalkerAlias::push).
+    let head = if ascii { 49 } else { 48 };
+    let total = head + 3 * 56;
     assert!(b.len() <= total && len < 32, "an alias holds at most 217 bits");
-    let blocks = if b.len() <= 49 { 0 } else { (b.len() - 49).div_ceil(56) };
-    b.resize(49 + 56 * blocks, 0);
+    let blocks = if b.len() <= head { 0 } else { (b.len() - head).div_ceil(56) };
+    b.resize(head + 56 * blocks, 0);
     let mut out = Vec::new();
     let mut h = [0u8; 9];
     h[0] = FLCO_ALIAS_HEADER;
-    h[2] = (format << 6) | ((len as u8) << 1) | b[0];
-    h[3..].copy_from_slice(&bytes(&b[1..49]));
+    if ascii {
+        h[2] = (format << 6) | ((len as u8) << 1) | b[0];
+        h[3..].copy_from_slice(&bytes(&b[1..49]));
+    } else {
+        h[2] = (format << 6) | ((len as u8) << 1);
+        h[3..].copy_from_slice(&bytes(&b[..48]));
+    }
     out.push(Lc(h));
     for k in 0..blocks {
         let mut l = [0u8; 9];
         l[0] = FLCO_ALIAS_BLOCK1 + k as u8;
-        l[2..].copy_from_slice(&bytes(&b[49 + 56 * k..49 + 56 * (k + 1)]));
+        l[2..].copy_from_slice(&bytes(&b[head + 56 * k..head + 56 * (k + 1)]));
         out.push(Lc(l));
     }
     out

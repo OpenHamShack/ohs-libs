@@ -9,9 +9,11 @@
 //! it is mixed down from the capture's centre and cut to 48 kS/s, as
 //! Radio's bank does, streamed in 100 ms blocks so a ten-minute capture at
 //! 2.4 MS/s (5.8 GB) never sits in memory. SHACK_DMR_SECONDS limits how
-//! much is read. Each file's results are printed. A `<name>.expect` beside
+//! much is read, SHACK_DMR_FROM where to start (seconds). Each file's results are printed. A `<name>.expect` beside
 //! it holds the calls it must find, one `slot src dst` a line (`#`
-//! comments); without one a file need only lock.
+//! comments), and may name its colour code, `cc N`; without one a file
+//! need only lock. With SHACK_TEST_MBELIB naming a developer's own mbelib,
+//! SHACK_DMR_WAV=<path> writes the voice heard (8 kHz mono, both slots).
 //!
 //!     SHACK_DMR_DIR=... cargo test --release --test dmr_real -- --ignored --nocapture
 use rustfft::num_complex::Complex32;
@@ -91,9 +93,15 @@ fn recordings_of_local_repeaters() {
         eprintln!("skipping: no .sigmf-data in {}", dir.display());
     }
     let limit: f64 = std::env::var("SHACK_DMR_SECONDS").ok().and_then(|v| v.parse().ok()).unwrap_or(f64::INFINITY);
+    let from: f64 = std::env::var("SHACK_DMR_FROM").ok().and_then(|v| v.parse().ok()).unwrap_or(0.0);
     for path in files {
         let mut cap = Capture::open(&path);
         let rate = cap.rate;
+        {
+            use std::io::Seek;
+            let size = if cap.cf32 { 8 } else { 4 };
+            cap.file.seek(std::io::SeekFrom::Start((from * rate) as u64 * size)).unwrap();
+        }
         let channel = std::fs::read_to_string(path.with_extension("channel"))
             .ok()
             .and_then(|t| t.trim().parse::<f64>().ok())
@@ -109,6 +117,9 @@ fn recordings_of_local_repeaters() {
         let mut dec = Decimator::new(lowpass(8 * d + 1, 7_000.0, rate), d);
         let mut phase = 0f64;
         let step = -2.0 * std::f64::consts::PI * shift / rate;
+        let mbelib = std::env::var_os("SHACK_TEST_MBELIB").map(PathBuf::from);
+        shack_sdr::codecs::use_path(shack_sdr::decoder::CodecId::Mbelib, mbelib);
+        let mut pcm: Vec<f32> = Vec::new();
         let mut d_dmr = Dmr::new();
         let mut sink = Sink::new();
         let block = (rate / 10.0) as usize;
@@ -131,12 +142,38 @@ fn recordings_of_local_repeaters() {
             out.clear();
             dec.process(&mixed, &mut out);
             let r = rate / d as f64;
-            let _ = d_dmr.feed(Input::Iq { samples: &out, rate: r, t0: index as f64 / r, index }, &mut sink);
+            let _ = d_dmr.feed(Input::Iq { samples: &out, rate: r, t0: from + index as f64 / r, index }, &mut sink);
             index += out.len() as u64;
+            sink.items.retain(|(_, o)| match o {
+                Output::Audio { pcm: p, .. } => {
+                    pcm.extend_from_slice(p);
+                    false
+                }
+                _ => true,
+            });
+        }
+        if let Some(wav) = std::env::var_os("SHACK_DMR_WAV") {
+            let mut b = Vec::new();
+            let data = (pcm.len() * 2) as u32;
+            b.extend_from_slice(b"RIFF");
+            b.extend_from_slice(&(36 + data).to_le_bytes());
+            b.extend_from_slice(b"WAVEfmt ");
+            b.extend_from_slice(&[16, 0, 0, 0, 1, 0, 1, 0]);
+            b.extend_from_slice(&8000u32.to_le_bytes());
+            b.extend_from_slice(&16000u32.to_le_bytes());
+            b.extend_from_slice(&[2, 0, 16, 0]);
+            b.extend_from_slice(b"data");
+            b.extend_from_slice(&data.to_le_bytes());
+            for x in &pcm {
+                b.extend_from_slice(&((x * 32767.0) as i16).to_le_bytes());
+            }
+            std::fs::write(&wav, b).unwrap();
+            println!("   {} s of sound to {}", pcm.len() / 8000, PathBuf::from(&wav).display());
         }
         let d = d_dmr;
         let x_len = read;
         let mut calls = Vec::new();
+        let mut ccs: Vec<String> = Vec::new();
         println!("== {} ({:.1} s at {rate} S/s, channel {channel:?}, {shift:+.0} Hz from the centre)", path.display(), x_len as f64 / rate);
         for (t, o) in sink.take() {
             if let Output::Frame { kind, fields, .. } = o {
@@ -153,6 +190,9 @@ fn recordings_of_local_repeaters() {
                     field(&fields, "text")
                 );
                 println!("{line}");
+                if field(&fields, "cc") != "-" {
+                    ccs.push(field(&fields, "cc"));
+                }
                 if kind == "call_end" {
                     calls.push(format!("{} {} {}", field(&fields, "slot"), field(&fields, "src"), field(&fields, "dst")));
                 }
@@ -164,6 +204,11 @@ fn recordings_of_local_repeaters() {
         assert!(syncs > 0, "{}: no DMR sync at all", path.display());
         if let Ok(want) = std::fs::read_to_string(path.with_extension("expect")) {
             for w in want.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')) {
+                if let Some(cc) = w.strip_prefix("cc ") {
+                    let heard = ccs.iter().any(|c| c == cc.trim());
+                    assert!(heard, "{}: colour code {cc} not heard ({ccs:?})", path.display());
+                    continue;
+                }
                 assert!(calls.iter().any(|c| c == w), "{}: no call `{w}` in {calls:?}", path.display());
             }
         }

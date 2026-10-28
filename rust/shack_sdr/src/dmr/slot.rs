@@ -5,7 +5,7 @@
 //! - **A voice call** starts at its voice LC header, or at its first voice
 //!   superframe when the header was missed (late entry: the IDs arrive
 //!   with the embedded LC, within a superframe or two). It ends at its
-//!   terminator, or when the slot has carried no voice for 360 ms.
+//!   terminator, or when the slot has carried no voice for a second.
 //! - **Encryption** is reported, never undone: the LC's privacy option,
 //!   a PI header, or the EMB's PI bit marks the call, and its voice is
 //!   not handed to the vocoder at all.
@@ -20,7 +20,10 @@ use super::vocoder::{Vocoder, FRAME_SAMPLES};
 use crate::decoder::Value;
 
 /// A voice call ends after this long with no voice in its slot.
-pub const CALL_TIMEOUT_S: f64 = 0.36;
+/// One second: GB7IR's long overs at 5 % BER (28/10/2026) lost a few
+/// hundred ms of bursts in fades, and at 360 ms each fade split an over
+/// into two calls. A call that really ends sends its terminator.
+pub const CALL_TIMEOUT_S: f64 = 1.0;
 /// A data message is dropped after this long without its next block.
 const DATA_TIMEOUT_S: f64 = 1.0;
 
@@ -53,6 +56,9 @@ pub struct Call {
     pub start: f64,
     pub last: f64,
     pub late_entry: bool,
+    /// Voice bursts in a row whose EMB said PI (privacy); two make the call
+    /// encrypted.
+    pub pi_votes: u32,
     /// Bits corrected and bits checked over the call (AMBE C0 and C1,
     /// BPTC), for its BER estimate.
     pub errs: u64,
@@ -93,6 +99,11 @@ pub struct Slot {
     /// Superframe position of the last voice burst (0 is A, with the sync).
     voice_idx: Option<u8>,
     emb_lc: EmbeddedLc,
+    /// The last embedded voice LC, which a new one must repeat (below).
+    emb_last: Option<Lc>,
+    /// The voice burst being read had its EMB corrected (its PI is not
+    /// trusted either way); set by the decoder.
+    pub emb_dirty: bool,
     alias: TalkerAlias,
     /// A PI header ahead of the call it belongs to.
     pi_pending: bool,
@@ -117,6 +128,8 @@ impl Slot {
             last_heard: None,
             voice_idx: None,
             emb_lc: EmbeddedLc::default(),
+            emb_last: None,
+            emb_dirty: false,
             alias: TalkerAlias::default(),
             pi_pending: false,
             msg: None,
@@ -160,6 +173,7 @@ impl Slot {
             return;
         }
         self.emb_lc.reset();
+        self.emb_last = None;
         self.alias.reset();
         self.call = Some(Call { start: t, last: t, late_entry: late, encrypted: self.pi_pending, ..Default::default() });
         self.pi_pending = false;
@@ -331,7 +345,14 @@ impl Slot {
         self.start_call(t, true, ev);
         if let Some(e) = emb {
             if e.pi {
-                if let Some(c) = self.call.as_mut() {
+                if let Some(c) = self.call.as_mut().filter(|c| {
+                    // One EMB is not enough: QR(16,7) corrects two bits, and
+                    // at GB7IR's 5 % BER (28/10/2026) a miscorrected PI bit
+                    // flagged plain amateur calls encrypted. The caller
+                    // passes PI only from an EMB with nothing corrected, and
+                    // two such bursts are needed.
+                    c.encrypted || c.pi_votes >= 1
+                }) {
                     if !c.encrypted {
                         c.encrypted = true;
                         ev.push(Event::Changed);
@@ -342,7 +363,16 @@ impl Slot {
                 if let Some((l, fixed)) = self.emb_lc.push(&burst::embedded(b), e.lcss) {
                     self.count(fixed, 128);
                     if l.is_voice() {
-                        self.apply_lc(&l, e.cc, ev);
+                        // The embedded LC's own check is a 5-bit checksum:
+                        // a weak call's noise passes it one time in 32,
+                        // which named strangers and flagged plain calls
+                        // encrypted on GB7IR. One that names the call as it
+                        // is, or repeats the last, is believed.
+                        let known = self.call.as_ref().is_some_and(|c| c.src == Some(l.src()) && c.dst == Some(l.dst()));
+                        if known || self.emb_last == Some(l) {
+                            self.apply_lc(&l, e.cc, ev);
+                        }
+                        self.emb_last = Some(l);
                     } else if let Some(a) = self.alias.push(&l) {
                         if let Some(c) = self.call.as_mut() {
                             if c.alias.as_deref() != Some(a.as_str()) {
@@ -355,6 +385,16 @@ impl Slot {
                 }
             } else if idx == 0 || idx == 5 {
                 self.emb_lc.reset();
+            }
+        }
+        if let (Some(e), Some(c)) = (emb, self.call.as_mut()) {
+            // In a row: a clean EMB without PI starts the count again (one
+            // burst taken from the wrong slot or place after a fade carried
+            // PI twice in a long GB7IR over).
+            if e.pi {
+                c.pi_votes += 1;
+            } else if !self.emb_dirty {
+                c.pi_votes = 0;
             }
         }
         let encrypted = self.call.as_ref().is_some_and(|c| c.encrypted);
