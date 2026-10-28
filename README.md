@@ -23,7 +23,7 @@ this directory name until it is renamed deliberately.
 | `Package.swift`, `swift/` | Swift package: `ShackClient` (the same, on the system SQLite3, pairing in the Keychain) and `ShackFormat`. iOS 16, tvOS 16, macOS 13. |
 | `spec/schemas/` | JSON Schemas for the dataset, the vector files and the pad action and layout declarations. |
 | `spec/vectors/` | Language-neutral conformance vectors (bandplan, sync T1-T21, i18n formatting, captured AKP03E pad reports) that every implementation runs. |
-| `tools/` | `test.sh` (everything, the Rust workspace included), `build.sh` (wheels), `build-sdr-wheels.sh` (the `shack-sdr` wheels, every platform), `check-encumbered.py` (nothing patent-encumbered linked or carried; denylist `spec/encumbered.json`), `extract_pot.py` (gettext templates), `export_ohscore.py` (the one-time conversion of the OpenHamShack modules). |
+| `tools/` | `test.sh` (everything, the Rust workspace included), `build.sh` (wheels), `build-sdr-wheels.sh` (the `shack-sdr` wheels, every platform; agents use `build-wheels-safe.sh <topic>`, which never reuses a folder), `check-encumbered.py` (nothing patent-encumbered linked or carried; denylist `spec/encumbered.json`), `extract_pot.py` (gettext templates), `export_ohscore.py` (the one-time conversion of the OpenHamShack modules). |
 
 Not here yet: the `shack-i18n.js` web loader, `release.sh`, and an Android
 SQLite adapter (Remote supplies it: `kotlin/shack-client` Sql.kt says how).

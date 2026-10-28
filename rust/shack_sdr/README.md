@@ -959,8 +959,12 @@ show as clicks and a raised floor; it should stay 0 now.
 `tools/test.sh` (repository root) runs `cargo test --release`, `cargo deny
 check bans licenses`, these Python tests against an extension built from
 the tree (`tools/dev-build.sh`), and `tools/check-encumbered.py` on it.
-Wheels: `tools/build-sdr-wheels.sh` (repository root) into
-`~/build/ohs-dist/shack-sdr/` with `SHA256SUMS`; never committed.
+Wheels: `tools/build-wheels-safe.sh <topic>` (repository root), which
+picks a folder `~/build/ohs-dist/shack-sdr-<topic><n>` that no other
+build or openhamshack-nb lock uses, runs `tools/build-sdr-wheels.sh` into
+it (`SHA256SUMS`, `BUILD-INFO` naming the commit) and prints it for
+openhamshack-nb's `tools/vendor-shack-sdr.sh`; never committed. Call
+`build-sdr-wheels.sh --out` directly only for a throw-away folder.
 
 The PSK fixtures (`testdata/psk/`, `tools/psk_golden.py`) are made and
 held the same way (`tests/psk.rs`).
