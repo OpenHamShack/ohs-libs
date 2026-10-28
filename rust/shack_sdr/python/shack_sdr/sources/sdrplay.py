@@ -609,6 +609,10 @@ class SdrplaySource(IqSource):
         return self._running and self.params is not None
 
     def gain_now(self) -> float | None:
+        with self._lock:
+            return self._gain_now()
+
+    def _gain_now(self) -> float | None:
         """The gain as this model reports it: SoapySDRPlay3's getGain,
         (gRdB - 20) + LNA state, or the gain reduction gRdB. Read from the
         API's structure while running (under AGC, whatever is there);
@@ -633,19 +637,24 @@ class SdrplaySource(IqSource):
         return {"gainIsReduction": True, "gainModel": self.gain_model,
                 "rfgrRange": list(soapy_rfgr_range(self._hw()))}
 
+    # Every setter below writes the API's own structure and calls Update:
+    # under the lock, and only while running, so none can reach a device
+    # that close() is putting through Uninit on another thread.
     def set_gain(self, gain: float | None) -> None:
         self.gain = gain
-        if self._running:
-            self._set_gain_fields(self._ch())
-            self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner,
-                        UPDATE_TUNER_GR | UPDATE_CTRL_AGC, 0), "Update")
+        with self._lock:
+            if self._running:
+                self._set_gain_fields(self._ch())
+                self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner,
+                            UPDATE_TUNER_GR | UPDATE_CTRL_AGC, 0), "Update")
 
     def set_centre(self, hz: float) -> None:
         self.centre = float(hz)
-        if self._running:
-            self._ch().tunerParams.rfFreq.rfHz = float(int(hz))
-            self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner, UPDATE_TUNER_FRF, 0),
-                        "Update", "out-of-range")
+        with self._lock:
+            if self._running:
+                self._ch().tunerParams.rfFreq.rfHz = float(int(hz))
+                self._check(self.lib.sdrplay_api_Update(self.device.dev, self.device.tuner, UPDATE_TUNER_FRF, 0),
+                            "Update", "out-of-range")
 
     def antennas(self) -> list[str]:
         """This receiver's input names for the model `open()` found, or []
@@ -667,9 +676,10 @@ class SdrplaySource(IqSource):
             raise SdrError("bad-antenna", f"{name!r}: no device is open to say what its inputs are")
         if name not in names:
             raise SdrError("bad-antenna", f"{name!r} is not one of this receiver's inputs: {names}")
-        if self._running:
-            self._apply_antenna(name, live=True)
-        self.antenna = name
+        with self._lock:
+            if self._running:
+                self._apply_antenna(name, live=True)
+            self.antenna = name
 
     def _apply_antenna(self, name: str, *, live: bool) -> None:
         """Write the struct fields for `name` (and, if `live`, push them)."""
@@ -728,10 +738,11 @@ class SdrplaySource(IqSource):
             if name not in OPTIONS or on is None:
                 raise ValueError(_("{name}={on!r}: set_options takes {options} as True or False").format(
                     name=name, on=on, options=OPTIONS))
-        for name, on in kw.items():
-            self.options[name] = bool(on)
-            if self._running:
-                self._apply_option(name, bool(on), live=True)
+        with self._lock:
+            for name, on in kw.items():
+                self.options[name] = bool(on)
+                if self._running:
+                    self._apply_option(name, bool(on), live=True)
 
     def _option_targets(self, name: str) -> list:
         """(struct, field, reason, ext1) for option `name` on the open
@@ -785,8 +796,11 @@ class SdrplaySource(IqSource):
 
     def option_values(self) -> dict:
         """Each switch this model has, as the API's structure holds it now
-        (False where never written: SDRplay's default); {} before open."""
-        if self.device is None or self.params is None:
+        (False where never written: SDRplay's default); {} unless running:
+        the structure is the API's, and after Uninit and Close the pointer
+        points at memory it has given back. Reading it then was how a
+        status() on a closed RSP could end the process in _ctypes."""
+        if self.device is None or not self._live():
             return {}
         out = {}
         for name in OPTIONS:
@@ -876,9 +890,12 @@ class SdrplaySource(IqSource):
         lib = self.lib
         if lib is None:
             return
-        if self._running:
+        # Marked stopped, and the API's structure forgotten, before it goes:
+        # nothing reads either again (_live).
+        was, self._running = self._running, False
+        self.params = None
+        if was:
             lib.sdrplay_api_Uninit(self.device.dev)
-            self._running = False
         if self._selected:
             lib.sdrplay_api_LockDeviceApi()
             lib.sdrplay_api_ReleaseDevice(ctypes.byref(self.device))
@@ -889,6 +906,10 @@ class SdrplaySource(IqSource):
             self._opened_api = False
 
     def status(self) -> dict:
+        with self._lock:
+            return self._status()
+
+    def _status(self) -> dict:
         st = super().status()
         st.update({"serial": self.serial, "api": self.api_version,
                    "device": self.device.SerNo.decode() if self.device is not None else None,

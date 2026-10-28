@@ -46,6 +46,7 @@ the library's or the device's own words, for a log.
 
 from __future__ import annotations
 
+import threading
 import time
 from dataclasses import dataclass, field
 
@@ -142,6 +143,14 @@ class IqSource:
         self.antenna = antenna or self.ANTENNAS[0]
         self.stats = SourceStats()
         self.opened = False
+        # Held by open() and close(), and by every call that reaches the
+        # receiver's C library (a subclass's setters, and read() where
+        # READ_CALLS_C), so nothing can call into a device another thread
+        # is closing. Radio's ADS-B reopen raced a status read against an
+        # SDRplay Uninit and python3 died in _ctypes (ohs-box, 28/10/2026).
+        # Never taken on a library's own callback thread: a callback waiting
+        # here while close() waits in Uninit for the callback would deadlock.
+        self._lock = threading.RLock()
         self._next = 0                 # the next sample's index
         self._t0: float | None = None  # UTC of sample 0
         self._mono0 = 0.0              # monotonic clock when sample 0 arrived
@@ -160,16 +169,24 @@ class IqSource:
 
     # -- the interface -------------------------------------------------------
 
+    #: Whether `_read` itself calls the C library (an RTL-SDR's synchronous
+    #: read): then read() holds the lock throughout, so close() waits for it.
+    #: SDRplay's `_read` only waits on a Python queue its callback fills, and
+    #: holding the lock there would hold close() up for a whole read timeout.
+    READ_CALLS_C = False
+
     def open(self) -> IqSource:
-        if not self.opened:
-            self._open()
-            self.opened = True
+        with self._lock:
+            if not self.opened:
+                self._open()
+                self.opened = True
         return self
 
     def close(self) -> None:
-        if self.opened:
-            self.opened = False
-            self._close()
+        with self._lock:
+            if self.opened:
+                self.opened = False
+                self._close()
 
     def __enter__(self) -> IqSource:
         return self.open()
@@ -186,9 +203,18 @@ class IqSource:
     def read(self) -> IqBlock | None:
         """The next block; None when a finite source has ended. Raises
         SdrError when a live one fails."""
-        if not self.opened:
-            raise SdrError("read-failed", "read() before open()")
-        z = self._read()
+        if self.READ_CALLS_C:
+            with self._lock:
+                if not self.opened:
+                    raise SdrError("closed", "read() with the receiver closed")
+                z = self._read()
+        else:
+            if not self.opened:
+                raise SdrError("closed", "read() with the receiver closed")
+            z = self._read()
+            if not self.opened:
+                # Closed while this waited: what came is not this stream's.
+                raise SdrError("closed", "the receiver was closed during read()")
         if z is None:
             return None
         now = time.monotonic()

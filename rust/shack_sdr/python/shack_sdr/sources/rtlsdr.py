@@ -160,6 +160,8 @@ def availability(lib_path=None, search=()) -> dict:
 
 class RtlSdrSource(IqSource):
     kind = "rtlsdr"
+    # rtlsdr_read_sync is C on the device handle close() frees.
+    READ_CALLS_C = True
     #: 1.2 and 2.4 MS/s (2.048 arrives with DAB in M3). Above 2.4 many hosts
     #: drop samples [guess, RADIO-SDR-PLAN §6.2].
     RATES = (1_200_000.0, 2_400_000.0)
@@ -225,15 +227,18 @@ class RtlSdrSource(IqSource):
 
     def set_gain(self, gain: float | None) -> None:
         self.gain = gain
-        if self.dev:
-            self._apply_gain()
+        with self._lock:
+            if self.dev:
+                self._apply_gain()
 
     def set_centre(self, hz: float) -> None:
         """Retune while running. The channels were placed for the old centre:
         the app makes a new Pipeline for the new one (ChannelPlan.centre_for)."""
         self.centre = float(hz)
-        if self.dev:
-            self._check(self.lib.rtlsdr_set_center_freq(self.dev, int(round(hz))), "set_center_freq", "out-of-range")
+        with self._lock:
+            if self.dev:
+                self._check(self.lib.rtlsdr_set_center_freq(self.dev, int(round(hz))), "set_center_freq",
+                            "out-of-range")
 
     def _read(self) -> np.ndarray:
         n = ctypes.c_int(0)

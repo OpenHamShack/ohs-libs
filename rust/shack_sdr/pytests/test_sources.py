@@ -78,6 +78,7 @@ int rtlsdr_set_agc_mode(void *dev, int on) { logf_("agc", on); return 0; }
 int rtlsdr_reset_buffer(void *dev) { logf_("reset", 0); return 0; }
 int rtlsdr_set_bias_tee(void *dev, int on) { logf_("bias_tee", on); return 0; }
 int rtlsdr_read_sync(void *dev, void *buf, int len, int *n_read) {
+    logf_("read", dev == &dev_token);
     if (read_result < 0) { *n_read = 0; return read_result; }
     unsigned char *b = buf;
     for (int i = 0; i < len; i++) { b[i] = iqlen ? iq[iqpos] : 127; if (iqlen) iqpos = (iqpos + 1) % iqlen; }
@@ -711,3 +712,98 @@ def test_on_a_controller_the_host_library_is_used(rsp, tmp_path, monkeypatch):
     monkeypatch.setenv("SHACK_HOSTLIBS", str(tmp_path / "hostlibs"))
     a = sdrplay.availability()
     assert a["available"] and a["host"]
+
+
+# -- nothing reaches C on a closed receiver (ohs-box, 28/10/2026) ------------------
+# Radio's ADS-B session reopened an RSPdx at another rate; a status read on
+# one thread met the close on another, and python3 died in _ctypes. Every
+# call that reaches a receiver's library now holds the source's lock and
+# checks it is open; read() on a closed source raises "closed" in Python.
+
+
+def test_an_rtl_sdr_read_after_close_never_reaches_c(rtl):
+    lib, ctl = rtl
+    src = RtlSdrSource(lib_path=lib, read_bytes=4096).open()
+    src.read()
+    src.close()
+    ctl.stub_reset()                           # the RTL stub's log, emptied
+    with pytest.raises(SdrError) as e:
+        src.read()
+    assert e.value.reason == "closed"
+    src.set_centre(430_000_000)
+    src.set_gain(20.0)
+    assert log(ctl) == []                      # not a read, not a retune, not a gain
+
+
+def test_an_rsp_after_close_is_never_touched_in_c(sdr):
+    lib, ctl = sdr
+    src = SdrplaySource(1_090_000_000, 6_000_000, lib_path=lib).open()
+    assert src.read() is not None and src.status()["options"]
+    src.close()
+    updates = ctl.stub_update_count()
+    with pytest.raises(SdrError) as e:
+        src.read()
+    assert e.value.reason == "closed"
+    src.set_centre(430_000_000)
+    src.set_gain(30.0)
+    src.set_options(dab_notch=True)
+    st = src.status()
+    # Nothing read from the API's structure, nothing updated, once closed.
+    assert st["options"] == {} and "gRdB" not in st
+    assert ctl.stub_update_count() == updates and ctl.stub_state() == 0
+
+
+def test_an_rsp_closed_and_reopened_under_busy_threads(sdr):
+    """Status reads, retunes and gain changes on two threads while the main
+    one closes and reopens the receiver, as Radio's supervisor and receive
+    thread do around a reopen: never an Update on a closed device, and the
+    process lives."""
+    import threading
+    lib, ctl = sdr
+    src = SdrplaySource(1_090_000_000, 6_000_000, lib_path=lib).open()
+    stop = threading.Event()
+    errors = []
+
+    def hammer(fn):
+        while not stop.is_set():
+            try:
+                fn()
+            except SdrError:
+                pass
+            except Exception as e:  # noqa: BLE001
+                errors.append(e)
+
+    threads = [threading.Thread(target=hammer, args=(f,)) for f in
+               (src.status, lambda: src.set_centre(1_090_000_000), lambda: src.set_gain(40.0))]
+    for t in threads:
+        t.start()
+    try:
+        for _ in range(30):
+            src.close()
+            closed_updates = ctl.stub_update_count()
+            assert ctl.stub_state() == 0
+            assert src.status()["options"] == {}
+            assert ctl.stub_update_count() == closed_updates
+            src.open()
+    finally:
+        stop.set()
+        for t in threads:
+            t.join()
+        src.close()
+    assert errors == []
+
+
+def test_an_rsp_not_found_on_one_open_is_found_on_the_next(sdr):
+    """What a reopen meets while the API still holds the device it has just
+    released: no RSP, then the RSP. The retry is the app's (Radio
+    restart_at); the source must simply fail cleanly and open again."""
+    lib, ctl = sdr
+    ctl.stub_set_ndev(0)
+    src = SdrplaySource(1_090_000_000, 2_400_000, lib_path=lib)
+    with pytest.raises(SdrError) as e:
+        src.open()
+    assert e.value.reason == "no-device" and not src.opened and ctl.stub_state() == 0
+    ctl.stub_set_ndev(1)
+    src.open()
+    assert src.read() is not None
+    src.close()
