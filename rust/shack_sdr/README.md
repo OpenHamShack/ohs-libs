@@ -588,6 +588,54 @@ host.audio(sid, rate=12_000, channels=1)   # its sound from the ring; RDS as `me
   0.1 s, which is right for FM's constant envelope but would miss a
   station that starts later in the capture.
 
+### AIS (`ais`): ships, both channels
+
+The ships' Automatic Identification System (ITU-R M.1371-5), both channels
+- 87B (161.975 MHz, "A") and 88B (162.025 MHz, "B") - from one IQ input
+with 162.000 MHz at `offsetHz` from its centre, any rate from 96 kS/s
+(a receiver's own 2.4 MS/s is decimated in Rust first). 9600 baud GMSK,
+NRZI, HDLC flags, bit stuffing and the CRC; then the message (`src/ais/`).
+
+```python
+from shack_sdr import Host, _native
+sid = host.start("ais", {"offsetHz": 0.0}, "iq", 2_400_000)
+host.feed(sid, iq, t0, index)
+host.poll()   # {"type": "frame", "frame": "ais", "fields": {...}, "raw": payload octets}
+_native.ais_encode({"type": 1, "mmsi": 235000001, "lat": 33270000, ...})   # payload octets
+_native.ais_parse(payload); _native.ais_nmea(payload, "A")
+_native.testsig_ais([{"t": 0.1, "channel": "B", "fields": {...}}], rate=2_400_000.0,
+                    duration_s=1.0, centre_hz=0.0, snr_db=20.0)              # complex64 bytes
+```
+
+- **Each frame's fields:** `type`, `repeat`, `mmsi`, `channel` ("A"/"B"),
+  `nmea` (the `!AIVDM` sentences, split at 60 characters with a sequence
+  id), `snrDb` (Eb/N0, from the burst's own envelope), `levelDb`, `offsetHz`
+  (the burst's frequency error); then by type, in real units with `null`
+  for "not available": 1-3 `navStatus`, `turn` (deg/min; `turnRaw` the
+  code), `speed` (kn), `accuracy`, `lon`, `lat` (degrees), `course`,
+  `heading`, `second`, `maneuver`, `raim`, `radio`; 4 and 11 the UTC
+  (`year`...`second`), position and `epfd`; 5 `aisVersion`, `imo`,
+  `callsign`, `shipName`, `shipType`, `toBow`, `toStern`, `toPort`,
+  `toStarboard` (m), `epfd`, `etaMonth`, `etaDay`, `etaHour`, `etaMinute`,
+  `draught` (m), `destination`, `dte`; 18 position and the Class B flags
+  (`cs`, `display`, `dsc`, `band`, `msg22`, `assigned`); 19 position with
+  name, type and dimensions; 21 `aidType`, `name` (with its extension),
+  position, dimensions, `offPosition`, `virtualAid`; 24 `partNo` with
+  `shipName` (part A) or `shipType`, `vendorId`, `model`, `serial`,
+  `callsign` and dimensions or `mothershipMmsi` (B); 27 `navStatus`,
+  position (1/10 minute), `speed`, `course`, `latency`. Every other type
+  comes with its header and sentences. Numbers such as `shipType` and
+  `navStatus` stay the standard's codes: the app words them.
+- **Status counters:** `frames`, `channelA`, `channelB`, `damaged`.
+- **Measured** (tests/ais.rs, 28/10/2026): type-1 bursts heard 42 % at
+  12 dB Eb/N0, 92 % at 14, all from 16; a frequency error to ±1.5 kHz
+  costs nothing and is measured to within 20 Hz; a burst 12 dB over
+  another on its channel is captured. One core's CPU a second of input:
+  about 8 ms at 96 kS/s and 24 ms at 2.4 MS/s.
+- **Bit-exact against pyais:** testdata/ais/golden.json, written once by
+  tools/ais_golden.py with pyais as the oracle (never a dependency).
+  `SHACK_AIS_DIR` runs real captures (tests/ais.rs says the format).
+
 ## Sources
 
 `shack_sdr.sources`: `IqSource`, `IqBlock`, `SdrError`, `REASONS`,

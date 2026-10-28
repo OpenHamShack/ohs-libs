@@ -75,7 +75,7 @@ fn params_py<'py>(py: Python<'py>, p: &Params) -> PyResult<Bound<'py, PyDict>> {
     Ok(d)
 }
 
-fn fields_py<'py>(py: Python<'py>, f: &[(String, Value)]) -> PyResult<Bound<'py, PyDict>> {
+pub(crate) fn fields_py<'py>(py: Python<'py>, f: &[(String, Value)]) -> PyResult<Bound<'py, PyDict>> {
     let d = PyDict::new(py);
     for (k, v) in f {
         d.set_item(k, value_py(py, v)?)?;
@@ -651,5 +651,6 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     crate::wfm::py::register(m)?;
     crate::psk::py::register(m)?;
     crate::sstv::py::register(m)?;
+    crate::ais::py::register(m)?;
     Ok(())
 }

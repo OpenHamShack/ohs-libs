@@ -12,7 +12,9 @@
 //! - `dsp`: the small pieces the decoders share.
 //! - `wfm`: broadcast FM: stereo, RDS and the band scanner's many-carrier RDS.
 //! - `sstv`: SSTV pictures, every common mode, with the test transmitter.
+//! - `ais`: ships' AIS, both channels, with the test transmitter.
 
+pub mod ais;
 pub mod catalogue;
 pub mod dab;
 pub mod codecs;
