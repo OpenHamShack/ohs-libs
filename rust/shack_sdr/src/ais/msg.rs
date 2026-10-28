@@ -502,6 +502,72 @@ fn round(v: f64, places: i32) -> f64 {
     (v * m).round() / m
 }
 
+/// Whether an MMSI has the form ITU-R M.585 gives the kind of station a
+/// message type comes from: ships 9 digits with a MID of 2xx-7xx
+/// (`MIDxxxxxx`), base stations `00MIDxxxx`, SAR aircraft `111MIDxxx`, aids
+/// to navigation `99MIDxxxx`, craft with a mother ship `98MIDxxxx`, and the
+/// distress beacons `970xxxxxx` (SART), `972xxxxxx` (MOB) and `974xxxxxx`
+/// (EPIRB-AIS), which send position reports as ships do.
+pub fn mmsi_form(kind: u8, mmsi: u32) -> bool {
+    let mid = |m: u32| (2..=7).contains(&(m / 100));
+    let ship = mmsi >= 100_000_000 && mmsi < 800_000_000 && mid(mmsi / 1_000_000);
+    let base = (2_000_000..8_000_000).contains(&mmsi) && mid(mmsi / 10_000);
+    let sar = (111_000_000..112_000_000).contains(&mmsi) && mid((mmsi / 1_000) % 1_000);
+    let aton = (990_000_000..1_000_000_000).contains(&mmsi) && mid((mmsi / 10_000) % 1_000);
+    let aux = (980_000_000..990_000_000).contains(&mmsi) && mid((mmsi / 10_000) % 1_000);
+    let sart = matches!(mmsi / 1_000_000, 970 | 972 | 974);
+    match kind {
+        1..=3 | 5 | 27 => ship || sart,
+        18 | 19 | 24 => ship || aux,
+        4 => base,
+        // A UTC answer, and the addressed and broadcast types, come from any station.
+        11 => base || ship,
+        9 => sar,
+        21 => aton,
+        _ => ship || base || sar || aton || aux || sart,
+    }
+}
+
+/// Whether a message's numbers are ones a transmitter can mean
+/// (M.1371-5 Annex 8): its MMSI's form (`mmsi_form`), a position on the
+/// Earth or the "not available" code (91 N, 181 E), a speed below the
+/// "not available" code, a course under 360 degrees or 3600, a heading
+/// under 360 or 511. `Err` names the first that fails: "mmsi", "position",
+/// "speed", "course", "heading". A frame with a good CRC that fails this is
+/// a transponder misconfigured, or the CRC's one-in-65,536 passing damage:
+/// either way nothing to put on a map.
+pub fn plausible(m: &Message) -> Result<(), &'static str> {
+    if !mmsi_form(m.kind, m.mmsi) {
+        return Err("mmsi");
+    }
+    let r = &m.raw;
+    let get = |k: &str| match r.get(k) {
+        Some(RawV::Int(v)) => Some(*v),
+        _ => None,
+    };
+    // 1/10000 minute, or 1/10 minute in type 27.
+    let per_deg = if m.kind == 27 { 600 } else { 600_000 };
+    if let (Some(lat), Some(lon)) = (get("lat"), get("lon")) {
+        let ok_lat = lat.abs() <= 90 * per_deg || lat == 91 * per_deg;
+        let ok_lon = lon.abs() <= 180 * per_deg || lon == 181 * per_deg;
+        if !ok_lat || !ok_lon {
+            return Err("position");
+        }
+    }
+    if m.kind != 27 {
+        if get("speed").is_some_and(|v| v > 1023) {
+            return Err("speed");
+        }
+        if get("course").is_some_and(|v| v > 3600) {
+            return Err("course");
+        }
+    }
+    if get("heading").is_some_and(|v| v >= 360 && v != 511) {
+        return Err("heading");
+    }
+    Ok(())
+}
+
 /// A client's view of a message: camelCase keys, real units, `Null` for
 /// "not available". Positions are degrees (east and north positive),
 /// speeds knots, courses and headings degrees true, rate of turn degrees a

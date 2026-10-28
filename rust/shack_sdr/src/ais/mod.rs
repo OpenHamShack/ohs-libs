@@ -38,7 +38,9 @@
 //! `channel` ("A"/"B"), `nmea` (the sentences), `snrDb` (the burst's
 //! signal to noise in 9.6 kHz, Eb/N0, from the spread of its envelope),
 //! `levelDb` (its power, dB full scale) and `offsetHz` (its
-//! frequency error); `raw` is the payload's octets, MSB first. Status
+//! frequency error), `plausible` (msg::plausible: the MMSI's form, the
+//! position, speed, course and heading in range) and, when false,
+//! `implausible` (which failed); `raw` is the payload's octets, MSB first. Status
 //! counts frames per channel and damaged frames (a failed CRC, a frame
 //! not whole octets, or an abort: one a slicer, so up to five a burst).
 //!
@@ -317,6 +319,7 @@ pub struct Ais {
     /// UTC of the 48 kS/s channels' sample 0.
     t_base: f64,
     seq: u8,
+    implausible: u64,
     scratch: [Vec<Complex32>; 2],
 }
 
@@ -357,6 +360,7 @@ impl Ais {
             next_index: None,
             t_base: 0.0,
             seq: 0,
+            implausible: 0,
             scratch: [Vec::new(), Vec::new()],
         }
     }
@@ -383,6 +387,16 @@ impl Ais {
         fields.push(("snrDb".into(), Value::Num((h.snr_db as f64 * 10.0).round() / 10.0)));
         fields.push(("levelDb".into(), Value::Num((h.level_db as f64 * 10.0).round() / 10.0)));
         fields.push(("offsetHz".into(), Value::Num(h.offset_hz.round() as f64)));
+        // Passed on all the same: a log of the air should hold what was on
+        // it. A map takes only plausible ones (msg::plausible).
+        match msg::plausible(&m) {
+            Ok(()) => fields.push(("plausible".into(), Value::Bool(true))),
+            Err(why) => {
+                self.implausible += 1;
+                fields.push(("plausible".into(), Value::Bool(false)));
+                fields.push(("implausible".into(), Value::Text(why.into())));
+            }
+        }
         let t = self.t_base + h.end as f64 / CHANNEL_RATE;
         let raw: Vec<u8> = bits.chunks(8).map(|c| c.iter().fold(0u8, |v, &b| (v << 1) | b)).collect();
         Some((t, Output::Frame { kind: "ais", fields, raw: Some(raw) }))
@@ -468,7 +482,7 @@ impl Decoder for Ais {
             snr_db: None,
             offset_hz: None,
             baud: None,
-            counters: vec![("frames", frames(0) + frames(1)), ("channelA", frames(0)), ("channelB", frames(1)), ("damaged", bad)],
+            counters: vec![("frames", frames(0) + frames(1)), ("channelA", frames(0)), ("channelB", frames(1)), ("damaged", bad), ("implausible", self.implausible)],
         }
     }
 }

@@ -610,7 +610,10 @@ _native.testsig_ais([{"t": 0.1, "channel": "B", "fields": {...}}], rate=2_400_00
 - **Each frame's fields:** `type`, `repeat`, `mmsi`, `channel` ("A"/"B"),
   `nmea` (the `!AIVDM` sentences, split at 60 characters with a sequence
   id), `snrDb` (Eb/N0, from the burst's own envelope), `levelDb`, `offsetHz`
-  (the burst's frequency error); then by type, in real units with `null`
+  (the burst's frequency error), `plausible` (and when false
+  `implausible`: `mmsi`, `position`, `speed`, `course`, `heading` - the
+  MMSI's form for its message type, ITU-R M.585, and numbers in range;
+  a map should take only plausible frames, a log may keep all); then by type, in real units with `null`
   for "not available": 1-3 `navStatus`, `turn` (deg/min; `turnRaw` the
   code), `speed` (kn), `accuracy`, `lon`, `lat` (degrees), `course`,
   `heading`, `second`, `maneuver`, `raim`, `radio`; 4 and 11 the UTC
@@ -626,9 +629,14 @@ _native.testsig_ais([{"t": 0.1, "channel": "B", "fields": {...}}], rate=2_400_00
   position (1/10 minute), `speed`, `course`, `latency`. Every other type
   comes with its header and sentences. Numbers such as `shipType` and
   `navStatus` stay the standard's codes: the app words them.
-- **Status counters:** `frames`, `channelA`, `channelB`, `damaged`.
+- **Status counters:** `frames`, `channelA`, `channelB`, `damaged`, `implausible`.
+- **On-air bit order** is Direwolf's and every transponder's: each
+  octet's value has the table's first bit most significant, sent LSB
+  first. The first build had it reversed and decoded every real ship as
+  garbage (the CRC passes either way); tests/ais.rs now reads our bursts
+  with an HDLC reader written as Direwolf's.
 - **Measured** (tests/ais.rs, 28/10/2026): type-1 bursts heard 42 % at
-  12 dB Eb/N0, 92 % at 14, all from 16; a frequency error to ±1.5 kHz
+  12 dB Eb/N0, 88-92 % at 14, 98-100 % at 16; a frequency error to ±1.5 kHz
   costs nothing and is measured to within 20 Hz; a burst 12 dB over
   another on its channel is captured. One core's CPU a second of input:
   about 8 ms at 96 kS/s and 24 ms at 2.4 MS/s.

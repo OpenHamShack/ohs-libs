@@ -57,6 +57,7 @@ def test_a_session_hears_both_channels_at_a_receivers_own_rate():
     assert abs(a["fields"]["lat"] - 55.45) < 1e-5 and abs(a["fields"]["lon"] + 4.80) < 1e-5
     assert a["fields"]["speed"] == 10.5 and a["fields"]["course"] == 180.0
     assert a["fields"]["nmea"][0].startswith("!AIVDM,1,1,,A,")
+    assert a["fields"]["plausible"] is True
     b = got[235000102]
     assert b["fields"]["shipName"] == "CLYDE TRADER" and b["fields"]["destination"] == "GREENOCK"
     assert len(b["fields"]["nmea"]) == 2
