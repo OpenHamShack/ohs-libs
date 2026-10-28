@@ -14,7 +14,9 @@
 //! - `sstv`: SSTV pictures, every common mode, with the test transmitter.
 //! - `ais`: ships' AIS, both channels, with the test transmitter.
 //! - `dmr`: DMR Tier II, both slots; voice only through the user's mbelib.
+//! - `adsb`: aircraft on 1090 MHz (ADS-B and Mode S), with the test transmitter.
 
+pub mod adsb;
 pub mod ais;
 pub mod catalogue;
 pub mod dab;

@@ -31,6 +31,10 @@ fn ais() -> Box<dyn Decoder> {
     Box::new(crate::ais::Ais::new())
 }
 
+fn adsb() -> Box<dyn Decoder> {
+    Box::new(crate::adsb::Adsb::new())
+}
+
 fn dmr() -> Box<dyn Decoder> {
     Box::new(crate::dmr::Dmr::new())
 }
@@ -50,6 +54,7 @@ pub fn kinds() -> Vec<Kind> {
         Kind { info: &crate::sstv::INFO, make: sstv },
         Kind { info: &crate::ais::INFO, make: ais },
         Kind { info: &crate::dmr::INFO, make: dmr },
+        Kind { info: &crate::adsb::INFO, make: adsb },
     ]
 }
 
