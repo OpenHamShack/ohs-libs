@@ -1,0 +1,17 @@
+{
+  "description": "spectrum/1 JSON control messages against spec/schemas/spectrum.schema.json: valid or not.",
+  "version": 1,
+  "cases": [
+    {"id": "subscribe-plan", "message": {"type": "subscribe", "stream": "main", "cols": 1280, "fps": 15, "loHz": 144100000, "hiHz": 144500000, "reduce": "peak", "depth": 8}, "valid": true, "note": "§2.1's example"},
+    {"id": "subscribe-minimal", "message": {"type": "subscribe", "stream": "zoom", "cols": 640}, "valid": true},
+    {"id": "subscribe-depth12", "message": {"type": "subscribe", "stream": "main", "cols": 640, "depth": 12}, "valid": false, "note": "depth is 8 or 16"},
+    {"id": "subscribe-median", "message": {"type": "subscribe", "stream": "main", "cols": 640, "reduce": "median"}, "valid": false},
+    {"id": "subscribe-no-cols", "message": {"type": "subscribe", "stream": "main"}, "valid": false},
+    {"id": "stream-plan", "message": {"type": "stream", "stream": "main", "rev": 7, "centreHz": 144300000, "spanHz": 2400000, "loHz": 143100000, "hiHz": 145500000, "binHz": 1171.875, "rbwHz": 1757.8, "srcBins": 2048, "rate": 20.0, "units": "dB", "calibrated": false, "dcBins": [1023, 1025], "pinned": {"by": ["ais-1"]}, "label": "Wide"}, "valid": true, "note": "§2.2's example"},
+    {"id": "stream-dbuv", "message": {"type": "stream", "stream": "main", "rev": 1, "centreHz": 1, "spanHz": 1, "loHz": 0, "hiHz": 1, "binHz": 1, "srcBins": 1, "rate": 1, "units": "dBuV", "calibrated": true}, "valid": false, "note": "units is dBm, dB or rel"},
+    {"id": "levels-plan", "message": {"type": "levels", "stream": "main", "dbFloor": -142.0, "dbStep": 0.375, "noiseDb": -131.5, "peakDb": -62.0}, "valid": true, "note": "§2.3's example"},
+    {"id": "levels-zero-step", "message": {"type": "levels", "stream": "main", "dbFloor": -142.0, "dbStep": 0, "noiseDb": -131.5, "peakDb": -62.0}, "valid": false},
+    {"id": "error-busy", "message": {"type": "error", "code": "busy"}, "valid": true, "note": "§2.4: the ninth client"},
+    {"id": "unknown-type", "message": {"type": "hello"}, "valid": false}
+  ]
+}

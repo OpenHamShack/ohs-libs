@@ -1,0 +1,16 @@
+{
+  "description": "spectrum/1 binary rows (CLIENT-UI-PLAN.md §2.3). Each case is a file in rows/ and either the decoded header and values or the error code a decoder must refuse it with: magic, version or length (a frame is exactly one row). Written by tools/gen-client-vectors.py.",
+  "version": 1,
+  "cases": [
+    {"id": "u8-basic", "file": "rows/u8-basic.bin", "note": "8-bit, no flags; header bytes are the §2.3 table exactly", "expect": {"stream": 0, "seq": 7, "tMs": 1767225600125, "loHz": 144100000.0, "colHz": 312.5, "depth": 8, "levelsChanged": false, "streamChanged": false, "gap": false, "values": [0, 1, 2, 127, 128, 200, 254, 255]}},
+    {"id": "u16-levels", "file": "rows/u16-levels.bin", "note": "16-bit (depth16), levelsChanged, a 10 GHz loHz that needs f64, seq past 16 bits", "expect": {"stream": 1, "seq": 70000, "tMs": 1767225600000, "loHz": 10489500000.0, "colHz": 1171.875, "depth": 16, "levelsChanged": true, "streamChanged": false, "gap": false, "values": [0, 1, 256, 4095, 65534, 65535]}},
+    {"id": "flags-all", "file": "rows/flags-all.bin", "note": "every defined flag; stream 3; largest seq", "expect": {"stream": 3, "seq": 4294967295, "tMs": 1767225600999, "loHz": 7000000.0, "colHz": 0.5, "depth": 8, "levelsChanged": true, "streamChanged": true, "gap": true, "values": [9, 9, 9]}},
+    {"id": "empty", "file": "rows/empty.bin", "note": "zero columns is a valid row", "expect": {"stream": 0, "seq": 1, "tMs": 1767225600000, "loHz": 0.0, "colHz": 1.0, "depth": 8, "levelsChanged": false, "streamChanged": false, "gap": false, "values": []}},
+    {"id": "unknown-flag", "file": "rows/unknown-flag.bin", "note": "bit 4 set: flags a reader does not know are ignored, so spectrum/1 can add one", "expect": {"stream": 0, "seq": 2, "tMs": 1767225600000, "loHz": 144000000.0, "colHz": 100.0, "depth": 8, "levelsChanged": false, "streamChanged": false, "gap": false, "values": [5, 6]}},
+    {"id": "bad-magic", "file": "rows/bad-magic.bin", "note": "not OS: refuse, never guess", "expect": {"error": "magic"}},
+    {"id": "bad-version", "file": "rows/bad-version.bin", "note": "version 2 is a different layout", "expect": {"error": "version"}},
+    {"id": "short-header", "file": "rows/short-header.bin", "note": "shorter than the 32-byte header", "expect": {"error": "length"}},
+    {"id": "extra-byte", "file": "rows/extra-byte.bin", "note": "a frame is one row: trailing bytes mean the layouts disagree", "expect": {"error": "length"}},
+    {"id": "missing-column", "file": "rows/missing-column.bin", "note": "fewer bytes than the column count says", "expect": {"error": "length"}}
+  ]
+}

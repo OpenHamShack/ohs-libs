@@ -1,0 +1,17 @@
+{
+  "description": "Presence service bodies and SSE event data (CLIENT-UI-PLAN.md §7.2) against spec/schemas/presence.schema.json: def names the $defs entry the message is checked against.",
+  "version": 1,
+  "cases": [
+    {"id": "renew-plan", "def": "renew", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"]}, "valid": true, "note": "§7.2's example"},
+    {"id": "renew-nothing-held", "def": "renew", "message": {"client": "remote-7f3a", "app": "shack-radio"}, "valid": true},
+    {"id": "renew-no-client", "def": "renew", "message": {"app": "shack-radio"}, "valid": false},
+    {"id": "renew-duplicate-hold", "def": "renew", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "dab"]}, "valid": false},
+    {"id": "lease-plan", "def": "lease", "message": {"leaseS": 30, "renewEveryS": 10}, "valid": true},
+    {"id": "list", "def": "list", "message": {"clients": [{"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"]}]}, "valid": true},
+    {"id": "arrived", "def": "arrived", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/dab", "holds": ["dab", "audio"]}, "valid": true},
+    {"id": "moved", "def": "moved", "message": {"client": "remote-7f3a", "app": "shack-radio", "screen": "radio/fm", "holds": ["audio"]}, "valid": true},
+    {"id": "gone-goodbye", "def": "gone", "message": {"client": "remote-7f3a", "why": "goodbye"}, "valid": true},
+    {"id": "gone-expired", "def": "gone", "message": {"client": "remote-7f3a", "why": "expired"}, "valid": true},
+    {"id": "gone-kicked", "def": "gone", "message": {"client": "remote-7f3a", "why": "kicked"}, "valid": false, "note": "why is goodbye or expired"}
+  ]
+}
