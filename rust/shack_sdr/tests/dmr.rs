@@ -401,3 +401,15 @@ fn mbelib_when_present_turns_the_voice_into_sound() {
     let rms = (want.iter().map(|x| x * x).sum::<f32>() / want.len() as f32).sqrt();
     assert!(rms > 1e-3, "rms {rms}");
 }
+
+#[test]
+fn noise_alone_names_no_call() {
+    // A minute of an empty channel: the search runs every sample and must
+    // never take noise, or a voice burst's random bits, for a call.
+    let case = DmrCase { mode: Mode::Ms, lead: 2_000, snr_db: Some(0.0), seed: 9, ..Default::default() };
+    let (mut d, heard) = recording();
+    let r = run(&mut d, &dmr_iq(&case).iq, 48_000.0);
+    let frames: Vec<&Output> = r.out.iter().map(|(_, o)| o).filter(|o| matches!(o, Output::Frame { .. })).collect();
+    assert!(frames.is_empty(), "{frames:?}");
+    assert!(heard.lock().unwrap().is_empty());
+}
