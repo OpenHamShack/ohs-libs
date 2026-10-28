@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhamshack.org/schemas/overlay.schema.json",
+  "title": "overlay/1: what is drawn on top of a waterfall (CLIENT-UI-PLAN.md §3)",
+  "description": "A text frame on the spectrum socket (fewer connections on a Fire TV), or the body of GET <base>api/overlay/v1?loHz=&hiHz=, which is the same snapshot. rev counts changes per socket; a client that sees a rev it did not expect asks again and gets a snapshot. A remove carries items with at least their id, since the rest of a gone item is of no use. Labels are already translated by the server; colours are semantic roles, never RGB, so the client's theme and contrast rules stay the client's. Items' actions use ui.schema.json's action shape, with the same transmit ban, and additionally need an id and label because the first is the item's OK/tap action and the others are listed by name.",
+  "$ref": "#/$defs/envelope",
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "required": ["type", "rev", "op", "items"],
+      "properties": {
+        "type": {"const": "overlay"},
+        "rev": {"type": "integer", "minimum": 0},
+        "op": {"enum": ["snapshot", "upsert", "remove"]}
+      },
+      "if": {"properties": {"op": {"const": "remove"}}},
+      "then": {"properties": {"items": {"type": "array", "items": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "minLength": 1}}}}}},
+      "else": {"properties": {"items": {"type": "array", "items": {"$ref": "#/$defs/item"}}}}
+    },
+    "item": {
+      "type": "object",
+      "required": ["id", "kind", "layer", "loHz", "hiHz", "label"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["segment", "dial", "passband", "tx", "channel", "station", "session", "spot", "bookmark", "beacon", "alert", "signal"]},
+        "layer": {"enum": ["band", "dial", "channels", "stations", "sessions", "spots", "bookmarks", "beacons", "alerts", "signals"],
+                  "description": "band and dial are always drawn; the others are the client's layer toggles."},
+        "loHz": {"type": "number", "minimum": 0},
+        "hiHz": {"type": "number", "minimum": 0},
+        "centreHz": {"type": "number", "minimum": 0},
+        "label": {"type": "string"},
+        "short": {"type": "string"},
+        "detail": {"type": "string"},
+        "prio": {"type": "integer", "minimum": 0, "maximum": 100},
+        "readAtHzPerPx": {"type": ["number", "null"], "exclusiveMinimum": 0,
+                          "description": "The label shows once the view is at or below this many Hz a pixel; null is always (band segments)."},
+        "role": {"type": "string", "pattern": "^[a-z][A-Za-z0-9]*(\\.[a-z][A-Za-z0-9-]*)*$",
+                 "description": "A semantic colour role such as channel.repeater or segment.cw; the theme maps it."},
+        "active": {"type": "boolean"},
+        "expires": {"type": ["integer", "null"], "minimum": 0,
+                    "description": "ms since the Unix epoch, box clock (as the row's capture time); null never."},
+        "source": {"type": "string"},
+        "actions": {
+          "type": "array",
+          "items": {"allOf": [{"$ref": "ui.schema.json#/$defs/action"}, {"required": ["id", "label"]}]}
+        }
+      }
+    }
+  }
+}

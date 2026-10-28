@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhamshack.org/schemas/presence.schema.json",
+  "title": "The platform's client presence service (CLIENT-UI-PLAN.md §7.2)",
+  "description": "One lease per client, renewed every 10 s and expiring after 30 s, that apps hang their client-scoped holds (audio, DAB, AIS...) off. The renewal is the whole state (app, screen, holds), not a delta, so a lost renewal costs nothing and it doubles as 'what this client is viewing'. Endpoints: POST api/shack/v1/presence takes $defs/renew and answers $defs/lease; DELETE api/shack/v1/presence/<client> (goodbye, best-effort, 1 s time-out) has no body either way; GET api/shack/v1/presence answers $defs/list; GET api/shack/v1/presence/events is SSE whose event name is arrived, moved or gone and whose data is $defs/arrived, $defs/moved or $defs/gone. There is no document-level shape: each message is validated against its own $def, since SSE already names the event and adding a type field would say it twice.",
+  "$defs": {
+    "client": {"type": "string", "minLength": 1, "maxLength": 128,
+               "description": "The client's existing stable id (the transmit lease's remote, AIS's client). The platform binds it to the caller's device token, so no device can say goodbye for another."},
+    "renew": {
+      "type": "object",
+      "required": ["client", "app"],
+      "properties": {
+        "client": {"$ref": "#/$defs/client"},
+        "app": {"type": "string", "minLength": 1},
+        "screen": {"type": "string"},
+        "holds": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true, "default": []}
+      }
+    },
+    "lease": {
+      "type": "object",
+      "required": ["leaseS", "renewEveryS"],
+      "properties": {
+        "leaseS": {"type": "integer", "minimum": 1, "examples": [30]},
+        "renewEveryS": {"type": "integer", "minimum": 1, "examples": [10]}
+      }
+    },
+    "list": {
+      "type": "object",
+      "required": ["clients"],
+      "properties": {"clients": {"type": "array", "items": {"$ref": "#/$defs/renew"}}}
+    },
+    "arrived": {"$ref": "#/$defs/renew"},
+    "moved": {"$ref": "#/$defs/renew"},
+    "gone": {
+      "type": "object",
+      "required": ["client", "why"],
+      "properties": {
+        "client": {"$ref": "#/$defs/client"},
+        "why": {"enum": ["goodbye", "expired"]}
+      }
+    }
+  }
+}

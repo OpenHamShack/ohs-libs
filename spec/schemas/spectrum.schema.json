@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openhamshack.org/schemas/spectrum.schema.json",
+  "title": "spectrum/1: the JSON control messages of an app's spectrum socket (CLIENT-UI-PLAN.md §2)",
+  "description": "One feed shape for every app's waterfall. A text frame on <base>api/spectrum/v1 is exactly one of these messages; overlay/1 frames share the socket and are described by overlay.schema.json. The binary row (§2.3: a 32-byte little-endian header, then n uint8 or uint16 columns) has no JSON Schema on purpose: it is not JSON, and its layout is fixed by the table in §2.3, so it is pinned instead by the byte-exact files in spec/vectors/spectrum/ that the Python encoder and every client's decoder must reproduce. Unknown properties are allowed so a newer server can add a field without breaking an older client; a removed or retyped field is spectrum/2.",
+  "oneOf": [
+    {"$ref": "#/$defs/subscribe"},
+    {"$ref": "#/$defs/stream"},
+    {"$ref": "#/$defs/levels"},
+    {"$ref": "#/$defs/error"}
+  ],
+  "$defs": {
+    "hz": {"type": "number", "minimum": 0},
+    "subscribe": {
+      "title": "Client to server, any time: what this client wants drawn (§2.1)",
+      "description": "The server decimates per client to at most cols columns over loHz..hiHz; it never changes the engine's FFT for a client, so nothing here can touch hardware. loHz/hiHz outside the stream's span are clipped to it, because zooming beyond the span is a tune, which is an explicit Control action and never implied by a subscription. Only stream and cols are required: the others have defaults (whole span, peak, 8-bit, the per-client fps cap of §2.4).",
+      "type": "object",
+      "required": ["type", "stream", "cols"],
+      "properties": {
+        "type": {"const": "subscribe"},
+        "stream": {"type": "string", "minLength": 1},
+        "cols": {"type": "integer", "minimum": 1},
+        "fps": {"type": "number", "exclusiveMinimum": 0},
+        "loHz": {"$ref": "#/$defs/hz"},
+        "hiHz": {"$ref": "#/$defs/hz"},
+        "reduce": {"enum": ["peak", "mean"], "default": "peak",
+                   "description": "peak: a column takes its highest bin (QO-100 NB today). mean: the power (linear) average of its bins, the 'SDR Console-like' look."},
+        "depth": {"enum": [8, 16], "default": 8,
+                  "description": "16 only for measuring clients (the dish survey); 8 bits over a 96 dB window is already finer than any colour map shows."}
+      }
+    },
+    "stream": {
+      "title": "Server to client: one stream's description, on connect and whenever it changes (§2.2)",
+      "description": "The order of stream messages on a socket numbers the streams: the binary row's stream index is that order. A row whose streamChanged flag is set follows a new rev, and a client refetches (waits for) this message before drawing it. units says what the dB numbers mean: only dBm (Flex's sweep) may be printed as dBm; dB is an engine's own uncalibrated scale; rel is Icom's 0..160 mapped to dB by its ref_db.",
+      "type": "object",
+      "required": ["type", "stream", "rev", "centreHz", "spanHz", "loHz", "hiHz", "binHz", "srcBins", "rate", "units", "calibrated"],
+      "properties": {
+        "type": {"const": "stream"},
+        "stream": {"type": "string", "minLength": 1,
+                   "description": "main, zoom (NB, Radio), pan-<id> (Flex, one per panadapter), receiver-<n> (Icom)."},
+        "rev": {"type": "integer", "minimum": 0},
+        "centreHz": {"$ref": "#/$defs/hz"},
+        "spanHz": {"type": "number", "exclusiveMinimum": 0},
+        "loHz": {"$ref": "#/$defs/hz"},
+        "hiHz": {"$ref": "#/$defs/hz"},
+        "binHz": {"type": "number", "exclusiveMinimum": 0},
+        "rbwHz": {"type": "number", "exclusiveMinimum": 0},
+        "srcBins": {"type": "integer", "minimum": 1},
+        "rate": {"type": "number", "exclusiveMinimum": 0},
+        "units": {"enum": ["dBm", "dB", "rel"]},
+        "calibrated": {"type": "boolean"},
+        "dcBins": {"type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 2, "maxItems": 2,
+                   "description": "First and last source bin of the DC spike, inclusive, so a client can mark or mask it."},
+        "pinned": {"type": "object", "properties": {"by": {"type": "array", "items": {"type": "string"}}}},
+        "label": {"type": "string"}
+      }
+    },
+    "levels": {
+      "title": "Server to client: the quantisation window and the display auto-level readings (§2.3)",
+      "description": "A row value v means dB = dbFloor + v * dbStep (0 at or below the floor, the top value at or above the top). The server moves dbFloor/dbStep only with hysteresis, so a window change is rare and the next row carries levelsChanged. The same message is repeated about once a second with the window unchanged, to carry noiseDb/peakDb for the client's display auto-levels (§4.2); every field is always present so a client never has to merge partial messages.",
+      "type": "object",
+      "required": ["type", "stream", "dbFloor", "dbStep", "noiseDb", "peakDb"],
+      "properties": {
+        "type": {"const": "levels"},
+        "stream": {"type": "string", "minLength": 1},
+        "dbFloor": {"type": "number"},
+        "dbStep": {"type": "number", "exclusiveMinimum": 0},
+        "noiseDb": {"type": "number"},
+        "peakDb": {"type": "number"}
+      }
+    },
+    "error": {
+      "title": "Server to client: a refusal (§2.4)",
+      "description": "busy: the app already serves its 8 subscribed clients. code is an open string rather than an enum so a server can add a refusal without a schema bump; a client shows an unknown code as a generic failure.",
+      "type": "object",
+      "required": ["type", "code"],
+      "properties": {
+        "type": {"const": "error"},
+        "code": {"type": "string", "minLength": 1, "examples": ["busy"]},
+        "stream": {"type": "string"},
+        "message": {"type": "string"}
+      }
+    }
+  }
+}
