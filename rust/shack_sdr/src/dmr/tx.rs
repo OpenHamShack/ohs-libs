@@ -349,3 +349,22 @@ pub fn dmr_iq(case: &DmrCase) -> Signal {
     }
     Signal { iq, voice, periods: per.len() }
 }
+
+/// What a simulator's repeater plays, over and over (about 7 s): on slot 1
+/// a talkgroup call with a talker alias, then a short message; on slot 2,
+/// overlapping it, a private call, then an encrypted one. The IDs are under
+/// country code 999, which no country has, so they name nobody.
+pub fn showcase() -> [Vec<Item>; 2] {
+    let mut tg = VoiceCall::new(9_990_001, 99, 8);
+    tg.alias = Some("MX0TST Test".into());
+    let mut private = VoiceCall::new(9_990_002, 9_990_001, 4);
+    private.group = false;
+    private.alias = Some("MX0ABC".into());
+    let mut secret = VoiceCall::new(9_990_003, 98, 3);
+    secret.encrypted = true;
+    let sms = Sms { src: 9_990_002, dst: 9_990_001, group: false, text: "Hello from the DMR simulator".into(), rate34: false };
+    [
+        vec![Item::Voice(tg), Item::Gap(12), Item::Sms(sms), Item::Gap(30)],
+        vec![Item::Gap(20), Item::Voice(private), Item::Gap(12), Item::Voice(secret), Item::Gap(8)],
+    ]
+}

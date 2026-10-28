@@ -490,7 +490,16 @@ impl Decoder for Dmr {
             out.push(now, Output::Meta { fields: self.meta() });
         }
         self.mix(now, out);
-        if std::mem::take(&mut self.needs_codec) {
+        // Said for as long as a call's voice goes unheard, not only in the
+        // blocks that held a voice burst, so the session's `why` is steady.
+        // A call that has only had its header so far opens its vocoder now.
+        for si in 0..2 {
+            if self.slots[si].call.is_some() {
+                self.ensure_vocoder(si);
+            }
+        }
+        let unheard = self.slots.iter().any(|s| s.call.as_ref().is_some_and(|c| !c.encrypted) && !s.has_vocoder());
+        if std::mem::take(&mut self.needs_codec) || unheard {
             return Err(DecodeError::NeedsCodec(CodecId::Mbelib));
         }
         Ok(())

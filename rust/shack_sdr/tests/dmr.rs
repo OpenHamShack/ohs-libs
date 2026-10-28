@@ -3,7 +3,7 @@
 //! meta, sound, the vectors a vocoder was handed - never its insides.
 //!
 //! mbelib is never ours: the test that needs it looks for the file named by
-//! SHACK_CODEC_MBELIB (a library the developer built, ~/build/mbelib) and
+//! SHACK_TEST_MBELIB (a library the developer built, ~/build/mbelib) and
 //! says it is skipping when there is none. Everything else uses a stand-in
 //! vocoder that records the 49-bit vectors it is given, which is how the
 //! FEC is held to the transmitter bit for bit.
@@ -358,8 +358,8 @@ fn audio_is_continuous_eight_khz_through_a_call() {
 
 #[test]
 fn mbelib_when_present_turns_the_voice_into_sound() {
-    let Some(path) = std::env::var_os("SHACK_CODEC_MBELIB").map(std::path::PathBuf::from).filter(|p| p.exists()) else {
-        eprintln!("skipping: SHACK_CODEC_MBELIB names no mbelib");
+    let Some(path) = std::env::var_os("SHACK_TEST_MBELIB").map(std::path::PathBuf::from).filter(|p| p.exists()) else {
+        eprintln!("skipping: SHACK_TEST_MBELIB names no mbelib");
         return;
     };
     let _g = CODEC.lock().unwrap_or_else(|e| e.into_inner());
@@ -378,7 +378,7 @@ fn mbelib_when_present_turns_the_voice_into_sound() {
     // The decoder's sound is what mbelib makes of the vectors sent, decoded
     // by a fresh mbelib directly: frame by frame the same loudness (its
     // unvoiced phases come from rand(), so never the same samples).
-    shack_sdr::codecs::use_path(CodecId::Mbelib, std::env::var_os("SHACK_CODEC_MBELIB").map(Into::into));
+    shack_sdr::codecs::use_path(CodecId::Mbelib, std::env::var_os("SHACK_TEST_MBELIB").map(Into::into));
     let mut m = shack_sdr::dmr::vocoder::Mbelib::open().expect("opens");
     shack_sdr::codecs::use_path(CodecId::Mbelib, None);
     let want: Vec<f32> = sig.voice[0].iter().flat_map(|f| m.decode(f, 0, 0)).collect();
