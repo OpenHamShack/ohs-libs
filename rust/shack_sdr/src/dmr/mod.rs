@@ -329,15 +329,20 @@ impl Dmr {
         let mut voice = None;
         match b.sync {
             Some((_, true, _)) => {
-                valid = true;
                 self.ensure_vocoder(si);
                 voice = self.slots[si].voice_burst(&bits, None, self.cc, t, &mut ev);
-                self.voice_heard(si);
+                valid = self.slots[si].call.is_some();
+                if valid {
+                    self.voice_heard(si);
+                }
             }
             Some((_, false, _)) => {
-                if let Some((cc, dt, _)) = burst::slot_type(&bits) {
+                if let Some((cc, dt, errs)) = burst::slot_type(&bits) {
                     valid = true;
-                    if self.cc != Some(cc) {
+                    // Golay(20,8) takes any word to within three bits of a
+                    // codeword a third of the time: only a clean slot type
+                    // names the channel's colour code.
+                    if errs == 0 && self.cc != Some(cc) {
                         self.cc = Some(cc);
                         self.meta_dirty = true;
                     }

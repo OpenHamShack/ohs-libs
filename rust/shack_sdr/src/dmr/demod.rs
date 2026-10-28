@@ -7,10 +7,10 @@
 //! and 2) are correlated against the discriminator's output every sample,
 //! after taking out the mean: a carrier off frequency is a DC offset there,
 //! which must not decide. A data sync is a voice sync with every symbol
-//! negated, so the sign of the same correlation finds it. Over 0.8 (of a
-//! perfect match) starts a burst; while locked only the expected place, a
-//! few samples either side, is looked at, so a voice burst's random bits
-//! cannot pass for a sync.
+//! negated, so the sign of the same correlation finds it. Over 0.9 (of a
+//! perfect match; 0.8 let a minute of noise start several calls) starts a
+//! burst; while locked only the expected place, a few samples either side,
+//! is looked at, so a voice burst's random bits cannot pass for a sync.
 //!
 //! **Levels.** Each sync is a known run of +-3 symbols: a least-squares fit
 //! of the samples to them gives the gain and the DC (the carrier's offset)
@@ -32,7 +32,7 @@ pub const ROLLOFF: f64 = 0.2;
 /// Symbols each side the RRC filters span.
 const RRC_SPAN: usize = 4;
 
-const SEARCH_THRESHOLD: f32 = 0.80;
+const SEARCH_THRESHOLD: f32 = 0.90;
 const LOCKED_THRESHOLD: f32 = 0.70;
 /// How far, in samples, a locked framer looks either side of where a sync
 /// should be.

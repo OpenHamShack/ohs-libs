@@ -314,6 +314,14 @@ impl Slot {
 
     /// A voice burst: A (with its sync, `emb` None) or B-F.
     pub fn voice_burst(&mut self, b: &Burst, emb: Option<Emb>, cc: Option<u8>, t: f64, ev: &mut Vec<Event>) -> Option<Voice> {
+        // A call is entered late only on a burst whose three AMBE frames
+        // all decode their C0 with at most one correction: noise that passed
+        // for a voice sync does that about once in five million bursts
+        // (random words fall within one bit of a Golay(24,12) codeword 0.6 %
+        // of the time), a real burst at 9 dB nearly always.
+        if self.call.is_none() && !ambe::frames_of(b).iter().all(|f| ambe::decode(f).errs_c0 <= 1) {
+            return None;
+        }
         self.last_heard = Some(t);
         let idx = match emb {
             None => 0,
