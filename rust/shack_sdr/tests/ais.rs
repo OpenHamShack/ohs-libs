@@ -5,11 +5,9 @@
 //! stuffing, an SNR and a frequency-error sweep, collisions, an empty
 //! channel, the receiver rates Radio feeds, and the CPU it costs.
 //!
-//! Real recordings: `SHACK_AIS_DIR` names a folder of `<name>.cf32` (or
-//! `.cs16`, interleaved little-endian) captures, each with `<name>.json`
-//! beside it: {"rate": S/s, "offsetHz": where 162.000 MHz is from the
-//! capture's centre, "minFrames": how many good frames it must give}.
-//! Unset, that test says so and passes. `AIS_SHOW=1` prints the sweeps.
+//! Real air: `real_air`, ignored, reads every SigMF capture in
+//! `SHACK_AIS_DIR` (its doc says what it must find). `AIS_SHOW=1` prints
+//! the sweeps.
 
 use rustfft::num_complex::Complex32;
 use serde_json::Value as J;
@@ -544,40 +542,118 @@ fn the_cpu_it_costs() {
     }
 }
 
+/// Every SigMF capture in `SHACK_AIS_DIR` (ci16_le or cf32_le, one
+/// channel), read in place in 0.1 s blocks - a five-minute capture at
+/// 2.4 MS/s is 2.9 GB, never loaded whole - with 162.000 MHz placed from
+/// its first capture's `core:frequency`.
+fn sigmf_frames(meta: &std::path::Path) -> Vec<(f64, Vec<(String, Value)>, Vec<u8>)> {
+    use std::io::Read;
+    let m: J = serde_json::from_str(&std::fs::read_to_string(meta).unwrap()).unwrap();
+    let rate = m["global"]["core:sample_rate"].as_f64().unwrap();
+    let dtype = m["global"]["core:datatype"].as_str().unwrap().to_string();
+    let freq = m["captures"][0]["core:frequency"].as_f64().unwrap();
+    let mut f = std::fs::File::open(meta.with_extension("sigmf-data")).unwrap();
+    let mut d = Ais::new();
+    d.configure(&Params::new().with("offsetHz", Value::Num(162_000_000.0 - freq))).unwrap();
+    let block = (rate / 10.0) as usize;
+    let size = if dtype == "ci16_le" { 4 } else { assert_eq!(dtype, "cf32_le"); 8 };
+    let mut buf = vec![0u8; block * size];
+    let mut sink = Sink::new();
+    let mut index = 0u64;
+    loop {
+        let mut got = 0;
+        while got < buf.len() {
+            let n = f.read(&mut buf[got..]).unwrap();
+            if n == 0 {
+                break;
+            }
+            got += n;
+        }
+        if got < size {
+            break;
+        }
+        let iq: Vec<Complex32> = if size == 4 {
+            buf[..got - got % 4].chunks_exact(4).map(|c| Complex32::new(i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0, i16::from_le_bytes([c[2], c[3]]) as f32 / 32768.0)).collect()
+        } else {
+            buf[..got - got % 8].chunks_exact(8).map(|c| Complex32::new(f32::from_le_bytes(c[..4].try_into().unwrap()), f32::from_le_bytes(c[4..].try_into().unwrap()))).collect()
+        };
+        d.feed(Input::Iq { samples: &iq, rate, t0: index as f64 / rate, index }, &mut sink).unwrap();
+        index += iq.len() as u64;
+        if got < buf.len() {
+            break;
+        }
+    }
+    println!("{}: {:?}", meta.display(), d.status().counters);
+    sink.take()
+        .into_iter()
+        .filter_map(|(t, o)| match o {
+            Output::Frame { kind: "ais", fields, raw } => Some((t, fields, raw.unwrap())),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Real air (`SHACK_AIS_DIR`, ignored without it: `cargo test --release
+/// --test ais -- --ignored`). Each SigMF capture there must give at least
+/// `SHACK_AIS_MIN` frames (default 20), nine in ten of them plausible, four
+/// in five ships' MMSIs from a European MID (2xx), every plausible position
+/// within 200 km of the Firth of Clyde, and at least one ship's name. The
+/// first capture (ohs-box, 28/10/2026 07:51, RSPdx Antenna A, 300 s at
+/// 2.4 MS/s centred on 161.700 MHz; on shack under ~/build/ais-real, never
+/// in the repository: 2.9 GB) gives 228 frames, all plausible, from 25
+/// stations - ships alongside at Troon, CalMac's FINLAGGAN, a UK base
+/// station 002320769 - in 13 s on one core; run it with SHACK_AIS_MIN=200.
 #[test]
-fn real_recordings() {
+#[ignore]
+fn real_air() {
     let Ok(dir) = std::env::var("SHACK_AIS_DIR") else {
-        println!("SHACK_AIS_DIR is not set: no real recordings decoded");
-        return;
+        panic!("set SHACK_AIS_DIR to a folder of SigMF captures");
     };
+    let least: usize = std::env::var("SHACK_AIS_MIN").ok().and_then(|v| v.parse().ok()).unwrap_or(20);
     let mut any = false;
     for e in std::fs::read_dir(&dir).unwrap() {
         let p = e.unwrap().path();
-        let ext = p.extension().and_then(|x| x.to_str()).unwrap_or("");
-        if ext != "cf32" && ext != "cs16" {
+        if p.extension().and_then(|x| x.to_str()) != Some("sigmf-meta") {
             continue;
         }
-        let meta: J = serde_json::from_str(&std::fs::read_to_string(p.with_extension("json")).unwrap()).unwrap();
-        let rate = meta["rate"].as_f64().unwrap();
-        let bytes = std::fs::read(&p).unwrap();
-        let iq: Vec<Complex32> = if ext == "cf32" {
-            bytes.chunks_exact(8).map(|c| Complex32::new(f32::from_le_bytes(c[..4].try_into().unwrap()), f32::from_le_bytes(c[4..].try_into().unwrap()))).collect()
-        } else {
-            bytes.chunks_exact(4).map(|c| Complex32::new(i16::from_le_bytes([c[0], c[1]]) as f32 / 32768.0, i16::from_le_bytes([c[2], c[3]]) as f32 / 32768.0)).collect()
-        };
-        let params = Params::new().with("offsetHz", Value::Num(meta["offsetHz"].as_f64().unwrap_or(0.0)));
-        let (frames, _) = decode(&iq, rate, params);
-        for (_, f, _) in &frames {
-            if let Some(Value::List(s)) = field(f, "nmea") {
-                for v in s {
-                    println!("{v:?}");
+        any = true;
+        let frames = sigmf_frames(&p);
+        let plausible: Vec<_> = frames.iter().filter(|(_, f, _)| field(f, "plausible") == Some(&Value::Bool(true))).collect();
+        let mut ships = std::collections::BTreeMap::new();
+        for (_, f, _) in &plausible {
+            let m = mmsi_of(f);
+            let e = ships.entry(m).or_insert((0, None::<String>, None::<(f64, f64)>));
+            e.0 += 1;
+            for k in ["shipName", "name"] {
+                if let Some(Value::Text(n)) = field(f, k) {
+                    e.1 = Some(n.clone());
                 }
             }
+            if let (Some(Value::Num(la)), Some(Value::Num(lo))) = (field(f, "lat"), field(f, "lon")) {
+                e.2 = Some((*la, *lo));
+            }
         }
-        let least = meta["minFrames"].as_u64().unwrap_or(1) as usize;
-        println!("{}: {} frames", p.display(), frames.len());
-        assert!(frames.len() >= least, "{}: {} frames, want {least}", p.display(), frames.len());
-        any = true;
+        for (m, (n, name, pos)) in &ships {
+            println!("{m:9} x{n:3} {:20} {pos:?}", name.as_deref().unwrap_or("-"));
+        }
+        for (_, f, _) in frames.iter().filter(|(_, f, _)| field(f, "plausible") != Some(&Value::Bool(true))) {
+            println!("implausible: {:?} {:?}", field(f, "implausible"), field(f, "nmea"));
+        }
+        println!("{} frames, {} plausible, {} stations", frames.len(), plausible.len(), ships.len());
+        assert!(frames.len() >= least, "{} frames, want {least}", frames.len());
+        assert!(plausible.len() * 10 >= frames.len() * 9, "{} of {} plausible", plausible.len(), frames.len());
+        // Ships' MMSIs: mostly a European MID (2xx) in British waters; a
+        // flag of convenience (Antigua's 305 on the first capture) is real too.
+        let ship_mmsis: Vec<i64> = ships.keys().copied().filter(|m| (100_000_000..800_000_000).contains(m)).collect();
+        let european = ship_mmsis.iter().filter(|m| *m / 100_000_000 == 2).count();
+        assert!(european * 5 >= ship_mmsis.len() * 4, "{european} of {} ships with a European MID", ship_mmsis.len());
+        for (m, (_, _, pos)) in &ships {
+            if let Some((la, lo)) = pos {
+                let km = ((la - 55.6) * 111.0).hypot((lo + 5.0) * 63.0);
+                assert!(km < 200.0, "{m} at {la}, {lo}: {km:.0} km from the Clyde");
+            }
+        }
+        assert!(ships.values().any(|s| s.1.is_some()), "no ship's name in {}", p.display());
     }
-    assert!(any, "no .cf32 or .cs16 captures in {dir}");
+    assert!(any, "no .sigmf-meta in {dir}");
 }
