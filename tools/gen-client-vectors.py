@@ -37,7 +37,7 @@ import jsonschema  # noqa: E402
 from referencing import Registry, Resource  # noqa: E402
 
 import shack_ui  # noqa: E402
-from shack_spectrum import LatestWins, LevelsWindow, Row, decode, encode, quantise, reduce  # noqa: E402
+from shack_spectrum import LatestWins, LevelsWindow, Row, RowError, decode, encode, quantise, reduce  # noqa: E402
 
 VEC = ROOT / "spec" / "vectors"
 SCHEMAS = ROOT / "spec" / "schemas"
@@ -101,7 +101,7 @@ def rows() -> None:
         try:
             decode(bytes(data))
             got = None
-        except ValueError as e:
+        except RowError as e:
             got = getattr(e, "code", None)
         check(got == code, f"{name} should fail with {code}, got {got}")
         cases.append({"id": name, "file": f"rows/{name}.bin", "note": note, "expect": {"error": code}})

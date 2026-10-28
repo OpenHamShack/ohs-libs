@@ -16,6 +16,8 @@ import math
 
 import numpy as np
 
+from .row import SpectrumError
+
 
 def crop(src_lo_hz: float, bin_hz: float, n_bins: int, lo_hz: float | None, hi_hz: float | None) -> tuple[int, int]:
     """The source bins [i0, i1) that cover lo_hz..hi_hz, widened to whole
@@ -42,9 +44,9 @@ def reduce(src_db, src_lo_hz: float, bin_hz: float, cols: int, lo_hz: float | No
     floor look smoother than the engine sees it.
     """
     if mode not in ("peak", "mean"):
-        raise ValueError(f"reduce must be peak or mean, not {mode!r}")
+        raise SpectrumError("reduce", f"reduce must be peak or mean, not {mode!r}")
     if cols < 1:
-        raise ValueError("cols must be at least 1")
+        raise SpectrumError("cols", "cols must be at least 1")
     src = np.asarray(src_db, dtype=np.float64)
     i0, i1 = crop(src_lo_hz, bin_hz, len(src), lo_hz, hi_hz)
     m = i1 - i0

@@ -17,10 +17,10 @@ from __future__ import annotations
 
 from .levels import LevelsWindow
 from .reduce import crop, dequantise, quantise, reduce
-from .row import Row, RowError, decode, encode
+from .row import Row, RowError, SpectrumError, decode, encode
 from .sender import LatestWins
 
 __version__ = "0.2.0"
 
-__all__ = ["LatestWins", "LevelsWindow", "Row", "RowError", "crop", "decode", "dequantise", "encode", "quantise",
+__all__ = ["LatestWins", "LevelsWindow", "Row", "RowError", "SpectrumError", "crop", "decode", "dequantise", "encode", "quantise",
            "reduce"]

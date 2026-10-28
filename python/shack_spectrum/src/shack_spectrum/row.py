@@ -29,13 +29,20 @@ STREAM_CHANGED = 0x04
 GAP = 0x08
 
 
-class RowError(ValueError):
-    """A row that must not be drawn. `code` is the name the vectors use:
-    magic, version, length."""
+class SpectrumError(Exception):
+    """Misuse of this library: a bug report for the app's developer, never
+    a sentence for an operator (so not a ValueError, which ohs-libs'
+    i18n check treats as user-facing). A client's bad subscribe is caught
+    earlier, by spectrum.schema.json, and answered with an error message."""
 
     def __init__(self, code: str, detail: str):
         super().__init__(f"{code}: {detail}")
         self.code = code
+
+
+class RowError(SpectrumError):
+    """A row that must not be drawn. `code` is the name the vectors use:
+    magic, version, length."""
 
 
 @dataclass
@@ -63,9 +70,9 @@ class Row:
 def encode(row: Row) -> bytes:
     v = np.asarray(row.values)
     if v.dtype not in (np.uint8, np.uint16):
-        raise TypeError(f"values must be uint8 or uint16, not {v.dtype}")
+        raise SpectrumError("depth", f"values must be uint8 or uint16, not {v.dtype}")
     if v.ndim != 1 or len(v) > 0xFFFF:
-        raise ValueError("values must be one row of at most 65535 columns")
+        raise SpectrumError("columns", "values must be one row of at most 65535 columns")
     head = HEADER.pack(MAGIC, VERSION, row.flags, row.stream, len(v), row.seq & 0xFFFFFFFF,
                        row.t_ms, row.lo_hz, row.col_hz)
     return head + v.astype(v.dtype.newbyteorder("<"), copy=False).tobytes()
