@@ -9,6 +9,7 @@ map layer or symbol ships with the box app and needs no client release.
     build.py   Screen, the part builders `p`, actions `A`, typed values `T`,
                item(), local(), and the downgrade for older clients
     serve.py   Req (what the client is) and serve_document (ETag, 304, 406)
+    live.py    LiveHub: channels, coalesced frames at maxHz, snaps, extras
     check.py   the validator: the rules every renderer also enforces
     ops.py     the reference op applier: what a renderer holds
     symbols.py the shared symbol sets and the client's icon names
@@ -19,13 +20,14 @@ from __future__ import annotations
 from .build import (UI_MINOR, UI_VERSION, A, Collection, Screen, T, TransmitActionError, UIError, descriptor,
                     downgrade, entry, item, local, p, part, rev, status)
 from .check import Problem, check, check_action, check_path, check_typed, iter_parts
+from .live import Channel, LiveHub, Session
 from .ops import apply_frame, apply_ops, drawn_keys, public_state, state_from_document
 from .serve import Req, Response, Unsupported, serve_document, serve_json
 from .symbols import Symbols, icon_names
 
 __version__ = "0.2.0"
 
-__all__ = ["A", "Collection", "Problem", "Req", "Response", "Screen", "Symbols", "T",
+__all__ = ["A", "Channel", "Collection", "LiveHub", "Problem", "Req", "Response", "Screen", "Session", "Symbols", "T",
            "TransmitActionError", "UIError", "UI_MINOR", "UI_VERSION", "Unsupported", "apply_frame", "apply_ops",
            "check", "check_action", "check_path", "check_typed", "descriptor", "downgrade", "drawn_keys", "entry",
            "icon_names", "item", "iter_parts", "local", "p", "part", "public_state", "rev", "serve_document",
