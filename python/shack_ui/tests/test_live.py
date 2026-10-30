@@ -270,6 +270,9 @@ class FakeSock:
     def send_text(self, text):
         self.out.put(json.loads(text))
 
+    def close(self):
+        self.inbox.put(None)
+
     def recv(self):
         m = self.inbox.get()
         return None if m is None else (0x1, m.encode())
@@ -333,3 +336,26 @@ def test_async_driver_serves_the_same():
         assert ch.sessions == []
 
     asyncio.run(run())
+
+
+def test_asking_for_a_channel_again_does_not_start_it_again():
+    hub = LiveHub(clock=lambda: 0.0)
+    ch = hub.channel("t/live", document=DOC)
+    ch.up("c", "a", label="A")
+    other = dict(DOC, rev="something-else")
+    assert hub.channel("t/live", document=other) is ch           # every request may ask
+    assert ch.rev == DOC["rev"] and "a" in ch.view()["collections"]["c"]["items"]
+    ch.reset(other)                                               # only when asked to
+    assert ch.rev == "something-else" and "a" not in ch.view()["collections"]["c"]["items"]
+
+
+def test_removing_a_channel_ends_its_clients():
+    hub = LiveHub(max_hz=50, ping_s=5)
+    hub.channel("t/live", document=DOC)
+    sock = FakeSock()
+    t = threading.Thread(target=hub.serve_blocking, args=(sock, "t/live"), daemon=True)
+    t.start()
+    next_frame(sock.out, "snap")
+    assert hub.remove("t/live") and not hub.remove("t/live")
+    t.join(timeout=3)
+    assert not t.is_alive() and hub.channels() == []

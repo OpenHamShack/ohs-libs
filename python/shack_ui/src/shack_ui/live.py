@@ -99,11 +99,15 @@ class Channel:
         self.sessions: list[Session] = []
         self._select_cbs: list[tuple[str | None, Callable]] = []
         self._event_cbs: list[Callable] = []
-        self.seed(document)
+        self.closed = False
+        self.reset(document)
 
-    def seed(self, document: dict | None) -> None:
-        """(Re)start from a document: its rev for `hello`, its state as the
-        base a snap is taken from. Live changes made before are dropped."""
+    def reset(self, document: dict | None) -> None:
+        """Start again from a document: its rev for `hello`, its state as
+        the base a snap is taken from. Every live change made before is
+        dropped and every client gets a fresh snap: for a screen whose
+        structure changed, not for each request (LiveHub.channel never
+        calls it on a channel that exists)."""
         with self.lock:
             doc = document or {"root": None}
             self.rev = doc.get("rev")
@@ -267,6 +271,16 @@ class Channel:
             s.dirty.add(("c", c, key))
             s._wake()
 
+    def close(self) -> None:
+        """No more frames: every session ends and its driver closes the
+        socket (the client reconnects, refetching the screen)."""
+        with self.lock:
+            self.closed = True
+            for s in list(self.sessions):
+                s.closed = True
+                s._wake()
+            self.sessions.clear()
+
     def connect(self, client: str | None = None, req=None, *, max_hz: float | None = None) -> Session:
         with self.lock:
             s = Session(self, client, req, max_hz or self.max_hz)
@@ -312,6 +326,7 @@ class Session:
         self.view_area: dict | None = None
         self.last_at: float | None = None
         self.wake: Callable[[], None] | None = None
+        self.closed = False
 
     def _wake(self) -> None:
         if self.wake is not None:
@@ -346,6 +361,8 @@ class Session:
         """The next frame if one may go now: the snap first, then a `p`
         of every change since, or None."""
         with self.channel.lock:
+            if self.closed:
+                return None
             w = self.wait_s(now)
             if w is None or w > 0:
                 return None
@@ -504,16 +521,25 @@ class LiveHub:
         self._lock = threading.Lock()
 
     def channel(self, name: str, document: dict | None = None) -> Channel:
-        """The channel for a screen, made on first use. A `document`
-        (Screen.json()'s) seeds it: its rev, collections, parts, charts."""
+        """The channel for a screen, made on first use and seeded from
+        `document` (Screen.json()'s) then. Calling it again, on every
+        request, is cheap and changes nothing: Channel.reset() is the
+        explicit way to start a channel again."""
         with self._lock:
             ch = self._channels.get(name)
             if ch is None:
                 ch = self._channels[name] = Channel(name, document, max_hz=self.max_hz)
-                return ch
-        if document is not None:
-            ch.seed(document)
-        return ch
+            return ch
+
+    def remove(self, name: str) -> bool:
+        """Drop a screen's channel (the feature went, the app is stopping a
+        decoder for good): its clients' sockets close. False if none."""
+        with self._lock:
+            ch = self._channels.pop(name, None)
+        if ch is None:
+            return False
+        ch.close()
+        return True
 
     def channels(self) -> list[str]:
         return list(self._channels)
@@ -538,7 +564,7 @@ class LiveHub:
             last = self.clock()
             try:
                 sock.send_text(_encode(s.hello()))
-                while not closed.is_set():
+                while not closed.is_set() and not s.closed:
                     now = self.clock()
                     f = s.frame(now)
                     if f is not None:
@@ -551,7 +577,7 @@ class LiveHub:
                     with cond:
                         # Checked again under the lock wake() takes, so a
                         # change between frame() and here is never missed.
-                        if closed.is_set():
+                        if closed.is_set() or s.closed:
                             break
                         w = s.wait_s(self.clock())
                         if w == 0.0:
@@ -559,7 +585,10 @@ class LiveHub:
                         timeout = self.ping_s - (now - last)
                         cond.wait(timeout=max(0.001, timeout if w is None else min(timeout, w)))
             except (OSError, ConnectionError):
-                closed.set()
+                pass
+            closed.set()
+            if s.closed and hasattr(sock, "close"):
+                sock.close()            # unblocks the reader's recv()
 
         t = threading.Thread(target=sender, name=f"shack-ui-live-{name}", daemon=True)
         t.start()
@@ -593,7 +622,7 @@ class LiveHub:
         async def sender():
             last = self.clock()
             await send(_encode(s.hello()))
-            while True:
+            while not s.closed:
                 now = self.clock()
                 f = s.frame(now)
                 if f is not None:
@@ -612,6 +641,8 @@ class LiveHub:
                     await asyncio.wait_for(ev.wait(), timeout=max(0.001, timeout if w is None else min(timeout, w)))
                 except asyncio.TimeoutError:
                     pass
+            if hasattr(ws, "close"):
+                await ws.close()        # the channel went: end the reader too
 
         task = asyncio.create_task(sender())
         try:
