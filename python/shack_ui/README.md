@@ -7,14 +7,18 @@ with data; the OpenHamShack client draws it natively and keeps it current
 from a live socket of patch ops. A new screen, map layer or symbol ships
 with the box app and needs no client release.
 
-This replaces ui/1 (CLIENT-UI-PLAN.md §5), which no client ever drew. Pure
-Python, standard library only at run time (jsonschema for the tests).
+This replaces ui/1 (CLIENT-UI-PLAN.md §5), which no client ever drew; its
+wheel is 0.3.0.dev1 so it never shares a number with ui/1's 0.2.0. Pure
+Python, standard library only at run time (jsonschema for the tests and
+`schema_errors`).
 
 | Module | What |
 |---|---|
 | `build` | `Screen`; the part builders `p.*` (every part of §3); actions `A.*`; typed values `T.*`; `item()`, `local()`; `descriptor()`, `entry()`, `status()` for the launcher; `downgrade()` for older clients |
 | `serve` | `Req.from_headers()`: what the client is (form, window, ui minor, language, client id, device, level); `serve_document()`: 406 / 304 / 200 with `ETag`, for any web framework |
-| `live` | `LiveHub`, its channels and sessions: coalesced frames at the client's `maxHz`, snaps, per-client extras, pings; `serve_blocking` (http.server sockets) and async `serve` (aiohttp) |
+| `live` | `LiveHub`, its channels and sessions: a document per rev, coalesced frames at the client's `maxHz`, snaps, per-client extras (`clients`, `refresh`), snap poll answers, pings; `serve_blocking` (http.server sockets) and async `serve` (aiohttp) |
+| `holds` | `Holds`: a hold whose stop needs the id its start returned, kept by the box on `ui/v2/hold/<name>` |
+| `schema` | `schema()`, the packaged `ui2.schema.json`; `schema_errors(value, ref)` |
 | `check` | the validator: `check(doc)` returns every `Problem` (code, where, message) in document order; the rules every renderer enforces too |
 | `ops` | the reference op applier: `state_from_document`, `apply_ops`, `apply_frame`, `drawn_keys`, `public_state`; for an app's tests to assert what a client would see |
 | `symbols` | `Symbols.load("aircraft" \| "ships" \| "aprs" \| "sondes" \| "station")`, `.only()`, `.for_aprs("/>")`; `icon_names()`, the client's icon set |
@@ -67,18 +71,30 @@ Then the moving data, from the app's own callbacks (any thread):
 
 ```python
 hub = LiveHub()                                            # one per app process
-feed = hub.channel("radio/aircraft", document=aircraft(Req()).json())
+feed = hub.channel("radio/aircraft", document=aircraft(Req()).json())   # made once; later calls change nothing
 feed.up("aircraft", icao, lat=lat, lon=lon, rot=track, sub=alt_text, at=heard_iso)
 feed.push("aircraft", icao, "trail", [[lat, lon, tone]], max=30)
 feed.order("aircraft", nearest_first)                      # sent only when it changes
 feed.rm("aircraft", icao)
 feed.set("status", text=_("Receiving"), tone="good")
 feed.on_select(lambda client, key: client.up("aircraft", key, photo=photo_for(key)), sel="aircraft")
+feed.refresh("aircraft", icao)       # its photo arrived: run on_select again for whoever has it selected
 
-# GET ui/v2/live/radio/aircraft, after the upgrade:
-hub.serve_blocking(sock, "radio/aircraft", Req.from_headers(headers))   # Radio's ohscore.server.ws
-await hub.serve(ws, "radio/aircraft", Req.from_headers(request.headers)) # aiohttp
+# GET ui/v2/live/radio/aircraft, after the upgrade. `document` is the one
+# this client fetched (the same build for its Req), so the hello carries
+# its rev: a TV and a phone have different documents and different revs.
+req = Req.from_headers(headers)
+hub.serve_blocking(sock, "radio/aircraft", req, document=aircraft(req).json())   # Radio's ohscore.server.ws
+await hub.serve(ws, "radio/aircraft", req, document=aircraft(req).json())        # aiohttp
 ```
+
+A channel lives as long as the process unless `hub.remove(name)` drops it
+(its clients' sockets close); `Channel.reset(document)` starts one again,
+dropping its live data. A polled screen answers its poll with
+`poll_answer(collections, parts, every_s=)`, or `feed.poll_answer(rev)`
+from a channel: both are snaps (`"snap": true`), the whole state, applied
+to the document's state, so an item no longer listed is gone with nothing
+remembered per client.
 
 And in the app's tests, what a client would see:
 
@@ -129,6 +145,17 @@ is pushed, comes back or reconnects, and `stop` when it is popped or goes
 to the background; it renews every held name through presence, or
 repeats `start` every `renew_s` for an app without presence. A refused
 start's error `actions` become the remedy buttons of the hold banner.
+
+When the stop needs what the start returned (a decoder session's id),
+let `Holds` keep it rather than the client:
+
+```python
+holds = Holds()
+holds.define("dmr", start=lambda client, req: start_dmr(client)["id"], stop=stop_session)
+s.hold("dmr", *holds.actions("dmr"))                  # POST / DELETE ui/v2/hold/dmr
+resp = holds.answer(method, "dmr", client, req)       # the app's route
+holds.gone(client)                                    # presence says it went
+```
 
 ## Transmit-safety summary
 
