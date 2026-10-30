@@ -1,0 +1,28 @@
+{
+ "set": "station",
+ "description": "The receiving station's own mark (ring and dot), verbatim from screens-fixtures/screens/radio/aircraft.json symbols.station.",
+ "symbols": {
+  "station": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      7
+     ],
+     "fill": "none",
+     "stroke": "ink",
+     "w": 2
+    },
+    {
+     "circle": [
+      12,
+      12,
+      4
+     ],
+     "fill": "ink"
+    }
+   ]
+  }
+ }
+}

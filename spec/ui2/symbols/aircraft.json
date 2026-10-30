@@ -1,0 +1,92 @@
+{
+ "set": "aircraft",
+ "description": "The seven aircraft marks (jet, heavy, light, rotor, other, ground, airport), verbatim from the contract fixture screens-fixtures/screens/radio/aircraft.json (symbols), which was converted from the client's AircraftUi.kt:257-358; the station mark is in station.json.",
+ "symbols": {
+  "jet": {
+   "paths": [
+    {
+     "d": "M12 1 L13.2 8 L21 12.5 L21 14 L13.2 12 L13 18 L15.5 20 L15.5 21.5 L12 20.6 L8.5 21.5 L8.5 20 L11 18 L10.8 12 L3 14 L3 12.5 L10.8 8 Z",
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1
+    }
+   ]
+  },
+  "heavy": {
+   "scale": 1.3,
+   "paths": [
+    {
+     "d": "M12 1 L13.2 8 L21 12.5 L21 14 L13.2 12 L13 18 L15.5 20 L15.5 21.5 L12 20.6 L8.5 21.5 L8.5 20 L11 18 L10.8 12 L3 14 L3 12.5 L10.8 8 Z",
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1
+    }
+   ]
+  },
+  "light": {
+   "paths": [
+    {
+     "d": "M12 3 L13 8 L21 9 L21 10.5 L13 11 L12.6 17 L15 18 L15 19.3 L12 19 L9 19.3 L9 18 L11.4 17 L11 11 L3 10.5 L3 9 L11 8 Z",
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1
+    }
+   ]
+  },
+  "rotor": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      9
+     ],
+     "fill": "none",
+     "stroke": "tone",
+     "w": 1
+    },
+    {
+     "d": "M12 5 L13.5 9 L13.5 15 L12.6 21 L11.4 21 L10.5 15 L10.5 9 Z",
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1
+    }
+   ]
+  },
+  "other": {
+   "paths": [
+    {
+     "d": "M12 3 L19 20 L12 16 L5 20 Z",
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1
+    }
+   ]
+  },
+  "ground": {
+   "scale": 0.75,
+   "paths": [
+    {
+     "d": "M12 1 L13.2 8 L21 12.5 L21 14 L13.2 12 L13 18 L15.5 20 L15.5 21.5 L12 20.6 L8.5 21.5 L8.5 20 L11 18 L10.8 12 L3 14 L3 12.5 L10.8 8 Z",
+     "fill": "none",
+     "stroke": "tone",
+     "w": 1.5
+    }
+   ]
+  },
+  "airport": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      5
+     ],
+     "fill": "none",
+     "stroke": "tone",
+     "w": 2
+    }
+   ]
+  }
+ }
+}

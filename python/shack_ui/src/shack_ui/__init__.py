@@ -8,14 +8,16 @@ map layer or symbol ships with the box app and needs no client release.
 
     check.py   the validator: the rules every renderer also enforces
     ops.py     the reference op applier: what a renderer holds
+    symbols.py the shared symbol sets and the client's icon names
 """
 
 from __future__ import annotations
 
 from .check import Problem, check, check_action, check_path, check_typed, iter_parts
 from .ops import apply_frame, apply_ops, drawn_keys, public_state, state_from_document
+from .symbols import Symbols, icon_names
 
 __version__ = "0.2.0"
 
 __all__ = ["Problem", "apply_frame", "apply_ops", "check", "check_action", "check_path", "check_typed",
-           "drawn_keys", "iter_parts", "public_state", "state_from_document"]
+           "Symbols", "drawn_keys", "icon_names", "iter_parts", "public_state", "state_from_document"]

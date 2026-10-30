@@ -1,0 +1,86 @@
+{
+ "set": "ships",
+ "description": "Ship marks for the traffic map, converted from ShipsMapView.kt:56-107 (ShipsPainter.mark; map px scaled by 1/0.6 into the box, the arrow at its details-panel size). Category colour is the item's tone, not in the symbol; the client's soft shadow and the base/aton rotation are the renderer's. Distress: the client's white backing ring is drawn ink here (no white paint).",
+ "symbols": {
+  "vessel": {
+   "paths": [
+    {
+     "d": "M12 0.5 L20 23.5 L12 18.5 L4 23.5 Z",
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 2.33
+    }
+   ]
+  },
+  "vesselStopped": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      6.67
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 2
+    }
+   ]
+  },
+  "baseStation": {
+   "paths": [
+    {
+     "d": "M4.5 4.5 L19.5 4.5 L19.5 19.5 L4.5 19.5 Z",
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 2
+    }
+   ]
+  },
+  "aton": {
+   "paths": [
+    {
+     "d": "M12 1.39 L22.61 12 L12 22.61 L1.39 12 Z",
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 2
+    }
+   ]
+  },
+  "distress": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      8.8
+     ],
+     "fill": "none",
+     "stroke": "ink",
+     "w": 5.5
+    },
+    {
+     "circle": [
+      12,
+      12,
+      8.8
+     ],
+     "fill": "none",
+     "stroke": "tone",
+     "w": 2.75
+    },
+    {
+     "d": "M6.72 6.72 L17.28 17.28",
+     "fill": "none",
+     "stroke": "tone",
+     "w": 2.75
+    },
+    {
+     "d": "M6.72 17.28 L17.28 6.72",
+     "fill": "none",
+     "stroke": "tone",
+     "w": 2.75
+    }
+   ]
+  }
+ }
+}

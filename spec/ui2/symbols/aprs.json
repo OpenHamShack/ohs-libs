@@ -1,0 +1,646 @@
+{
+ "set": "aprs",
+ "description": "APRS station marks: a tone disc with the family glyph in ink, converted from AprsUi.kt:192-295 (AprsPainter.mark and aprsGlyph, disc r 9 and glyph box scaled 11/9 into the 24 box); table is AprsSymbols.glyph (shack/AprsMap.kt:44-65) expanded to table+code keys, with any other code, overlay character or missing symbol being `default` (a dot, AprsUi.kt:195). Not in the symbols: the course arrow (rot), the dashed/translucent disc for a station not heard direct, the disc's soft shadow; digipeater arcs are single cubics, line caps are butt not round.",
+ "table": {
+  "/!": "emergency",
+  "/#": "digi",
+  "/&": "igate",
+  "/'": "aircraft",
+  "/-": "house",
+  "/<": "bike",
+  "/=": "truck",
+  "/>": "car",
+  "/A": "emergency",
+  "/C": "boat",
+  "/O": "balloon",
+  "/P": "emergency",
+  "/R": "truck",
+  "/S": "boat",
+  "/T": "truck",
+  "/U": "truck",
+  "/X": "aircraft",
+  "/Y": "boat",
+  "/[": "person",
+  "/^": "aircraft",
+  "/_": "weather",
+  "/`": "antenna",
+  "/a": "emergency",
+  "/b": "bike",
+  "/e": "person",
+  "/f": "emergency",
+  "/g": "person",
+  "/j": "truck",
+  "/k": "truck",
+  "/r": "antenna",
+  "/s": "boat",
+  "/u": "truck",
+  "/v": "truck",
+  "/y": "antenna",
+  "\\#": "digi",
+  "\\&": "igate",
+  "\\'": "aircraft",
+  "\\-": "house",
+  "\\<": "bike",
+  "\\>": "car",
+  "\\O": "balloon",
+  "\\U": "truck",
+  "\\X": "aircraft",
+  "\\^": "aircraft",
+  "\\_": "weather",
+  "\\`": "antenna",
+  "\\a": "aircraft",
+  "\\b": "bike",
+  "\\k": "truck",
+  "\\r": "antenna",
+  "\\u": "truck",
+  "\\v": "truck",
+  "\\y": "house"
+ },
+ "tableNote": "Keys are the APRS table character then the code ('/' primary, '\\\\' alternate); an overlay character counts as the alternate table. byCategory fallback (AprsMap.kt:99-106): mobile car, weather weather, digi digi, igate igate, station house, object default.",
+ "symbols": {
+  "car": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "d": "M7.07 11.62 H16.93 Q18.06 11.62 18.06 12.76 V14.27 Q18.06 15.41 16.93 15.41 H7.07 Q5.94 15.41 5.94 14.27 V12.76 Q5.94 11.62 7.07 11.62 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M8.21 11.62 L9.73 8.59 L14.27 8.59 L16.17 11.62 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "circle": [
+      8.59,
+      15.79,
+      1.67
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "circle": [
+      15.41,
+      15.79,
+      1.67
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    }
+   ]
+  },
+  "truck": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "d": "M5.94 8.21 L13.14 8.21 L13.14 14.65 L5.94 14.65 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M13.89 10.11 L16.17 10.11 L18.06 12.76 L18.06 14.65 L13.89 14.65 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "circle": [
+      8.59,
+      15.41,
+      1.52
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "circle": [
+      15.41,
+      15.41,
+      1.52
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    }
+   ]
+  },
+  "bike": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "circle": [
+      8.21,
+      14.27,
+      2.42
+     ],
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    },
+    {
+     "circle": [
+      15.79,
+      14.27,
+      2.42
+     ],
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    },
+    {
+     "d": "M8.21 14.27 L12 10.86",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    },
+    {
+     "d": "M12 10.86 L15.79 14.27",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    },
+    {
+     "d": "M12 10.86 L10.86 8.21",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    },
+    {
+     "d": "M9.73 8.21 L12.38 8.21",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    },
+    {
+     "d": "M15.03 8.59 L15.79 14.27",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    }
+   ]
+  },
+  "person": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "circle": [
+      12,
+      7.45,
+      1.82
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M12 9.58 L12 13.89",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.67
+    },
+    {
+     "d": "M8.97 11.24 L15.03 11.24",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    },
+    {
+     "d": "M12 13.89 L9.73 18.06",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    },
+    {
+     "d": "M12 13.89 L14.27 18.06",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.29
+    }
+   ]
+  },
+  "house": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "d": "M5.94 12 L12 6.7 L18.06 12 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M7.83 12 L16.17 12 L16.17 17.68 L7.83 17.68 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M10.86 13.89 L13.14 13.89 L13.14 17.68 L10.86 17.68 Z",
+     "fill": "tone",
+     "stroke": "none"
+    }
+   ]
+  },
+  "weather": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "circle": [
+      9.35,
+      11.62,
+      2.58
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "circle": [
+      12.38,
+      9.88,
+      3.03
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "circle": [
+      15.03,
+      11.77,
+      2.27
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M6.77 11.62 L17.3 11.62 L17.3 14.2 L6.77 14.2 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M9.73 15.79 L8.97 18.06",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    },
+    {
+     "d": "M12.38 15.79 L11.62 18.06",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    },
+    {
+     "d": "M15.03 15.79 L14.27 18.06",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    }
+   ]
+  },
+  "digi": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "d": "M8.97 18.06 L12 10.48 L15.03 18.06 Z",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.7
+    },
+    {
+     "d": "M10.48 14.65 L13.52 14.65",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 0.99
+    },
+    {
+     "circle": [
+      12,
+      9.12,
+      1.29
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M14.39 5.71 C15.19 6.27 15.77 7.1 16.03 8.04",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    },
+    {
+     "d": "M7.97 8.04 C8.23 7.1 8.81 6.27 9.61 5.71",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    },
+    {
+     "d": "M15.69 3.84 C16.93 4.71 17.83 5.99 18.22 7.45",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    },
+    {
+     "d": "M5.78 7.45 C6.17 5.99 7.07 4.71 8.31 3.84",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    }
+   ]
+  },
+  "igate": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "circle": [
+      12,
+      12,
+      5.46
+     ],
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.21
+    },
+    {
+     "d": "M8.97 10.33 L15.03 10.33",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.14
+    },
+    {
+     "d": "M15.03 10.33 L13.52 8.82",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.14
+    },
+    {
+     "d": "M15.03 10.33 L13.52 11.85",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.14
+    },
+    {
+     "d": "M15.03 13.67 L8.97 13.67",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.14
+    },
+    {
+     "d": "M8.97 13.67 L10.48 12.15",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.14
+    },
+    {
+     "d": "M8.97 13.67 L10.48 15.18",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.14
+    }
+   ]
+  },
+  "aircraft": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "d": "M12 5.94 L12 18.06",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.82
+    },
+    {
+     "d": "M12 10.86 L5.94 14.27 L5.94 15.64 L12 14.12 L18.06 15.64 L18.06 14.27 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M9.35 17.46 L14.65 17.46",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.21
+    }
+   ]
+  },
+  "boat": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "d": "M5.94 13.89 L18.06 13.89 L15.79 17.68 L8.21 17.68 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M12 13.89 L12 6.32",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    },
+    {
+     "d": "M12.91 6.7 L17.3 12.38 L12.91 12.38 Z",
+     "fill": "ink",
+     "stroke": "none"
+    }
+   ]
+  },
+  "balloon": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "circle": [
+      12,
+      10.11,
+      4.17
+     ],
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M9.73 13.89 L10.86 15.79",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 0.83
+    },
+    {
+     "d": "M14.27 13.89 L13.14 15.79",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 0.83
+    },
+    {
+     "d": "M10.48 15.79 L13.52 15.79 L13.52 18.06 L10.48 18.06 Z",
+     "fill": "ink",
+     "stroke": "none"
+    }
+   ]
+  },
+  "emergency": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "d": "M10.26 6.32 L13.74 6.32 L13.74 17.68 L10.26 17.68 Z",
+     "fill": "ink",
+     "stroke": "none"
+    },
+    {
+     "d": "M6.32 10.26 L17.68 10.26 L17.68 13.74 L6.32 13.74 Z",
+     "fill": "ink",
+     "stroke": "none"
+    }
+   ]
+  },
+  "antenna": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      11
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    },
+    {
+     "d": "M12 5.94 L12 18.06",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.21
+    },
+    {
+     "d": "M8.21 8.21 L15.79 8.21",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    },
+    {
+     "d": "M9.12 12 L14.88 12",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    },
+    {
+     "d": "M10.03 15.79 L13.97 15.79",
+     "fill": "none",
+     "stroke": "ink",
+     "w": 1.06
+    }
+   ]
+  },
+  "default": {
+   "paths": [
+    {
+     "circle": [
+      12,
+      12,
+      6.72
+     ],
+     "fill": "tone",
+     "stroke": "ink",
+     "w": 1.71
+    }
+   ]
+  }
+ }
+}

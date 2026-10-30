@@ -1,0 +1,186 @@
+{
+ "description": "The client's closed icon-name set (SCREENS.md 3.2 icon): launcher tile icons (EntryIcon, launcher/Entries.kt:40, with the box-side names ship, satellite, balloon, dish, rig, tv for SHIPS, WXSAT, SONDE, QO100/CLASSIC, ICOM/FLEX, DATV) and the control glyphs the client draws today (DabIcon, speaker, back, more, stepper, tile actions). Android paths are relative to the OpenHamShack Remote repo; EntryIcon APRS/SONDE/DMR/FT8 exist on the tv-launcher branch, not yet on main. An unknown name draws no icon.",
+ "version": 1,
+ "icons": [
+  {
+   "name": "aircraft",
+   "meaning": "ADS-B aircraft; launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:368 (tile_aircraft art; EntryIcon.AIRCRAFT launcher/Entries.kt:40)"
+  },
+  {
+   "name": "aprs",
+   "meaning": "APRS; launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:370 (tile_aprs art)"
+  },
+  {
+   "name": "back",
+   "meaning": "Back / leave the screen (chevron left)",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/RadioParts.kt:564-568"
+  },
+  {
+   "name": "balloon",
+   "meaning": "Radiosonde; launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:371 (EntryIcon.SONDE, tile_sonde art)"
+  },
+  {
+   "name": "chevronLeft",
+   "meaning": "Stepper arrow, previous value",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioUi.kt:1729,1739"
+  },
+  {
+   "name": "chevronRight",
+   "meaning": "Stepper arrow, next value",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioUi.kt:1732,1739"
+  },
+  {
+   "name": "dab",
+   "meaning": "DAB radio; launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:366 (tile_dab art)"
+  },
+  {
+   "name": "dish",
+   "meaning": "QO-100 / satellite dish; launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:384,417 (dishIcon; EntryIcon.QO100, CLASSIC)"
+  },
+  {
+   "name": "dmr",
+   "meaning": "DMR; launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:372 (tile_dmr art)"
+  },
+  {
+   "name": "favourite",
+   "meaning": "Favourite, not set (outline heart)",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:531-540 (DabIcon.HEART)"
+  },
+  {
+   "name": "favouriteOn",
+   "meaning": "Favourite, set (filled heart)",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:531-540 (DabIcon.HEART_ON)"
+  },
+  {
+   "name": "ft8",
+   "meaning": "FT8 / digital modes; launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:373 (tile_ft8 art)"
+  },
+  {
+   "name": "info",
+   "meaning": "Information",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:580 (DabIcon.INFO)"
+  },
+  {
+   "name": "levelBars",
+   "meaning": "Signal level bars; the station playing",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/RadioStations.kt:351-360 (LevelBarsTv)"
+  },
+  {
+   "name": "list",
+   "meaning": "List",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:571 (DabIcon.LIST)"
+  },
+  {
+   "name": "lock",
+   "meaning": "Padlock: a locked or private thing",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DmrPanel.kt:236-244 (Padlock)"
+  },
+  {
+   "name": "logbook",
+   "meaning": "Logbook; in fixtures only, no client drawing today",
+   "android": "none today (named by screens-fixtures)"
+  },
+  {
+   "name": "moon",
+   "meaning": "Night / dim mode",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:557 (DabIcon.MOON)"
+  },
+  {
+   "name": "more",
+   "meaning": "More: the three-dot overflow menu",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/RadioPhone.kt:268-272"
+  },
+  {
+   "name": "mute",
+   "meaning": "Speaker crossed out",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/RadioParts.kt:506-540 (SpeakerIcon muted); ui/DabRadioLook.kt:542 (DabIcon.MUTED)"
+  },
+  {
+   "name": "next",
+   "meaning": "Skip to next",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:525 (DabIcon.NEXT)"
+  },
+  {
+   "name": "pair",
+   "meaning": "Pair with a box (tile action)",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:390,453 (pairIcon)"
+  },
+  {
+   "name": "pause",
+   "meaning": "Pause",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:576 (DabIcon.PAUSE)"
+  },
+  {
+   "name": "picture",
+   "meaning": "Picture / image; in fixtures only, no client drawing today",
+   "android": "none today (named by screens-fixtures)"
+  },
+  {
+   "name": "play",
+   "meaning": "Play",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:526 (DabIcon.PLAY)"
+  },
+  {
+   "name": "previous",
+   "meaning": "Skip to previous",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:524 (DabIcon.PREVIOUS)"
+  },
+  {
+   "name": "radio",
+   "meaning": "Radio (app, entry); launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:383,405 (radioIcon; EntryIcon.RADIO)"
+  },
+  {
+   "name": "record",
+   "meaning": "Record",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:567 (DabIcon.RECORD)"
+  },
+  {
+   "name": "retry",
+   "meaning": "Retry (tile action)",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:392,461 (retryIcon)"
+  },
+  {
+   "name": "rig",
+   "meaning": "Transceiver; launcher tile (Icom, Flex)",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:386,436 (rigIcon; EntryIcon.ICOM, FLEX)"
+  },
+  {
+   "name": "satellite",
+   "meaning": "Weather satellites; launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:369 (EntryIcon.WXSAT, tile_wxsat art)"
+  },
+  {
+   "name": "ship",
+   "meaning": "AIS ships; launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:367 (EntryIcon.SHIPS, tile_ships art)"
+  },
+  {
+   "name": "stop",
+   "meaning": "Stop",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:530 (DabIcon.STOP)"
+  },
+  {
+   "name": "tv",
+   "meaning": "Digital TV (DATV); launcher tile",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:385,427 (tvIcon; EntryIcon.DATV)"
+  },
+  {
+   "name": "unknown",
+   "meaning": "An app this client cannot show",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:387,445 (unknownIcon; EntryIcon.UNKNOWN)"
+  },
+  {
+   "name": "volume",
+   "meaning": "Speaker, sound on",
+   "android": "android/app/src/main/java/com/openhamshack/remote/ui/RadioParts.kt:506-540 (SpeakerIcon); ui/DabRadioLook.kt:542 (DabIcon.SPEAKER)"
+  }
+ ]
+}

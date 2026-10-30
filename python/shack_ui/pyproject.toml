@@ -22,3 +22,9 @@ test = ["pytest>=8", "jsonschema>=4.18"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+# Copies of spec/ui2/ (the symbol sets and the client's icon names), read
+# at run time by shack_ui.symbols; a wheel cannot reach the repository.
+# tools/gen-ui2-vectors.py refreshes them and a test fails if they differ.
+shack_ui = ["data/ui2/*.json", "data/ui2/symbols/*.json"]
