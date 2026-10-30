@@ -4,6 +4,15 @@
 
 First M1 cut.
 
+- shack-ui moves to ui/2, server-driven screens (openhamshack
+  docs/contract/SCREENS.md, 30/10/2026), and ui/1 goes: no client ever
+  drew it. `Screen` and the `p`/`A`/`T` builders, `serve_document`,
+  `LiveHub`, the validator and op applier (from the contract's fixture
+  tool), the shared symbol sets in `spec/ui2/`, `spec/schemas/ui2.schema.json`
+  and `spec/vectors/ui2/` for the Kotlin and Swift renderers. Radio's
+  ui/1 screens (openhamshack-nb `ohsradio/screens.py`, `ohscore/server/uiv1.py`)
+  stop importing on their next ohs-libs pin and move to ui/2 then.
+
 - shack-rig and shack-packet, for Packet Radio 0.3.2 (21/10/2026, held):
   following the radio's own VFO. `shack_rig.datasetup` rule 6: a setting
   the operator changed on the radio during a session is left as they set
