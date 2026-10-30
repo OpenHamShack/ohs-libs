@@ -58,6 +58,11 @@
    "android": "android/app/src/main/java/com/openhamshack/remote/ui/DabRadioLook.kt:531-540 (DabIcon.HEART_ON)"
   },
   {
+   "name": "fm",
+   "meaning": "FM broadcast radio (Radio's FM screen and entry); no client draws it yet: one is drawn beside dab before the switch",
+   "android": "none today (named by Radio's ui/2 FM screen, openhamshack-nb)"
+  },
+  {
    "name": "ft8",
    "meaning": "FT8 / digital modes; launcher tile",
    "android": "android/app/src/main/java/com/openhamshack/remote/ui/Launcher.kt:373 (tile_ft8 art)"

@@ -93,6 +93,8 @@ def fm(req: Req) -> Screen:
                     steps=[100_000], step=100_000, min=87_500_000, max=108_000_000),
         p.text("", id="rds", style="title", fit=True),
         p.list("stations", from_="stations", keep_focus=True,
+               empty=p.empty("No stations yet: scan the band", icon="fm",
+                             action=A.post("api/scan", {"band": "fm"}, level="control", text="Scan")),
                template=p.row(p.text(item("freqText"), style="numeric", w=90), p.text(item("name"), weight=1),
                               p.badge(item("rdsText"), style="outline")),
                on_activate=A.post("api/set", {"changes": {"vfo": item("hz"), "mode": "wfm"}}, level="control")),
