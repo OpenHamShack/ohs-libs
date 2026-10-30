@@ -393,7 +393,7 @@ def opscases() -> None:
          lambda s: s["drawn"]["c"] == ["b", "a"] and s["collections"]["c"]["order"] == ["b", "nope", "a"],
          "kept as sent; a key with no item is not drawn")
     case("order-partial", [[{"op": "order", "c": "c", "keys": ["b"]}]],
-         lambda s: s["drawn"]["c"] == ["b", "a"], "items missing from `order` are drawn last, in item order")
+         lambda s: s["drawn"]["c"] == ["b", "a"], "items missing from `order` are drawn last, sorted by key")
     case("push-keeps-the-last-max", [[{"op": "push", "c": "c", "key": "a", "f": "trail", "v": [[i, i]], "max": 3}
                                       for i in range(5)],
                                      [{"op": "push", "c": "c", "key": "nobody", "f": "trail", "v": [[0, 0]]}]],
@@ -445,7 +445,7 @@ def opscases() -> None:
                        "...} for a socket frame) and must reach `state`: id'd parts flat with their own "
                        "properties (children, child, template, empty, fallback and overlay left out; a tabs "
                        "part's tabs without their child), collections as held, `drawn` (each collection's keys "
-                       "as drawn: those in `order` that have an item, then the rest in item order), chart "
+                       "as drawn: those in `order` that have an item, then the rest sorted by key), chart "
                        "points per mark, toasts and reload. A snap frame applies to the document's own state.",
         "version": 1, "base": OPS_DOC}, cases)
 

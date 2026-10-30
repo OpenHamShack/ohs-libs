@@ -63,12 +63,17 @@ def state_from_document(doc: dict) -> dict:
 
 def drawn_keys(state: dict, c: str) -> list:
     """The keys a renderer draws for collection `c`, in order (§2.2): those
-    in `order` that have an item, then any item missing from `order`."""
+    in `order` that have an item, then any item missing from `order`,
+    sorted by key. Sorted, not in the order the items object lists them:
+    Swift's JSON objects keep no order, and a box that removed and
+    re-added an item between two frames cannot say where it now sits, so
+    "object order" would differ between a client and the box, and between
+    platforms."""
     coll = state["collections"].get(c) or {"items": {}, "order": []}
     items, order = coll["items"], coll["order"]
     first = [k for k in order if k in items]
     seen = set(first)
-    return first + [k for k in items if k not in seen]
+    return first + sorted(k for k in items if k not in seen)
 
 
 def _merge(target: dict, fields: dict):

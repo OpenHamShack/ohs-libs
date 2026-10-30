@@ -58,8 +58,8 @@ beside them (SCREENS.md §4.3, item 3). The vectors write that as:
 - `collections`: items and `order` as held; a collection's `filter` is
   not state.
 - `drawn`: per collection, the keys in `order` that have an item, then
-  every other item in the order the items object lists them (JSON object
-  order, which every parser used here keeps).
+  every other item sorted by key (code point order). Not JSON object
+  order: Swift's parser keeps none, and nothing a box sends can pin it.
 - `charts`: per chart id, the points of each mark by index.
 - `toasts`: every toast op, in order; `reload`: whether a reload op came.
 
