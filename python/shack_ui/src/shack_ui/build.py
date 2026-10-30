@@ -296,6 +296,15 @@ class A:
 
 # ---------------------------------------------------------------- parts
 
+_UNSET: Any = type("Unset", (), {"__repr__": lambda self: "UNSET"})()
+
+
+def _opt(name: str, v: Any) -> dict:
+    """An optional main value: left out when not given, kept when given as
+    None (a part the box patches later starts with a null value)."""
+    return {} if v is _UNSET else {name: v}
+
+
 def part(type_: str, **props) -> dict:
     """Any part by its type, the escape hatch for a type newer than this
     package (give it `since=` and a `fallback=`)."""
@@ -393,13 +402,13 @@ class p:
         return part("field", label=label, value=value, **props)
 
     @staticmethod
-    def badge(text: Any = None, **props) -> dict:
-        return part("badge", **({"text": text} if text is not None else {}), **props)
+    def badge(text: Any = _UNSET, **props) -> dict:
+        return part("badge", **_opt("text", text), **props)
 
     @staticmethod
-    def icon(name: str | None = None, **props) -> dict:
+    def icon(name: str = _UNSET, **props) -> dict:
         """`name` from the client's icon set, or `sym=` from the document's symbols."""
-        return part("icon", **({"name": name} if name is not None else {}), **props)
+        return part("icon", **_opt("name", name), **props)
 
     @staticmethod
     def image(src: Any, **props) -> dict:
@@ -414,8 +423,9 @@ class p:
         return part("progress", value=value, **props)
 
     @staticmethod
-    def meter(value: Any = None, **props) -> dict:
-        return part("meter", **({"value": value} if value is not None else {}), **props)
+    def meter(value: Any = _UNSET, **props) -> dict:
+        """No value: `source=` reads an audio part's level instead."""
+        return part("meter", **_opt("value", value), **props)
 
     @staticmethod
     def chart(id: str, marks: list[dict], **props) -> dict:
