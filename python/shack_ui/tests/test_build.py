@@ -42,7 +42,7 @@ def test_typed_values_take_datetimes_and_bindings():
     assert T.ago(item("at")) == {"ago": {"$": "at"}}
     assert T.freq(145_500_000, "MHz", 3, text="145.500 MHz") == {"freq": 145_500_000, "unit": "MHz",
                                                                 "decimals": 3, "text": "145.500 MHz"}
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         T.ago(datetime(2026, 10, 30, 9, 20))                 # naive: which zone?
     assert local("adsb.hide", [], has="ground", not_=True) == {"local": "adsb.hide", "default": [],
                                                              "has": "ground", "not": True}

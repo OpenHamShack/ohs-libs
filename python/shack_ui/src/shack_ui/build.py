@@ -92,7 +92,7 @@ def camel(name: str) -> str:
 def iso(t: datetime) -> str:
     """An aware datetime as the contract's ISO time, UTC with a Z."""
     if t.tzinfo is None:
-        raise ValueError("a naive datetime has no zone: give it one (the box's clock is UTC)")
+        raise TypeError("a naive datetime has no zone: give it one (the box's clock is UTC)")
     t = t.astimezone(timezone.utc)
     return t.strftime("%Y-%m-%dT%H:%M:%S") + (f".{t.microsecond // 1000:03d}" if t.microsecond else "") + "Z"
 
