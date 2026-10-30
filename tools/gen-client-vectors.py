@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the client-contract vectors of CLIENT-UI-PLAN.md (step 0).
 
-spec/vectors/spectrum/, overlay/, ui/ and presence/ are what the Kotlin,
+spec/vectors/spectrum/, overlay/ and presence/ are what the Kotlin,
 Swift and JS clients will be tested against, so they are committed files,
 not something a test regenerates: a change to them is a change to the
 contract, and it shows up in review as a diff.
@@ -10,13 +10,13 @@ Spectrum expectations are computed by shack_spectrum (it is the reference
 encoder); every case that has an obvious right answer also carries that
 answer written by hand below, and the script stops if the reference
 disagrees, so a bug in shack_spectrum cannot be laundered into the
-vectors. The JSON-document cases (ui, overlay, presence) are written by
-hand entirely; the script checks each against the schema and shack_ui
-and stops if one does not get the verdict it claims.
+vectors. The JSON-document cases (overlay, presence) are written by
+hand entirely; the script checks each against the schema and stops if
+one does not get the verdict it claims.
 
 Deterministic: every pseudo-random source row comes from a fixed seed and
 is rounded to 0.1 dB, so a rerun with no code change rewrites the same
-bytes. It also refreshes shack_ui's packaged copy of ui.schema.json.
+bytes.
 
 Usage: tools/gen-client-vectors.py     (needs numpy and jsonschema; run it
 with ~/build/venvs/ohs-libs/bin/python)
@@ -31,12 +31,11 @@ from pathlib import Path
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
-sys.path[:0] = [str(ROOT / "python" / "shack_spectrum" / "src"), str(ROOT / "python" / "shack_ui" / "src")]
+sys.path[:0] = [str(ROOT / "python" / "shack_spectrum" / "src")]
 
 import jsonschema  # noqa: E402
 from referencing import Registry, Resource  # noqa: E402
 
-import shack_ui  # noqa: E402
 from shack_spectrum import LatestWins, LevelsWindow, Row, RowError, decode, encode, quantise, reduce  # noqa: E402
 
 VEC = ROOT / "spec" / "vectors"
@@ -354,85 +353,11 @@ def overlay() -> None:
 
 
 # ------------------------------------------------------------------------ ui
-def ui() -> None:
-    sv = validator("ui.schema.json")
-    plan = {"ui": "1.0", "screen": "radio/home", "rev": "b13-4f2a", "title": "Radio",
-            "data": {"state": "ws:api/events?kinds=state,meter", "stations": "get:api/dab/stations"},
-            "root": {"c": "column", "children": [
-                {"c": "nowPlaying", "title": {"bind": "state.dab.service"}, "subtitle": {"bind": "state.dab.dls"},
-                 "image": {"bind": "state.dab.slideUrl"}},
-                {"c": "native", "name": "waterfall", "v": 1,
-                 "props": {"stream": "main", "layers": ["band", "dial", "stations"]},
-                 "fallback": {"c": "text", "text": "This needs a newer OpenHamShack app."}},
-                {"c": "row", "children": [
-                    {"c": "button", "label": "Scan", "icon": "scan",
-                     "action": {"do": "post", "path": "api/dab/scan", "level": "control"}},
-                    {"c": "slider", "label": "Volume", "value": {"bind": "state.volume"}, "min": 0, "max": 1,
-                     "action": {"do": "post", "path": "api/set", "body": {"volume": "$value"},
-                                "level": "control"}}]}]}}
-
-    def doc(root, **kw):
-        return {"ui": "1.0", "screen": "test/screen", "root": root} | kw
-
-    def button(action):
-        return {"c": "button", "label": "Go", "action": action}
-
-    cases = []
-
-    def case(id_, d, error=None, note=""):
-        try:
-            shack_ui.validate(d)
-            got = None
-        except shack_ui.UIError as e:
-            got = e.code
-        check(got == error, f"ui {id_}: shack_ui says {got}, want {error}")
-        check(sv.is_valid(d) == (error is None), f"ui {id_}: schema disagrees")
-        cases.append({"id": id_, "document": d, "expect": {"error": error} if error else {"ok": True}}
-                     | ({"note": note} if note else {}))
-
-    case("plan-example", plan, note="§5.2's example, unchanged")
-    case("every-action", doc({"c": "column", "children": [
-        button({"do": "open", "screen": "radio/dab", "params": {"band": "III"}}),
-        button({"do": "back"}),
-        button({"do": "local", "key": "layers.spots", "value": False}),
-        button({"do": "native", "verb": "waterfall.zoomIn"}),
-        button({"do": "confirm", "text": "Stop the scan?",
-                "action": {"do": "post", "path": "api/dab/stop", "level": "control"}})]}))
-    case("ptt-placed", doc({"c": "row", "children": [
-        {"c": "native", "name": "enableTx", "v": 1}, {"c": "native", "name": "ptt", "v": 1, "tv": False}]}),
-         note="the server places ptt/enableTx; their behaviour is client code")
-    case("polled-feed", doc({"c": "value", "value": {"bind": "status.vfo", "format": "freq"}},
-                            data={"status": {"src": "get:api/status", "poll": 5}}))
-    case("unknown-property-ignored", doc({"c": "text", "text": "hi", "sparkle": True}),
-         note="§5.3: unknown properties are ignored, so a newer server can add one")
-    case("transmit-post", doc(button({"do": "post", "path": "api/tx", "level": "transmit"})), "transmit_action",
-         "§5.6: no generic action may transmit")
-    case("transmit-in-confirm", doc(button({"do": "confirm", "text": "Key up?",
-                                            "action": {"do": "post", "path": "api/ptt", "level": "transmit"}})),
-         "transmit_action", "wrapping it in a question does not make it allowed")
-    case("transmit-in-fallback", doc({"c": "native", "name": "waterfall", "v": 1,
-                                      "fallback": button({"do": "post", "path": "api/tx", "level": "transmit"})}),
-         "transmit_action")
-    case("ptt-with-action", doc({"c": "native", "name": "ptt", "v": 1,
-                                 "action": {"do": "post", "path": "api/ptt", "level": "control"}}),
-         "transmit_component_action", "ptt/enableTx take no generic action, whatever its level")
-    case("unknown-component", doc({"c": "marquee", "text": "hi"}), "unknown_component",
-         "a closed vocabulary: the server sends a fallback instead")
-    case("unknown-native", doc({"c": "native", "name": "spectrumAnalyser", "v": 1}), "unknown_native")
-    case("unknown-action", doc(button({"do": "eval", "code": "1"})), "unknown_action")
-    case("absolute-path", doc(button({"do": "post", "path": "/api/set", "level": "control"})), "schema",
-         "relative to the app's base, never absolute")
-    case("post-without-level", doc(button({"do": "post", "path": "api/set"})), "schema",
-         "every post declares its level")
-    case("ui-2", plan | {"ui": "2.0"}, "schema", "ui 2 is a different contract")
-    write(VEC / "ui" / "documents.json", {
-        "description": "ui/1 screen documents (CLIENT-UI-PLAN.md §5) and what a validator must say: ok, or the "
-                       "named error. Every error case is also invalid against spec/schemas/ui.schema.json, so "
-                       "a client that only runs the schema refuses the same documents; the names are what "
-                       "shack_ui (and any port that names errors) reports, checked node by node, depth first, in this order: "
-                       "unknown_component, unknown_native, transmit_component_action, unknown_action, "
-                       "transmit_action, then the schema (schema).",
-        "version": 1}, cases)
+# spec/vectors/ui/documents.json (ui/1) is no longer written here: shack_ui
+# moved to ui/2 (SCREENS.md, decision D1) and its ui/1 validator went with
+# it. The file stays, frozen, because kotlin/shack-ui-contracts still runs
+# its ui/1 Document against it; it goes when that module moves to ui/2.
+# The ui/2 vectors are tools/gen-ui2-vectors.py's.
 
 
 # ------------------------------------------------------------------ presence
@@ -470,14 +395,12 @@ def presence() -> None:
 
 
 def main() -> None:
-    shutil.copyfile(SCHEMAS / "ui.schema.json", ROOT / "python" / "shack_ui" / "src" / "shack_ui" / "ui.schema.json")
     rows()
     decimation()
     levels()
     gaps()
     messages()
     overlay()
-    ui()
     presence()
     print("gen-client-vectors: written")
 

@@ -5,25 +5,20 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "shack-ui"
 version = "0.2.0"
-description = "OpenHamShack ui/1: build server-driven screen documents and validate them, transmit rule included"
+description = "OpenHamShack ui/2: build server-driven screens, validate them, apply and serve their live patch ops"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "GPL-3.0-or-later"
 authors = [{ name = "Brian Henderson, GM4BRI" }]
-# jsonschema at run time: validate() is what each app's tests call on
-# every screen it serves, and a hand-written walk of the whole schema
-# would drift from it. The transmit rule is checked in code as well, so
-# that error is named, but the schema is the contract.
-dependencies = ["jsonschema>=4.18"]
+# Standard library only at run time. The named rules (check.py) are what
+# a renderer enforces and what Screen.json() runs; jsonschema checks the
+# structure against spec/schemas/ui2.schema.json in the tests, where a
+# hand-written walk of the whole schema would drift from it. An app whose
+# own tests want the schema too installs the `test` extra.
+dependencies = []
 
 [project.optional-dependencies]
-test = ["pytest>=8"]
+test = ["pytest>=8", "jsonschema>=4.18"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-# A copy of spec/schemas/ui.schema.json, because validate() needs it at
-# run time and a wheel cannot reach the repository; tools/gen-client-vectors.py
-# refreshes it and a test fails if it differs from the spec.
-shack_ui = ["ui.schema.json"]
