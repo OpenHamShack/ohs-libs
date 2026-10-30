@@ -214,6 +214,9 @@ def documents() -> None:
          [("bad_action", "/holds/0/start")], schema=False)
     case("call-without-level", broken(lambda d: d["holds"][0]["start"].pop("level")),
          [("bad_action", "/holds/0/start")], schema=False, note="every call names its level")
+    case("local-cycle-is-not-a-typed-value", broken(lambda d: d["keys"].update(
+        info={"do": "local", "key": "map.style", "cycle": ["real", "night"]})), [], schema=True,
+        note="an action's fields are not values: `cycle` here is §5.1's, not §2.1's typed value")
     case("unknown-do-in-a-seq", broken(lambda d: d["keys"].update(info={"do": "seq", "actions": [
         {"do": "back"}, {"do": "shell"}]})), [("bad_action", "/keys/info/actions/1")], schema=False)
     case("evil-placeholder", broken(lambda d: d["holds"][0]["start"].update(body={"client": "$token"})),

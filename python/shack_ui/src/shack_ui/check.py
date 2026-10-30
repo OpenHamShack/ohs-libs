@@ -380,7 +380,9 @@ def _scan_bindings(value, where, out, ctx, *, skip=()):
             out.append(Problem("template_binding", where, "{\"$\": ...} outside a template"))
         return
     if isinstance(value, dict):
-        for msg in check_typed(value):
+        # An action is never a typed value, though `local`'s `cycle` field
+        # has the name of one (SCREENS.md §5.1 and §2.1 share the word).
+        for msg in ([] if "do" in value else check_typed(value)):
             out.append(Problem("bad_typed", where, msg))
         for k, v in value.items():
             if k in skip or (isinstance(v, dict) and "do" in v):
