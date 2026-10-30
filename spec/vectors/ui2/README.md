@@ -20,7 +20,7 @@ sometimes a `note` (why the case exists, not part of the check).
 | `documents.json` | screen documents, each `document` (inline) or `fixture` (a path under `fixtures/`), with `baseKind` (`app`, or `platform` for the launcher) | its validator reports exactly `problems`, in that order: `[{code, where}]` with `where` a JSON pointer into the document; `[]` is valid. `schema` is whether `spec/schemas/ui2.schema.json` accepts it, for a port that has a schema engine (the renderers do not need one) |
 | `typed.json` | typed values (§2.1) | `ok` says whether the value is well formed |
 | `paths.json` | paths and URLs (§9, §11) with their `kind`: `path`, `image` or `link` | it refuses with `problem` (`bad_path`, `absolute_url`) or accepts (`null`) |
-| `ops.json` | a starting document (`"base"`: the file's own `base`; or `fixture`; or inline) and `steps`, each `{"ops": [...]}` or `{"frame": {...}}` | after every step in turn, its state equals `state` (below) |
+| `ops.json` | a starting document (`"base"`: the file's own `base`; or `fixture`; or inline) and `steps`, each `{"ops": [...]}`, `{"frame": {...}}` or `{"poll": {...}}` (a poll answer) | after every step in turn, its state equals `state` (below) |
 | `aircraft-stream.json` | the whole Aircraft minute: `fixtures/streams/radio/aircraft.jsonl` on `fixtures/screens/radio/aircraft.json` | after the frame on 0-based line `line` of the stream, its state equals the checkpoint's `state` |
 | `fixtures/` | the contract's worked examples, copied (see its README) | every document there is in `documents.json` as valid |
 
@@ -77,3 +77,6 @@ are the points a port gets wrong:
 - a **`snap` frame is applied to the document's own state**, not on top of
   what was held: after a reconnect, what went while the socket was down
   must not survive. `hello` and `ping` change nothing.
+- **a poll answer with `"snap": true`** is likewise applied to the
+  document's own state (it is the screen's whole state); one without
+  `snap` applies on top, as a `p` frame does.

@@ -735,6 +735,31 @@ def downgrade(doc: dict, minor: int) -> dict:
     return d
 
 
+def poll_answer(collections: dict | None = None, parts: dict | None = None, *, every_s: float | None = None,
+                snap: bool = True) -> dict:
+    """A poll answer (§4.5) from the screen's whole state now, with no
+    memory of earlier polls: `collections` maps a name to a Collection (or
+    an items dict, drawn in its own order), `parts` an id to the
+    properties to set. As a snap (the default) a client applies it to the
+    document's state, so an item missing from it is gone (items the
+    document itself carries stay: a polled screen's document carries its
+    collections empty). `every_s` changes the polling rate."""
+    ops: list[dict] = []
+    for name, c in (collections or {}).items():
+        c = c if isinstance(c, Collection) else Collection(c)
+        if c.items:
+            ops.append({"op": "up", "c": name, "items": copy.deepcopy(c.items)})
+        ops.append({"op": "order", "c": name, "keys": list(c.order)})
+    for pid, props in (parts or {}).items():
+        ops.append({"op": "set", "id": pid, "v": _value(props)})
+    a: dict[str, Any] = {"ops": ops}
+    if snap:
+        a["snap"] = True
+    if every_s is not None:
+        a["everyS"] = every_s
+    return a
+
+
 def descriptor(entries: list[dict], *, min_client: str = UI_VERSION, **fields) -> dict:
     """An app's `ui/v2/app` answer (§1): the launcher entries this app has
     now. `fields`: app, kind, name, version, art (the descriptor's own)."""

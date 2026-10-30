@@ -2395,6 +2395,10 @@
     "everyS": {
      "type": "number",
      "exclusiveMinimum": 0
+    },
+    "snap": {
+     "type": "boolean",
+     "description": "§4.5: true when the answer is the screen's whole live state, applied to the document's own state as a snap frame is"
     }
    }
   },

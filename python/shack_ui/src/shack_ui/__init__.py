@@ -19,10 +19,10 @@ map layer or symbol ships with the box app and needs no client release.
 from __future__ import annotations
 
 from .build import (UI_MINOR, UI_VERSION, A, Collection, Screen, T, TransmitActionError, UIError, descriptor,
-                    downgrade, entry, item, local, p, part, rev, status)
+                    downgrade, entry, item, local, p, part, poll_answer, rev, status)
 from .check import Problem, check, check_action, check_path, check_typed, iter_parts
 from .live import Channel, LiveHub, Session
-from .ops import apply_frame, apply_ops, drawn_keys, public_state, state_from_document
+from .ops import apply_frame, apply_ops, apply_poll, drawn_keys, public_state, state_from_document
 from .schema import schema, schema_errors
 from .serve import Req, Response, Unsupported, serve_document, serve_json
 from .symbols import Symbols, icon_names
@@ -30,7 +30,7 @@ from .symbols import Symbols, icon_names
 __version__ = "0.3.0.dev1"
 
 __all__ = ["A", "Channel", "Collection", "LiveHub", "Problem", "Req", "Response", "Screen", "Session", "Symbols", "T",
-           "TransmitActionError", "UIError", "UI_MINOR", "UI_VERSION", "Unsupported", "apply_frame", "apply_ops",
+           "TransmitActionError", "UIError", "UI_MINOR", "UI_VERSION", "Unsupported", "apply_frame", "apply_ops", "apply_poll",
            "check", "check_action", "check_path", "check_typed", "descriptor", "downgrade", "drawn_keys", "entry",
-           "icon_names", "item", "iter_parts", "local", "p", "part", "public_state", "rev", "schema", "schema_errors", "serve_document",
+           "icon_names", "item", "iter_parts", "local", "p", "part", "poll_answer", "public_state", "rev", "schema", "schema_errors", "serve_document",
            "serve_json", "state_from_document", "status"]

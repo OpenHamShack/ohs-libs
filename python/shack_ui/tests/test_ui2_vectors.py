@@ -9,7 +9,7 @@ import jsonschema
 import pytest
 from referencing import Registry, Resource
 
-from shack_ui import apply_frame, apply_ops, check, check_path, check_typed, public_state, state_from_document
+from shack_ui import apply_frame, apply_ops, apply_poll, check, check_path, check_typed, public_state, state_from_document
 
 ROOT = Path(__file__).resolve().parents[3]
 VEC = ROOT / "spec" / "vectors" / "ui2"
@@ -70,7 +70,12 @@ def test_ops(case):
     start = state_from_document(document_of(case, OPS["base"]))
     s = start
     for step in case["steps"]:
-        s = apply_frame(s, step["frame"], start) if "frame" in step else apply_ops(s, step["ops"])
+        if "frame" in step:
+            s = apply_frame(s, step["frame"], start)
+        elif "poll" in step:
+            s = apply_poll(s, step["poll"], start)
+        else:
+            s = apply_ops(s, step["ops"])
     assert public_state(s) == case["state"]
 
 
@@ -78,7 +83,9 @@ def test_every_op_in_the_vectors_and_the_fixture_stream_has_the_schema_s_shape()
     v = validator("op")
     for case in OPS["cases"]:
         for step in case["steps"]:
-            for op in step.get("ops") or step.get("frame", {}).get("ops") or []:
+            if "poll" in step:
+                assert validator("pollAnswer").is_valid(step["poll"]), case["id"]
+            for op in step.get("ops") or step.get("frame", step.get("poll", {})).get("ops") or []:
                 if isinstance(op, dict) and op.get("op") in ("set", "up", "rm", "order", "push", "append", "replace",
                                                              "toast", "reload"):
                     assert v.is_valid(op), (case["id"], op)

@@ -7,7 +7,7 @@ import random
 import threading
 import time
 
-from shack_ui import A, LiveHub, Screen, apply_frame, drawn_keys, item, p, public_state, state_from_document
+from shack_ui import A, LiveHub, apply_poll, poll_answer, Screen, apply_frame, drawn_keys, item, p, public_state, state_from_document
 
 DOC = None
 
@@ -441,3 +441,29 @@ def test_an_app_can_refresh_one_client_s_extras():
     assert phone.state["collections"]["c"]["items"]["b"]["note"] == "only you"
     ch.clients("one", "b")[0].clear("c", "b")
     assert phone.pump(3.0)["ops"] == [{"op": "up", "c": "c", "items": {"b": {"note": None}}}]
+
+
+def test_a_polled_screen_drops_items_without_keeping_state():
+    start = state_from_document(DOC)
+    first = poll_answer({"c": {"a": {"label": "A"}, "b": {"label": "B"}}}, {"status": {"value": "Up"}}, every_s=2)
+    assert first["snap"] is True and first["everyS"] == 2
+    s = apply_poll(start, first, start)
+    assert drawn_keys(s, "c") == ["a", "b", "base"] and s["parts"]["status"]["value"] == "Up"
+    # The next poll simply lists what there is now, and b has gone. What
+    # the document itself carries ("base") stays: a snap starts from the
+    # document, so a polled screen's document carries its collections
+    # empty, as Weather Sats' does.
+    s = apply_poll(s, poll_answer({"c": {"a": {"label": "A"}}}), start)
+    assert drawn_keys(s, "c") == ["a", "base"] and s["parts"]["status"]["value"] == "Starting"
+
+
+def test_a_channel_answers_polls_from_the_same_feed():
+    ch = channel()
+    ch.up("c", "a", label="A")
+    ch.rm("c", "base")
+    ch.set("status", value="On")
+    start = state_from_document(DOC)
+    ans = ch.poll_answer(DOC["rev"], every_s=5)
+    assert ans["snap"] is True and ans["everyS"] == 5
+    s = apply_poll(start, ans, start)
+    assert drawn_keys(s, "c") == ["a"] and s["parts"]["status"]["value"] == "On"

@@ -375,6 +375,8 @@ def opscases() -> None:
         for st in steps:
             if isinstance(st, dict) and "frame" in st:
                 s = ops.apply_frame(s, st["frame"], start)
+            elif isinstance(st, dict) and "poll" in st:
+                s = ops.apply_poll(s, st["poll"], start)
             else:
                 s = ops.apply_ops(s, st)
             out.append({**st} if isinstance(st, dict) else {"ops": st})
@@ -445,6 +447,15 @@ def opscases() -> None:
          lambda s: s["drawn"]["c"] == ["new", "a", "b"] and "gone" not in s["collections"]["c"]["items"]
          and s["parts"]["status"]["value"] == "Starting",
          "a `snap` (after a reconnect) is applied to the document's own state, not on top of what was held")
+    case("poll-snap-drops-what-it-does-not-list", [
+        {"poll": {"ops": [{"op": "up", "c": "c", "items": {"x": {"label": "X"}}},
+                          {"op": "set", "id": "status", "v": {"value": "Polled"}}]}},
+        {"poll": {"snap": True, "everyS": 10, "ops": [{"op": "up", "c": "c", "items": {"y": {"label": "Y"}}},
+                                                      {"op": "order", "c": "c", "keys": ["y", "a"]}]}}],
+         lambda s: s["drawn"]["c"] == ["y", "a", "b"] and "x" not in s["collections"]["c"]["items"]
+         and s["parts"]["status"]["value"] == "Starting",
+         "a poll answer without `snap` applies on top; with `snap: true` it is the whole state, applied to the "
+         "document's state, so a polled screen drops items without remembering what it sent")
     case("hello-and-ping-change-nothing", [{"frame": {"t": "hello", "rev": "x", "maxHz": 2}},
                                            {"frame": {"t": "ping"}}],
          lambda s: s == ops.public_state(doc_state))
@@ -457,12 +468,13 @@ def opscases() -> None:
     write(VEC / "ops.json", {
         "description": "Op application (SCREENS.md §4.2) and live frames (§4.1). Each case starts from a "
                        "document's state (`document`: \"base\" is the file's `base` document, a fixture path "
-                       "under fixtures/, or inline), applies each step in turn (a list of ops, or {\"frame\": "
-                       "...} for a socket frame) and must reach `state`: id'd parts flat with their own "
+                       "under fixtures/, or inline), applies each step in turn (a list of ops, {\"frame\": "
+                       "...} for a socket frame, or {\"poll\": ...} for a poll answer) and must reach `state`: id'd parts flat with their own "
                        "properties (children, and child, template, empty, fallback and overlay when they hold a part, left out; a tabs "
                        "part's tabs without their child), collections as held, `drawn` (each collection's keys "
                        "as drawn: those in `order` that have an item, then the rest sorted by key), chart "
-                       "points per mark, toasts and reload. A snap frame applies to the document's own state.",
+                       "points per mark, toasts and reload. A snap frame, and a poll answer with snap: true, apply to "
+                       "the document's own state.",
         "version": 1, "base": OPS_DOC}, cases)
 
 

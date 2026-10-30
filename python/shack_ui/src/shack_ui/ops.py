@@ -4,6 +4,7 @@ how each live frame or poll answer changes it.
     state_from_document(doc)      -> state   what a renderer starts from
     apply_ops(state, ops)         -> state   one frame, without mutating
     apply_frame(state, frame, doc_state) -> state   a `snap` or `p` frame
+    apply_poll(state, answer, doc_state)  -> state   a poll answer, `snap` or not
     drawn_keys(state, c)          -> [key]   what a list or map draws, in order
     public_state(state)           -> dict    the language-neutral form the
                                              vectors compare (ops.json)
@@ -171,6 +172,17 @@ def apply_frame(state: dict, frame: dict, doc_state: dict) -> dict:
     if t == "p":
         return apply_ops(state, frame.get("ops"))
     return state
+
+
+def apply_poll(state: dict, answer: dict, doc_state: dict) -> dict:
+    """One poll answer (§4.5). With `"snap": true` it is the screen's whole
+    live state, applied to the document's own state as a snap frame is:
+    an item the box no longer lists is gone, so a polled screen can drop
+    items without remembering what any client was sent. Without it, its
+    ops apply on top, as a `p` frame's do."""
+    if not isinstance(answer, dict):
+        return state
+    return apply_ops(doc_state if answer.get("snap") is True else state, answer.get("ops"))
 
 
 def public_state(state: dict) -> dict:

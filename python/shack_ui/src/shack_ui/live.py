@@ -402,6 +402,19 @@ class Channel:
             s.dirty.add(("c", c, key))
             s._wake()
 
+    def poll_answer(self, rev: Any = None, *, every_s: float | None = None) -> dict:
+        """The channel's live state as a snap poll answer (§4.5) for the
+        document `rev`: the same feed serves a polled screen, or a client
+        that polls a live one, with nothing kept per client."""
+        with self.lock:
+            v = self.variant(rev)
+            start = apply_ops(v.base, list(self.replaced.values()))
+            view = copy.deepcopy(v.state)
+            a: dict[str, Any] = {"snap": True, "ops": list(self.replaced.values()) + _diff(start, view, None)}
+        if every_s is not None:
+            a["everyS"] = every_s
+        return a
+
     def close(self) -> None:
         """No more frames: every session ends and its driver closes the
         socket (the client reconnects, refetching the screen)."""
