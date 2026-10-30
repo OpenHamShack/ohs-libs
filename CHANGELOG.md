@@ -12,6 +12,9 @@ First M1 cut.
   and `spec/vectors/ui2/` for the Kotlin and Swift renderers. Radio's
   ui/1 screens (openhamshack-nb `ohsradio/screens.py`, `ohscore/server/uiv1.py`)
   stop importing on their next ohs-libs pin and move to ui/2 then.
+  Its wheel is 0.3.0.dev1, not 0.2.0, so it never shares a number with
+  ui/1's 0.2.0 wheel that apps already pin; tools/test.sh's lockstep
+  check accepts a .devN of a later version, and the release sets it back.
 
 - shack-rig and shack-packet, for Packet Radio 0.3.2 (21/10/2026, held):
   following the radio's own VFO. `shack_rig.datasetup` rule 6: a setting

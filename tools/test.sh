@@ -36,14 +36,24 @@ step "one version everywhere"
 import pathlib, re, sys, tomllib
 root = pathlib.Path(".")
 want = (root / "VERSION").read_text().strip()
+# Lockstep: every package carries VERSION. One exception: a package that
+# changed incompatibly since VERSION's wheels went out may carry a .devN
+# pre-release of a later version (shack_ui 0.3.0.dev1 after ui/1's 0.2.0),
+# so its wheel never shares a number with the one apps already pin. Whoever
+# cuts the next release sets it back to VERSION (REPO-LAYOUT.md §3).
+def ok(got):
+    if got == want:
+        return True
+    m = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)\.dev\d+", got)
+    return bool(m) and tuple(map(int, m.groups())) > tuple(map(int, want.split(".")))
 bad = []
 for pp in sorted(root.glob("python/*/pyproject.toml")):
     got = tomllib.loads(pp.read_text())["project"]["version"]
-    if got != want:
+    if not ok(got):
         bad.append(f"{pp}: {got}")
 for init in sorted(root.glob("python/*/src/*/__init__.py")):
     m = re.search(r'^__version__ = "([^"]+)"', init.read_text(), re.M)
-    if m and m.group(1) != want:
+    if m and not ok(m.group(1)):
         bad.append(f"{init}: {m.group(1)}")
 for b in bad:
     print(f"{b} differs from VERSION {want}")

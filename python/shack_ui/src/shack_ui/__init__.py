@@ -25,7 +25,7 @@ from .ops import apply_frame, apply_ops, drawn_keys, public_state, state_from_do
 from .serve import Req, Response, Unsupported, serve_document, serve_json
 from .symbols import Symbols, icon_names
 
-__version__ = "0.2.0"
+__version__ = "0.3.0.dev1"
 
 __all__ = ["A", "Channel", "Collection", "LiveHub", "Problem", "Req", "Response", "Screen", "Session", "Symbols", "T",
            "TransmitActionError", "UIError", "UI_MINOR", "UI_VERSION", "Unsupported", "apply_frame", "apply_ops",
