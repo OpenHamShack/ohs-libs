@@ -9,7 +9,9 @@ enforces, each a small function named by the code it reports.
 
 Moved here from the contract's fixture tool (openhamshack
 tools/screens-fixture/uidoc.py, 30/10/2026), where it was written against
-the worked examples; the fixture tool now imports this one. The walk order
+the worked examples. Until the fixture tool imports this one, a rule
+changed here must be changed there too (or the tool's copy retired). The
+walk order
 is the document order, so two runs report the same list in the same order,
 and the vectors (spec/vectors/ui2/documents.json) pin that order for the
 Kotlin and Swift ports.
