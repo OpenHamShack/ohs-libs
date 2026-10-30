@@ -13,6 +13,7 @@ map layer or symbol ships with the box app and needs no client release.
     check.py   the validator: the rules every renderer also enforces
     ops.py     the reference op applier: what a renderer holds
     symbols.py the shared symbol sets and the client's icon names
+    schema.py  ui2.schema.json, packaged, and schema_errors()
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from .build import (UI_MINOR, UI_VERSION, A, Collection, Screen, T, TransmitActi
 from .check import Problem, check, check_action, check_path, check_typed, iter_parts
 from .live import Channel, LiveHub, Session
 from .ops import apply_frame, apply_ops, drawn_keys, public_state, state_from_document
+from .schema import schema, schema_errors
 from .serve import Req, Response, Unsupported, serve_document, serve_json
 from .symbols import Symbols, icon_names
 
@@ -30,5 +32,5 @@ __version__ = "0.3.0.dev1"
 __all__ = ["A", "Channel", "Collection", "LiveHub", "Problem", "Req", "Response", "Screen", "Session", "Symbols", "T",
            "TransmitActionError", "UIError", "UI_MINOR", "UI_VERSION", "Unsupported", "apply_frame", "apply_ops",
            "check", "check_action", "check_path", "check_typed", "descriptor", "downgrade", "drawn_keys", "entry",
-           "icon_names", "item", "iter_parts", "local", "p", "part", "public_state", "rev", "serve_document",
+           "icon_names", "item", "iter_parts", "local", "p", "part", "public_state", "rev", "schema", "schema_errors", "serve_document",
            "serve_json", "state_from_document", "status"]

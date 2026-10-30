@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Write the ui/2 vectors (spec/vectors/ui2/, SCREENS.md §14) and refresh
-shack_ui's packaged copies of spec/ui2/.
+shack_ui's packaged copies of spec/ui2/ and spec/schemas/ui2.schema.json.
 
 The vectors are what the Python, Kotlin and Swift implementations are all
 held to, so they are committed files, not something a test regenerates: a
@@ -496,12 +496,15 @@ def aircraft_stream() -> None:
 
 # ------------------------------------------------------------------ packaged data
 def package_data() -> None:
-    """shack_ui reads the symbol sets and icon names at run time and a
-    wheel cannot reach spec/, so it carries copies."""
-    dst = ROOT / "python" / "shack_ui" / "src" / "shack_ui" / "data" / "ui2"
+    """shack_ui reads the symbol sets, icon names and ui2.schema.json at
+    run time and a wheel cannot reach spec/, so it carries copies."""
+    data = ROOT / "python" / "shack_ui" / "src" / "shack_ui" / "data"
+    dst = data / "ui2"
     if dst.exists():
         shutil.rmtree(dst)
     shutil.copytree(ROOT / "spec" / "ui2", dst)
+    (data / "schemas").mkdir(exist_ok=True)
+    shutil.copyfile(ROOT / "spec" / "schemas" / "ui2.schema.json", data / "schemas" / "ui2.schema.json")
 
 
 def compare_contract(contract: Path) -> bool:

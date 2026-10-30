@@ -1,0 +1,2552 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://openhamshack.org/schemas/ui2.schema.json",
+ "title": "ui/2: server-driven screens (openhamshack docs/contract/SCREENS.md)",
+ "description": "The structure of a ui/2 screen document and the messages around it: the live socket's frames and ops (§4), a poll answer, a call's answer (§5.3), an app's descriptor and status (§1) and a symbol set file (§3.6). The root is a document; the other shapes are $defs to $ref directly. The schema is the shape a client can parse plus the rules expressible as shape: relative paths (§11), the transmit rules (§7: level transmit only with tx and a lease, an item's action never transmit, ptt and txArm with no action and no timing but holdMs >= 1000), the action kinds and their fields. Unknown properties, part types, layer kinds and ops are allowed, because a client degrades on them (§2.3). What needs the whole document (ids that exist, a lease naming a ptt, bindings only inside templates, ids used once, the cross-app open, a call to a key route) is check.py's, in shack_ui, and each port's: spec/vectors/ui2/documents.json gives both verdicts for every case.",
+ "$ref": "#/$defs/document",
+ "$defs": {
+  "document": {
+   "type": "object",
+   "required": [
+    "ui",
+    "screen",
+    "root"
+   ],
+   "properties": {
+    "ui": {
+     "type": "string",
+     "pattern": "^2\\.[0-9]+$"
+    },
+    "screen": {
+     "type": "string"
+    },
+    "rev": {
+     "type": "string"
+    },
+    "title": {
+     "type": "string"
+    },
+    "form": {
+     "type": "string"
+    },
+    "level": {
+     "enum": [
+      "view",
+      "control",
+      "transmit"
+     ]
+    },
+    "colors": {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "#/$defs/color"
+     }
+    },
+    "symbols": {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "#/$defs/symbol"
+     }
+    },
+    "words": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    },
+    "collections": {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "#/$defs/collection"
+     }
+    },
+    "selections": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "object",
+      "required": [
+       "from"
+      ],
+      "properties": {
+       "from": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    "holds": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/hold"
+     }
+    },
+    "live": {
+     "type": "object",
+     "required": [
+      "path"
+     ],
+     "properties": {
+      "path": {
+       "type": "string",
+       "minLength": 1,
+       "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+      }
+     }
+    },
+    "poll": {
+     "$ref": "#/$defs/poll"
+    },
+    "keys": {
+     "$ref": "#/$defs/keys"
+    },
+    "backdrop": {
+     "type": "object",
+     "properties": {
+      "style": {
+       "type": "string"
+      },
+      "image": {
+       "anyOf": [
+        {
+         "type": "null"
+        },
+        {
+         "$ref": "#/$defs/binding"
+        },
+        {
+         "type": "string",
+         "minLength": 1,
+         "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+        },
+        {
+         "type": "string",
+         "pattern": "^https://([A-Za-z0-9-]+\\.)*plnspttrs\\.net(:\\d+)?(/|$)"
+        }
+       ]
+      },
+      "dim": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      }
+     }
+    },
+    "root": {
+     "$ref": "#/$defs/part"
+    }
+   }
+  },
+  "part": {
+   "type": "object",
+   "required": [
+    "type"
+   ],
+   "properties": {
+    "type": {
+     "type": "string",
+     "minLength": 1
+    },
+    "id": {
+     "type": "string",
+     "minLength": 1
+    },
+    "forms": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "hidden": {
+     "type": "boolean"
+    },
+    "weight": {
+     "type": "number"
+    },
+    "w": {
+     "type": "number"
+    },
+    "h": {
+     "type": "number"
+    },
+    "maxW": {
+     "type": "number"
+    },
+    "maxH": {
+     "type": "number"
+    },
+    "surface": {
+     "type": "string"
+    },
+    "back": {
+     "$ref": "#/$defs/actionOrBinding"
+    },
+    "keys": {
+     "$ref": "#/$defs/keys"
+    },
+    "hero": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "$ref": "#/$defs/binding"
+      }
+     ]
+    },
+    "since": {
+     "type": "string",
+     "pattern": "^2\\.[0-9]+$"
+    },
+    "fallback": {
+     "$ref": "#/$defs/part"
+    },
+    "children": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/part"
+     }
+    },
+    "child": {
+     "$ref": "#/$defs/part"
+    },
+    "template": {
+     "$ref": "#/$defs/part"
+    },
+    "empty": {
+     "$ref": "#/$defs/part"
+    },
+    "action": {
+     "$ref": "#/$defs/actionOrBinding"
+    },
+    "onActivate": {
+     "$ref": "#/$defs/actionOrBinding"
+    },
+    "onHold": {
+     "$ref": "#/$defs/actionOrBinding"
+    },
+    "onClose": {
+     "$ref": "#/$defs/actionOrBinding"
+    },
+    "from": {
+     "type": "string"
+    },
+    "for": {
+     "type": "string"
+    },
+    "selection": {
+     "type": "string"
+    },
+    "label": {
+     "$ref": "#/$defs/value"
+    },
+    "poll": {
+     "$ref": "#/$defs/poll"
+    }
+   },
+   "description": "§3. Unknown properties are allowed (a newer server may add one and a client ignores it), and so is an unknown type: a client draws its fallback or a placeholder (§2.3). check.py's unknown_part is the server's own rule, not the schema's.",
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "text"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "value": {
+        "$ref": "#/$defs/value"
+       },
+       "style": {
+        "type": "string"
+       },
+       "lines": {
+        "type": "integer",
+        "minimum": 1
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "field"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "label": {
+        "$ref": "#/$defs/value"
+       },
+       "value": {
+        "$ref": "#/$defs/value"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "badge"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "text": {
+        "$ref": "#/$defs/value"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "progress"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "value": {
+        "$ref": "#/$defs/value"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "image"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "src": {
+        "anyOf": [
+         {
+          "type": "null"
+         },
+         {
+          "$ref": "#/$defs/binding"
+         },
+         {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+         },
+         {
+          "type": "string",
+          "pattern": "^https://([A-Za-z0-9-]+\\.)*plnspttrs\\.net(:\\d+)?(/|$)"
+         }
+        ]
+       },
+       "link": {
+        "anyOf": [
+         {
+          "type": "string",
+          "pattern": "^https://[^/?#]+"
+         },
+         {
+          "$ref": "#/$defs/binding"
+         }
+        ]
+       },
+       "refreshS": {
+        "type": "number",
+        "exclusiveMinimum": 0
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "audio"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "src"
+      ],
+      "properties": {
+       "src": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "video"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "src"
+      ],
+      "properties": {
+       "src": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+       },
+       "overlay": {
+        "$ref": "#/$defs/part"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "camera"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "srt"
+      ],
+      "properties": {
+       "srt": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "tile"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "art": {
+        "anyOf": [
+         {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+         },
+         {
+          "$ref": "#/$defs/binding"
+         }
+        ]
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "list"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "follow": {
+        "enum": [
+         "top"
+        ]
+       },
+       "keepFocus": {
+        "type": "boolean"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "table"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "columns"
+      ],
+      "properties": {
+       "columns": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "required": [
+          "value"
+         ]
+        }
+       },
+       "page": {
+        "$ref": "#/$defs/poll"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "panel"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "slot": {
+        "type": "string"
+       },
+       "step": {
+        "type": "boolean"
+       },
+       "open": {
+        "type": "boolean"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "split"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "children": {
+        "maxItems": 2
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "tabs"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "tabs"
+      ],
+      "properties": {
+       "tabs": {
+        "type": "array",
+        "items": {
+         "type": "object",
+         "required": [
+          "id"
+         ],
+         "properties": {
+          "child": {
+           "$ref": "#/$defs/part"
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "frame"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "w",
+       "h"
+      ],
+      "properties": {
+       "w": {
+        "type": "number"
+       },
+       "h": {
+        "type": "number"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "map"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [],
+      "properties": {
+       "ground": {
+        "type": "object",
+        "properties": {
+         "tiles": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+         },
+         "land": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+         }
+        }
+       },
+       "layers": {
+        "type": "array",
+        "items": {
+         "$ref": "#/$defs/layer"
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "spectrum"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "stream"
+      ],
+      "properties": {
+       "stream": {
+        "type": "object",
+        "required": [
+         "path"
+        ],
+        "properties": {
+         "path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+         }
+        }
+       },
+       "tap": {
+        "$ref": "#/$defs/action"
+       },
+       "overlay": {
+        "type": "boolean",
+        "description": "§3.7: draw the overlay/1 items that come on the spectrum socket"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "chart"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "marks"
+      ],
+      "properties": {
+       "marks": {
+        "type": "array",
+        "items": {
+         "type": "object"
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "ptt"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "key"
+      ],
+      "properties": {
+       "key": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+       },
+       "heartbeat": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+       },
+       "keep": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+       },
+       "holdMs": {
+        "type": "number",
+        "minimum": 1000
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "ptt"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "propertyNames": {
+       "not": {
+        "pattern": "^(?!holdMs$)[a-z][A-Za-z]*(Ms|S)$"
+       }
+      },
+      "not": {
+       "anyOf": [
+        {
+         "required": [
+          "action"
+         ]
+        },
+        {
+         "required": [
+          "onHold"
+         ]
+        },
+        {
+         "required": [
+          "onActivate"
+         ]
+        },
+        {
+         "required": [
+          "tap"
+         ]
+        }
+       ]
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "txArm"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "required": [
+       "arm"
+      ],
+      "properties": {
+       "arm": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+       },
+       "heartbeat": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+       },
+       "digital": {
+        "type": "boolean"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "txArm"
+       }
+      },
+      "required": [
+       "type"
+      ]
+     },
+     "then": {
+      "propertyNames": {
+       "not": {
+        "pattern": "^[a-z][A-Za-z]*(Ms|S)$"
+       }
+      },
+      "not": {
+       "anyOf": [
+        {
+         "required": [
+          "action"
+         ]
+        },
+        {
+         "required": [
+          "onHold"
+         ]
+        },
+        {
+         "required": [
+          "onActivate"
+         ]
+        },
+        {
+         "required": [
+          "tap"
+         ]
+        }
+       ]
+      }
+     }
+    }
+   ]
+  },
+  "layer": {
+   "type": "object",
+   "required": [
+    "kind"
+   ],
+   "properties": {
+    "id": {
+     "type": "string"
+    },
+    "kind": {
+     "type": "string",
+     "description": "markers, lines, polygons, rings, images; an unknown kind is not drawn"
+    },
+    "from": {
+     "type": "string"
+    },
+    "selection": {
+     "type": "string"
+    },
+    "items": {
+     "type": "array"
+    }
+   }
+  },
+  "value": {
+   "description": "§2.1: a literal (already localised), a typed value, {\"$\": field} inside a template, a local preference, or a list of values drawn joined. A dict is read as the first of these it matches; one that names a typed kind must be that kind's shape.",
+   "anyOf": [
+    {
+     "type": [
+      "string",
+      "number",
+      "boolean",
+      "null"
+     ]
+    },
+    {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/value"
+     }
+    },
+    {
+     "$ref": "#/$defs/binding"
+    },
+    {
+     "$ref": "#/$defs/local"
+    },
+    {
+     "type": "object",
+     "allOf": [
+      {
+       "if": {
+        "required": [
+         "freq"
+        ]
+       },
+       "then": {
+        "properties": {
+         "freq": {
+          "anyOf": [
+           {
+            "type": "number"
+           },
+           {
+            "$ref": "#/$defs/binding"
+           }
+          ]
+         },
+         "unit": {
+          "type": "string"
+         },
+         "decimals": {
+          "type": "integer",
+          "minimum": 0
+         }
+        }
+       }
+      },
+      {
+       "if": {
+        "required": [
+         "ago"
+        ]
+       },
+       "then": {
+        "properties": {
+         "ago": {
+          "anyOf": [
+           {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d(:\\d\\d(\\.\\d+)?)?(Z|[+-]\\d\\d:\\d\\d)$"
+           },
+           {
+            "$ref": "#/$defs/binding"
+           }
+          ]
+         }
+        }
+       }
+      },
+      {
+       "if": {
+        "required": [
+         "since"
+        ]
+       },
+       "then": {
+        "properties": {
+         "since": {
+          "anyOf": [
+           {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d(:\\d\\d(\\.\\d+)?)?(Z|[+-]\\d\\d:\\d\\d)$"
+           },
+           {
+            "$ref": "#/$defs/binding"
+           }
+          ]
+         }
+        }
+       }
+      },
+      {
+       "if": {
+        "required": [
+         "time"
+        ]
+       },
+       "then": {
+        "properties": {
+         "time": {
+          "anyOf": [
+           {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d(:\\d\\d(\\.\\d+)?)?(Z|[+-]\\d\\d:\\d\\d)$"
+           },
+           {
+            "$ref": "#/$defs/binding"
+           }
+          ]
+         },
+         "zone": {
+          "enum": [
+           "local",
+           "utc",
+           "local+utc"
+          ]
+         },
+         "style": {
+          "type": "string"
+         }
+        }
+       }
+      },
+      {
+       "if": {
+        "required": [
+         "clock"
+        ]
+       },
+       "then": {
+        "properties": {
+         "clock": {
+          "enum": [
+           "local",
+           "utc",
+           "local+utc"
+          ]
+         },
+         "style": {
+          "enum": [
+           "hm",
+           "hms"
+          ]
+         }
+        }
+       }
+      },
+      {
+       "if": {
+        "required": [
+         "countdown"
+        ]
+       },
+       "then": {
+        "properties": {
+         "countdown": {
+          "type": "object",
+          "required": [
+           "to",
+           "text"
+          ],
+          "properties": {
+           "to": {
+            "anyOf": [
+             {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d(:\\d\\d(\\.\\d+)?)?(Z|[+-]\\d\\d:\\d\\d)$"
+             },
+             {
+              "$ref": "#/$defs/binding"
+             }
+            ]
+           },
+           "then": {
+            "anyOf": [
+             {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d(:\\d\\d(\\.\\d+)?)?(Z|[+-]\\d\\d:\\d\\d)$"
+             },
+             {
+              "$ref": "#/$defs/binding"
+             }
+            ]
+           },
+           "text": {
+            "type": "array",
+            "items": {
+             "type": "string"
+            }
+           }
+          },
+          "if": {
+           "required": [
+            "then"
+           ]
+          },
+          "then": {
+           "properties": {
+            "text": {
+             "minItems": 3,
+             "maxItems": 3
+            }
+           }
+          },
+          "else": {
+           "properties": {
+            "text": {
+             "minItems": 2,
+             "maxItems": 2
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      {
+       "if": {
+        "required": [
+         "cycle"
+        ]
+       },
+       "then": {
+        "properties": {
+         "cycle": {
+          "type": "object",
+          "required": [
+           "periodS"
+          ],
+          "properties": {
+           "periodS": {
+            "type": "number",
+            "exclusiveMinimum": 0
+           },
+           "offsetS": {
+            "type": "number"
+           }
+          }
+         }
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "binding": {
+   "type": "object",
+   "required": [
+    "$"
+   ],
+   "properties": {
+    "$": {
+     "type": "string",
+     "minLength": 1
+    }
+   }
+  },
+  "local": {
+   "type": "object",
+   "required": [
+    "local"
+   ],
+   "properties": {
+    "local": {
+     "type": "string",
+     "minLength": 1
+    },
+    "default": true,
+    "has": true,
+    "not": {
+     "type": "boolean"
+    }
+   }
+  },
+  "action": {
+   "type": "object",
+   "required": [
+    "do"
+   ],
+   "properties": {
+    "do": {
+     "enum": [
+      "call",
+      "open",
+      "back",
+      "show",
+      "hide",
+      "focus",
+      "part",
+      "select",
+      "local",
+      "send",
+      "link",
+      "seq"
+     ]
+    },
+    "text": {
+     "type": "string"
+    },
+    "hint": {
+     "type": "string"
+    },
+    "tx": {
+     "type": "boolean"
+    },
+    "lease": {
+     "type": "string"
+    },
+    "level": {
+     "enum": [
+      "view",
+      "control",
+      "transmit"
+     ]
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "call"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "method",
+       "path",
+       "level"
+      ],
+      "properties": {
+       "method": {
+        "enum": [
+         "POST",
+         "PUT",
+         "DELETE"
+        ]
+       },
+       "path": {
+        "description": "a path that may also hold the {$client}/{$value}/{$hz} placeholders",
+        "allOf": [
+         {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+         },
+         {
+          "not": {
+           "pattern": "\\{\\$(?!(client|value|hz)\\})[^}]*\\}"
+          }
+         }
+        ]
+       },
+       "body": {
+        "$ref": "#/$defs/callValue"
+       },
+       "timeoutS": {
+        "type": "number",
+        "exclusiveMinimum": 0
+       },
+       "confirm": {
+        "type": "object",
+        "required": [
+         "title",
+         "text"
+        ],
+        "properties": {
+         "title": {
+          "type": "string"
+         },
+         "text": {
+          "type": "string"
+         },
+         "yes": {
+          "type": "string"
+         },
+         "no": {
+          "type": "string"
+         },
+         "tone": {
+          "type": "string"
+         }
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "open"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "screen"
+      ],
+      "properties": {
+       "screen": {
+        "type": "string",
+        "minLength": 1
+       },
+       "params": {
+        "type": "object",
+        "additionalProperties": {
+         "$ref": "#/$defs/callValue"
+        }
+       },
+       "app": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "show"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "part"
+      ],
+      "properties": {
+       "part": {
+        "type": "string"
+       },
+       "tab": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "hide"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "part"
+      ],
+      "properties": {
+       "part": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "focus"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "part"
+      ],
+      "properties": {
+       "part": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "part"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "part",
+       "verb"
+      ],
+      "properties": {
+       "part": {
+        "type": "string"
+       },
+       "verb": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "select"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "sel"
+      ],
+      "properties": {
+       "sel": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "local"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "key"
+      ],
+      "properties": {
+       "key": {
+        "type": "string"
+       }
+      },
+      "anyOf": [
+       {
+        "required": [
+         "set"
+        ]
+       },
+       {
+        "required": [
+         "toggle"
+        ]
+       },
+       {
+        "required": [
+         "cycle"
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "send"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "name"
+      ],
+      "properties": {
+       "name": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "link"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "url"
+      ],
+      "properties": {
+       "url": {
+        "type": "string",
+        "pattern": "^https://[^/?#]+"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "do": {
+        "const": "seq"
+       }
+      },
+      "required": [
+       "do"
+      ]
+     },
+     "then": {
+      "required": [
+       "actions"
+      ],
+      "properties": {
+       "actions": {
+        "type": "array",
+        "items": {
+         "$ref": "#/$defs/actionOrBinding"
+        }
+       }
+      }
+     }
+    },
+    {
+     "description": "§7.2: only a tx action with a lease may be level transmit, and tx needs a lease",
+     "if": {
+      "properties": {
+       "level": {
+        "const": "transmit"
+       }
+      },
+      "required": [
+       "level"
+      ]
+     },
+     "then": {
+      "required": [
+       "tx",
+       "lease"
+      ],
+      "properties": {
+       "tx": {
+        "const": true
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "tx": {
+        "const": true
+       }
+      },
+      "required": [
+       "tx"
+      ]
+     },
+     "then": {
+      "required": [
+       "lease"
+      ]
+     }
+    }
+   ]
+  },
+  "actionOrBinding": {
+   "anyOf": [
+    {
+     "$ref": "#/$defs/action"
+    },
+    {
+     "$ref": "#/$defs/binding"
+    }
+   ]
+  },
+  "dataAction": {
+   "description": "§2.2/§7.2: an item's own action, which may never transmit",
+   "allOf": [
+    {
+     "$ref": "#/$defs/action"
+    },
+    {
+     "not": {
+      "anyOf": [
+       {
+        "properties": {
+         "tx": {
+          "const": true
+         }
+        },
+        "required": [
+         "tx"
+        ]
+       },
+       {
+        "properties": {
+         "level": {
+          "const": "transmit"
+         }
+        },
+        "required": [
+         "level"
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  "callValue": {
+   "anyOf": [
+    {
+     "type": [
+      "number",
+      "boolean",
+      "null"
+     ]
+    },
+    {
+     "type": "string",
+     "allOf": [
+      {
+       "description": "§5.2: a whole-string placeholder is one of $value, $hz, $client",
+       "if": {
+        "type": "string",
+        "pattern": "^\\$"
+       },
+       "then": {
+        "enum": [
+         "$value",
+         "$hz",
+         "$client"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "$ref": "#/$defs/binding"
+    },
+    {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/callValue"
+     }
+    },
+    {
+     "type": "object",
+     "not": {
+      "required": [
+       "$"
+      ]
+     },
+     "additionalProperties": {
+      "$ref": "#/$defs/callValue"
+     }
+    }
+   ]
+  },
+  "keys": {
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$defs/actionOrBinding"
+   }
+  },
+  "poll": {
+   "type": "object",
+   "required": [
+    "path"
+   ],
+   "properties": {
+    "path": {
+     "type": "string",
+     "minLength": 1,
+     "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+    },
+    "everyS": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "size": {
+     "type": "integer"
+    }
+   }
+  },
+  "item": {
+   "type": "object",
+   "properties": {
+    "lat": {
+     "type": "number"
+    },
+    "lon": {
+     "type": "number"
+    },
+    "az": {
+     "type": "number"
+    },
+    "el": {
+     "type": "number"
+    },
+    "rot": {
+     "type": "number"
+    },
+    "sym": {
+     "type": "string"
+    },
+    "tags": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "at": {
+     "type": [
+      "string",
+      "null"
+     ]
+    },
+    "pin": {
+     "type": [
+      "boolean",
+      "null"
+     ]
+    },
+    "minZoom": {
+     "type": "number"
+    },
+    "trail": {
+     "type": "array",
+     "items": {
+      "type": "array"
+     }
+    },
+    "action": {
+     "$ref": "#/$defs/dataAction"
+    }
+   }
+  },
+  "collection": {
+   "type": "object",
+   "properties": {
+    "items": {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "#/$defs/item"
+     }
+    },
+    "order": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "filter": {
+     "type": "object",
+     "properties": {
+      "hide": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/local"
+        },
+        {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        }
+       ]
+      },
+      "maxAgeS": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/local"
+        },
+        {
+         "type": [
+          "number",
+          "null"
+         ]
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  "color": {
+   "type": "object",
+   "required": [
+    "dark",
+    "light"
+   ],
+   "properties": {
+    "dark": {
+     "type": "string",
+     "pattern": "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$"
+    },
+    "light": {
+     "type": "string",
+     "pattern": "^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$"
+    }
+   }
+  },
+  "symbol": {
+   "type": "object",
+   "required": [
+    "paths"
+   ],
+   "properties": {
+    "scale": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "paths": {
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "$ref": "#/$defs/symbolPath"
+     }
+    }
+   }
+  },
+  "symbolPath": {
+   "type": "object",
+   "properties": {
+    "d": {
+     "type": "string",
+     "pattern": "^[MmLlHhVvCcQqZz0-9eE.,+\\- ]*$"
+    },
+    "circle": {
+     "type": "array",
+     "items": {
+      "type": "number"
+     },
+     "minItems": 3,
+     "maxItems": 3
+    },
+    "fill": {
+     "enum": [
+      "tone",
+      "ink",
+      "none",
+      "halo"
+     ]
+    },
+    "stroke": {
+     "enum": [
+      "tone",
+      "ink",
+      "none",
+      "halo"
+     ]
+    },
+    "w": {
+     "type": "number",
+     "minimum": 0
+    }
+   },
+   "oneOf": [
+    {
+     "required": [
+      "d"
+     ]
+    },
+    {
+     "required": [
+      "circle"
+     ]
+    }
+   ]
+  },
+  "hold": {
+   "type": "object",
+   "required": [
+    "name",
+    "start",
+    "stop"
+   ],
+   "properties": {
+    "name": {
+     "type": "string",
+     "minLength": 1
+    },
+    "start": {
+     "$ref": "#/$defs/action"
+    },
+    "stop": {
+     "$ref": "#/$defs/action"
+    },
+    "renewS": {
+     "type": [
+      "number",
+      "null"
+     ],
+     "exclusiveMinimum": 0
+    }
+   }
+  },
+  "op": {
+   "type": "object",
+   "required": [
+    "op"
+   ],
+   "properties": {
+    "op": {
+     "type": "string"
+    }
+   },
+   "description": "§4.2. An unknown op is ignored by a client, so it is allowed here; the known ones have their shapes.",
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "op": {
+        "const": "set"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "id",
+       "v"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "v": {
+        "type": "object"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "op": {
+        "const": "replace"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "id",
+       "part"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "part": {
+        "$ref": "#/$defs/part"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "op": {
+        "const": "up"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "c",
+       "items"
+      ],
+      "properties": {
+       "c": {
+        "type": "string"
+       },
+       "items": {
+        "type": "object",
+        "additionalProperties": {
+         "type": "object",
+         "properties": {
+          "action": {
+           "anyOf": [
+            {
+             "type": "null"
+            },
+            {
+             "$ref": "#/$defs/dataAction"
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "op": {
+        "const": "rm"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "c",
+       "keys"
+      ],
+      "properties": {
+       "c": {
+        "type": "string"
+       },
+       "keys": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "op": {
+        "const": "order"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "c",
+       "keys"
+      ],
+      "properties": {
+       "c": {
+        "type": "string"
+       },
+       "keys": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "op": {
+        "const": "push"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "c",
+       "key",
+       "f",
+       "v"
+      ],
+      "properties": {
+       "c": {
+        "type": "string"
+       },
+       "key": {
+        "type": "string"
+       },
+       "f": {
+        "type": "string"
+       },
+       "v": {
+        "type": "array"
+       },
+       "max": {
+        "type": "integer",
+        "minimum": 0
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "op": {
+        "const": "append"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "id",
+       "v"
+      ],
+      "properties": {
+       "id": {
+        "type": "string"
+       },
+       "mark": {
+        "type": "integer",
+        "minimum": 0
+       },
+       "v": {
+        "type": "array"
+       },
+       "max": {
+        "type": "integer",
+        "minimum": 0
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "op": {
+        "const": "toast"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "text"
+      ],
+      "properties": {
+       "text": {
+        "type": "string"
+       },
+       "tone": {
+        "type": "string"
+       },
+       "s": {
+        "type": "number",
+        "exclusiveMinimum": 0
+       }
+      }
+     }
+    }
+   ]
+  },
+  "frame": {
+   "type": "object",
+   "required": [
+    "t"
+   ],
+   "description": "§4.1, either direction.",
+   "properties": {
+    "t": {
+     "enum": [
+      "hello",
+      "snap",
+      "p",
+      "select",
+      "view",
+      "visible",
+      "event",
+      "ping"
+     ]
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "t": {
+        "enum": [
+         "snap",
+         "p"
+        ]
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "seq",
+       "ops"
+      ],
+      "properties": {
+       "seq": {
+        "type": "integer",
+        "minimum": 1
+       },
+       "ops": {
+        "type": "array",
+        "items": {
+         "$ref": "#/$defs/op"
+        }
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "t": {
+        "const": "hello"
+       }
+      }
+     },
+     "then": {
+      "properties": {
+       "rev": {
+        "type": "string"
+       },
+       "maxHz": {
+        "type": "number",
+        "exclusiveMinimum": 0
+       },
+       "client": {
+        "type": "string"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "t": {
+        "const": "select"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "sel",
+       "key"
+      ],
+      "properties": {
+       "sel": {
+        "type": "string"
+       },
+       "key": {
+        "type": [
+         "string",
+         "null"
+        ]
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "t": {
+        "const": "view"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "part"
+      ],
+      "properties": {
+       "part": {
+        "type": "string"
+       },
+       "bbox": {
+        "type": "array",
+        "items": {
+         "type": "number"
+        },
+        "minItems": 4,
+        "maxItems": 4
+       },
+       "zoom": {
+        "type": "number"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "t": {
+        "const": "visible"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "value"
+      ],
+      "properties": {
+       "value": {
+        "type": "boolean"
+       }
+      }
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "t": {
+        "const": "event"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "name"
+      ],
+      "properties": {
+       "name": {
+        "type": "string"
+       }
+      }
+     }
+    }
+   ]
+  },
+  "pollAnswer": {
+   "type": "object",
+   "required": [
+    "ops"
+   ],
+   "properties": {
+    "ops": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/op"
+     }
+    },
+    "everyS": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    }
+   }
+  },
+  "answer": {
+   "description": "§5.3: a call's 2xx answer",
+   "type": "object",
+   "properties": {
+    "ops": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/op"
+     }
+    },
+    "toast": {
+     "type": "string"
+    },
+    "open": {
+     "type": "object",
+     "required": [
+      "screen"
+     ]
+    }
+   }
+  },
+  "entry": {
+   "type": "object",
+   "required": [
+    "id",
+    "title",
+    "screen"
+   ],
+   "properties": {
+    "id": {
+     "type": "string",
+     "pattern": "^[A-Za-z0-9_.-]+$"
+    },
+    "title": {
+     "type": "string"
+    },
+    "art": {
+     "type": "string",
+     "minLength": 1,
+     "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+    },
+    "icon": {
+     "type": "string"
+    },
+    "screen": {
+     "type": "string"
+    },
+    "params": {
+     "type": "object"
+    },
+    "forms": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "tv",
+       "phone",
+       "tablet"
+      ]
+     }
+    }
+   }
+  },
+  "descriptor": {
+   "description": "§1: GET <base>ui/v2/app",
+   "type": "object",
+   "required": [
+    "ui",
+    "minClient",
+    "entries"
+   ],
+   "properties": {
+    "ui": {
+     "type": "string",
+     "pattern": "^2\\.[0-9]+$"
+    },
+    "minClient": {
+     "type": "string",
+     "pattern": "^2\\.[0-9]+$"
+    },
+    "art": {
+     "type": "string",
+     "minLength": 1,
+     "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+    },
+    "entries": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/entry"
+     }
+    }
+   }
+  },
+  "statusAnswer": {
+   "description": "§1: GET <base>ui/v2/status",
+   "type": "object",
+   "required": [
+    "entries"
+   ],
+   "properties": {
+    "entries": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "object",
+      "properties": {
+       "status": {
+        "type": [
+         "string",
+         "null"
+        ]
+       },
+       "tone": {
+        "type": [
+         "string",
+         "null"
+        ]
+       }
+      }
+     }
+    }
+   }
+  },
+  "symbolSet": {
+   "description": "spec/ui2/symbols/<set>.json",
+   "type": "object",
+   "required": [
+    "set",
+    "description",
+    "symbols"
+   ],
+   "properties": {
+    "set": {
+     "type": "string"
+    },
+    "description": {
+     "type": "string"
+    },
+    "symbols": {
+     "type": "object",
+     "additionalProperties": {
+      "$ref": "#/$defs/symbol"
+     }
+    },
+    "table": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ }
+}

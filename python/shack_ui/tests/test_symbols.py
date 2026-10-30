@@ -70,3 +70,10 @@ def test_every_icon_a_fixture_names_is_in_the_client_s_set():
             used |= {p["icon"] for p, _, _ in iter_parts(doc["root"]) if isinstance(p.get("icon"), str)}
         used |= {e["icon"] for e in doc.get("entries", []) if isinstance(e, dict) and "icon" in e}
     assert used and used <= names, used - names
+
+
+def test_the_packaged_schema_is_the_spec_and_checks_shapes():
+    from shack_ui import schema, schema_errors
+    assert schema() == json.loads((ROOT / "spec" / "schemas" / "ui2.schema.json").read_text())
+    assert schema_errors(json.loads((FIX / "screens" / "radio" / "aircraft.json").read_text())) == []
+    assert schema_errors({"op": "rm", "c": "x"}, "op") == ["/: 'keys' is a required property"]
