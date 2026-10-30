@@ -222,6 +222,30 @@ def documents() -> None:
          "tap": {"do": "call", "method": "POST", "path": "api/set", "body": {"changes": {"vfo": "$hz"}},
                  "level": "control"}})), [], schema=True,
         note="§3.7: a spectrum's `overlay` is a flag; only a video's is a part")
+    case("spectrum-overlay-local", broken(lambda d: bar(d).append(
+        {"type": "spectrum", "id": "scope", "stream": {"path": "api/spectrum/v1", "name": "main"},
+         "overlay": {"local": "nb.labels", "default": True}})), [], schema=True,
+        note="§3.7: the overlay may be a per-device choice, as any shown property may (§2.1)")
+    case("spectrum-overlay-string", broken(lambda d: bar(d).append(
+        {"type": "spectrum", "id": "scope", "stream": {"path": "api/spectrum/v1"}, "overlay": "yes"})),
+        [], schema=False, note="neither a flag nor a `local`: the schema refuses; the validator does not "
+        "look inside a spectrum's overlay")
+    case("spectrum-rows-local", broken(lambda d: bar(d).append(
+        {"type": "spectrum", "id": "scope", "stream": {"path": "api/spectrum/v1"},
+         "look": {"palette": "calm", "rows": {"local": "wb.rows", "default": 0}}})), [], schema=True,
+        note="§3.7: the waterfall as a viewer setting")
+    case("spectrum-rows-zero", broken(lambda d: bar(d).append(
+        {"type": "spectrum", "id": "scope", "stream": {"path": "api/spectrum/v1"}, "look": {"rows": 0}})),
+        [], schema=True, note="§3.7: rows 0 is no waterfall")
+    case("spectrum-rows-negative", broken(lambda d: bar(d).append(
+        {"type": "spectrum", "id": "scope", "stream": {"path": "api/spectrum/v1"}, "look": {"rows": -1}})),
+        [], schema=False, note="rows is a count: the schema refuses a negative one")
+    case("video-mute", broken(lambda d: bar(d).append(
+        {"type": "video", "id": "rx", "src": "api/rx/stream.ts", "ticket": True, "controls": "mute"})),
+        [], schema=True, note="§9: video takes the audio part's `mute` control")
+    case("video-controls-unknown", broken(lambda d: bar(d).append(
+        {"type": "video", "id": "rx", "src": "api/rx/stream.ts", "controls": "rewind"})),
+        [], schema=False)
     case("video-overlay-part", broken(lambda d: bar(d).append(
         {"type": "video", "id": "rx", "src": "api/rx/stream.ts", "ticket": True,
          "overlay": {"type": "text", "id": "mer", "value": "MER 9.1 dB"}})), [], schema=True)
@@ -395,6 +419,13 @@ def opscases() -> None:
          "video's overlay part is a child")
     case("set-merges-and-null-deletes", [[{"op": "set", "id": "status", "v": {"value": "On", "tone": None}}]],
          lambda s: s["parts"]["status"] == {"type": "text", "id": "status", "value": "On"})
+    case("set-spectrum-local-overlay-and-rows", [[
+        {"op": "set", "id": "scope", "v": {"overlay": {"local": "nb.labels", "default": True},
+                                           "look": {"rows": {"local": "wb.rows", "default": 0}}}}]],
+         lambda s: s["parts"]["scope"]["overlay"] == {"local": "nb.labels", "default": True}
+         and s["parts"]["scope"]["look"] == {"rows": {"local": "wb.rows", "default": 0}},
+         "a patch may swap a spectrum's flag for a per-device choice and set its rows; the applier keeps "
+         "the `local` objects whole for the renderer to resolve, and does not read them as child parts")
     case("set-unknown-part", [[{"op": "set", "id": "nowhere", "v": {"x": 1}}]],
          lambda s: "nowhere" not in s["parts"], "ignored")
     case("up-merges-creates-and-null-deletes", [[
