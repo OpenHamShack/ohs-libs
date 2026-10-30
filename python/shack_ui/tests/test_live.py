@@ -343,8 +343,9 @@ def test_asking_for_a_channel_again_does_not_start_it_again():
     ch = hub.channel("t/live", document=DOC)
     ch.up("c", "a", label="A")
     other = dict(DOC, rev="something-else")
-    assert hub.channel("t/live", document=other) is ch           # every request may ask
-    assert ch.rev == DOC["rev"] and "a" in ch.view()["collections"]["c"]["items"]
+    assert hub.channel("t/live", document=DOC) is ch              # every request may ask
+    assert hub.channel("t/live", document=other) is ch
+    assert "a" in ch.view()["collections"]["c"]["items"]          # the live data stays
     ch.reset(other)                                               # only when asked to
     assert ch.rev == "something-else" and "a" not in ch.view()["collections"]["c"]["items"]
 
@@ -359,3 +360,56 @@ def test_removing_a_channel_ends_its_clients():
     assert hub.remove("t/live") and not hub.remove("t/live")
     t.join(timeout=3)
     assert not t.is_alive() and hub.channels() == []
+
+
+def test_each_client_gets_the_rev_of_the_document_it_fetched():
+    """A screen built per form has a rev per form; a hello with another rev
+    makes the client refetch, so each session must carry its own."""
+    tv = DOC
+    s = Screen("t/live", level="control", form="phone")
+    s.collection("c", {"base": {"label": "From the document"}})
+    s.selection("one", from_="c")
+    s.root = p.column(p.text("Starting", id="status"), p.text("phone only", id="extra"))
+    phone = s.json()
+    assert phone["rev"] != tv["rev"]
+    hub = LiveHub(clock=lambda: 0.0)
+    ch = hub.channel("t/live", document=tv)
+    ch.up("c", "a", label="A")
+    ch.set("status", value="On")
+    ch.add(phone)                                       # registered later: the data and the set carry over
+    on_tv = ch.connect("tv", rev=tv["rev"])
+    on_phone = ch.connect("phone", rev=phone["rev"])
+    stray = ch.connect("old", rev="no-such-rev")
+    assert on_tv.hello()["rev"] == tv["rev"] and on_phone.hello()["rev"] == phone["rev"]
+    assert stray.hello()["rev"] == phone["rev"]         # the newest: it will refetch
+    start = state_from_document(phone)
+    st = apply_frame(start, on_phone.frame(0.0), start)
+    assert st["parts"]["status"]["value"] == "On" and drawn_keys(st, "c") == ["base", "a"]
+    ch.set("extra", value="changed")                    # a part only the phone's document has
+    ch.set("rows", hidden=True)                         # and one only the TV's has
+    f = on_phone.frame(1.0)
+    assert f["ops"] == [{"op": "set", "id": "extra", "v": {"value": "changed"}}]
+    tv_start = state_from_document(tv)
+    tv_state = apply_frame(tv_start, on_tv.frame(1.0), tv_start)
+    assert tv_state["parts"]["rows"]["hidden"] is True and "extra" not in tv_state["parts"]
+
+
+def test_variants_are_capped_but_never_one_in_use():
+    hub = LiveHub(clock=lambda: 0.0)
+    ch = hub.channel("t/live", document=DOC)
+    keep = ch.connect("tv", rev=DOC["rev"])
+    for i in range(40):
+        ch.add(dict(DOC, rev=f"r{i}"))
+    assert len(ch.variants) <= 17 and DOC["rev"] in ch.variants and keep.hello()["rev"] == DOC["rev"]
+
+
+def test_the_drivers_bind_the_session_to_the_document_given():
+    hub = LiveHub(max_hz=50, ping_s=5)
+    hub.channel("t/live", document=DOC)
+    other = dict(DOC, rev="phone-rev")
+    sock = FakeSock()
+    t = threading.Thread(target=hub.serve_blocking, args=(sock, "t/live"), kwargs={"document": other}, daemon=True)
+    t.start()
+    assert sock.out.get(timeout=3) == {"t": "hello", "rev": "phone-rev", "maxHz": 50}
+    sock.inbox.put(None)
+    t.join(timeout=3)

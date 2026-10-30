@@ -89,8 +89,33 @@ class ClientView:
         self._s.channel._extra(self._s, c, key, dict(fields or {}, **more))
 
 
+MAX_VARIANTS = 16
+
+
+class _Variant:
+    """One document of a channel's screen: a screen built per form and
+    language has several, each with its own rev, its own parts and its own
+    starting state, and every client must get the hello rev of the one it
+    fetched (or it refetches the document on every connect)."""
+
+    def __init__(self, doc: dict, base: dict, state: dict):
+        self.rev = doc.get("rev")
+        self.base = base
+        self.state = state
+        self.selections = {k: v.get("from") for k, v in (doc.get("selections") or {}).items()
+                           if isinstance(v, dict)}
+
+
 class Channel:
-    """One screen's live state, shared by every client showing it."""
+    """One screen's live state, shared by every client showing it.
+
+    The data (collections, chart points) is one store whichever document a
+    client has. Parts are per document: each variant keeps its own, and a
+    `set` or `replace` goes to every variant that has the part. Variants
+    are keyed by rev: `add(document)` registers one (idempotent and cheap,
+    so call it per request), and a session is bound to the rev its client
+    fetched. The 16 most recently added are kept, never one in use.
+    """
 
     def __init__(self, name: str, document: dict | None = None, *, max_hz: float = DEFAULT_HZ):
         self.name = name
@@ -110,14 +135,68 @@ class Channel:
         calls it on a channel that exists)."""
         with self.lock:
             doc = document or {"root": None}
-            self.rev = doc.get("rev")
-            self.base = state_from_document(doc)
-            self.state = copy.deepcopy(self.base)
-            self.selections = {k: v.get("from") for k, v in (doc.get("selections") or {}).items()
-                               if isinstance(v, dict)}
+            first = state_from_document(doc)
+            self.collections = copy.deepcopy(first["collections"])
+            self.charts = copy.deepcopy(first["charts"])
             self.replaced: dict[str, dict] = {}
+            self.part_sets: dict[str, dict] = {}
+            self.variants: dict[Any, _Variant] = {}
+            self.rev = None
+            self.add(doc)
             for s in self.sessions:
+                s.rev = self.rev
                 s._all_dirty()
+
+    def add(self, document: dict) -> Any:
+        """Register a document of this screen (another form or language, or
+        the same one again) and return its rev. The live data carries over;
+        parts start from this document with every set and replace made so
+        far. The newest added is the one a session without a rev gets."""
+        with self.lock:
+            rev = document.get("rev")
+            v = self.variants.pop(rev, None)
+            if v is None:
+                base = state_from_document(document)
+                parts_state = apply_ops({"parts": copy.deepcopy(base["parts"]), "collections": {}, "charts": {},
+                                         "toasts": [], "reload": False, "subtrees": base["subtrees"]},
+                                        list(self.replaced.values()))
+                for pid, props in self.part_sets.items():
+                    target = parts_state["parts"].get(pid)
+                    if target is not None:
+                        _merge_props(target, props)
+                for cid, marks in base["charts"].items():
+                    self.charts.setdefault(cid, copy.deepcopy(marks))
+                for cid, marks in parts_state["charts"].items():
+                    self.charts.setdefault(cid, marks)
+                state = {"parts": parts_state["parts"], "subtrees": parts_state["subtrees"],
+                         "collections": self.collections, "charts": self.charts, "toasts": [], "reload": False}
+                v = _Variant(document, base, state)
+            self.variants[rev] = v          # last is newest
+            self.rev = rev
+            in_use = {s.rev for s in self.sessions}
+            for old in list(self.variants):
+                if len(self.variants) <= MAX_VARIANTS:
+                    break
+                if old not in in_use and old != rev:
+                    del self.variants[old]
+            return rev
+
+    def variant(self, rev: Any = None) -> _Variant:
+        with self.lock:
+            return self.variants.get(rev) or self.variants[self.rev]
+
+    @property
+    def state(self) -> dict:
+        """The newest document's state (the data is the same in all)."""
+        return self.variants[self.rev].state
+
+    @property
+    def base(self) -> dict:
+        return self.variants[self.rev].base
+
+    @property
+    def selections(self) -> dict:
+        return self.variants[self.rev].selections
 
     # ---- changes, from the app (any thread)
     def _mark(self, mark: tuple, event: dict | None = None) -> None:
@@ -185,14 +264,15 @@ class Channel:
         """Merge properties into a part; a None property deletes."""
         v = dict(props or {}, **more)
         with self.lock:
-            target = self.state["parts"].get(part)
-            if target is None:
+            hit = False
+            for var in self.variants.values():
+                target = var.state["parts"].get(part)
+                if target is not None:
+                    _merge_props(target, v)
+                    hit = True
+            if not hit:
                 return
-            for k, x in v.items():
-                if x is None:
-                    target.pop(k, None)
-                else:
-                    target[k] = copy.deepcopy(x)
+            self.part_sets.setdefault(part, {}).update(copy.deepcopy(v))
             self._mark(("part", part))
 
     def replace(self, part: str, new: dict) -> None:
@@ -200,10 +280,19 @@ class Channel:
         client gets the op itself, and a later snap carries it too."""
         op = {"op": "replace", "id": part, "part": copy.deepcopy(new)}
         with self.lock:
-            if part not in self.state["parts"]:
+            hit = False
+            for var in self.variants.values():
+                if part in var.state["parts"]:
+                    t = apply_ops({"parts": var.state["parts"], "subtrees": var.state["subtrees"], "collections": {},
+                                   "charts": {}, "toasts": [], "reload": False}, [op])
+                    var.state["parts"], var.state["subtrees"] = t["parts"], t["subtrees"]
+                    for cid, marks in t["charts"].items():
+                        self.charts.setdefault(cid, marks)
+                    hit = True
+            if not hit:
                 return
-            self.state = apply_ops(self.state, [op])
             self.replaced[part] = op
+            self.part_sets.pop(part, None)
             self._mark(("part", part), op)
 
     def append(self, chart: str, points: list, mark: int = 0, max: int | None = None) -> None:
@@ -281,9 +370,14 @@ class Channel:
                 s._wake()
             self.sessions.clear()
 
-    def connect(self, client: str | None = None, req=None, *, max_hz: float | None = None) -> Session:
+    def connect(self, client: str | None = None, req=None, *, max_hz: float | None = None,
+                rev: Any = None) -> Session:
+        """A session for a client holding the document `rev` (Channel.add's);
+        an unknown or missing rev gets the newest document's, whose hello
+        then tells the client to refetch."""
         with self.lock:
             s = Session(self, client, req, max_hz or self.max_hz)
+            s.rev = rev if rev in self.variants else self.rev
             self.sessions.append(s)
             return s
 
@@ -296,7 +390,7 @@ class Channel:
         """What a client should hold now: the live state, with this
         session's extras over the items they belong to."""
         with self.lock:
-            v = copy.deepcopy(self.state)
+            v = copy.deepcopy(self.variant(s.rev if s is not None else None).state)
             if s is not None:
                 for c, items in s.extras.items():
                     coll = v["collections"].get(c)
@@ -327,6 +421,7 @@ class Session:
         self.last_at: float | None = None
         self.wake: Callable[[], None] | None = None
         self.closed = False
+        self.rev: Any = None
 
     def _wake(self) -> None:
         if self.wake is not None:
@@ -344,7 +439,7 @@ class Session:
 
     # ---- frames
     def hello(self) -> dict:
-        return {"t": "hello", "rev": self.channel.rev, "maxHz": self.hz}
+        return {"t": "hello", "rev": self.channel.variant(self.rev).rev, "maxHz": self.hz}
 
     def pending(self) -> bool:
         return self.sent is None or bool(self.dirty) or bool(self.events)
@@ -368,7 +463,7 @@ class Session:
                 return None
             view = self.channel.view(self)
             if self.sent is None:
-                start = apply_ops(self.channel.base, list(self.channel.replaced.values()))
+                start = apply_ops(self.channel.variant(self.rev).base, list(self.channel.replaced.values()))
                 ops = list(self.channel.replaced.values()) + _diff(start, view, None)
                 kind = "snap"
             else:
@@ -416,7 +511,7 @@ class Session:
         if not isinstance(sel, str):
             return
         ch = self.channel
-        c = ch.selections.get(sel, sel)
+        c = ch.variant(self.rev).selections.get(sel, sel)
         with ch.lock:
             # The extras belonged to the old selection: drop them, and the
             # next frame tells the client (their fields go as nulls).
@@ -428,6 +523,14 @@ class Session:
             if want is None or want == sel:
                 fn(ClientView(self), key)
         self._wake()
+
+
+def _merge_props(target: dict, props: dict) -> None:
+    for k, x in props.items():
+        if x is None:
+            target.pop(k, None)
+        else:
+            target[k] = copy.deepcopy(x)
 
 
 def _diff(old: dict, new: dict, dirty: set | None) -> list[dict]:
@@ -521,15 +624,24 @@ class LiveHub:
         self._lock = threading.Lock()
 
     def channel(self, name: str, document: dict | None = None) -> Channel:
-        """The channel for a screen, made on first use and seeded from
-        `document` (Screen.json()'s) then. Calling it again, on every
-        request, is cheap and changes nothing: Channel.reset() is the
-        explicit way to start a channel again."""
+        """The channel for a screen, made on first use. A `document`
+        (Screen.json()'s) is registered as one of its variants (Channel.add):
+        the first seeds it; later ones, another form or language or a
+        rebuilt screen, add their rev and keep the live data. Calling it on
+        every request is cheap. Channel.reset() is the explicit way to start
+        a channel again."""
         with self._lock:
             ch = self._channels.get(name)
             if ch is None:
                 ch = self._channels[name] = Channel(name, document, max_hz=self.max_hz)
-            return ch
+                return ch
+        if document is not None:
+            ch.add(document)
+        return ch
+
+    def _bind(self, name: str, document: dict | None):
+        ch = self.channel(name, document)
+        return ch, (ch.add(document) if document is not None else None)
 
     def remove(self, name: str) -> bool:
         """Drop a screen's channel (the feature went, the app is stopping a
@@ -544,14 +656,16 @@ class LiveHub:
     def channels(self) -> list[str]:
         return list(self._channels)
 
-    def serve_blocking(self, sock, name: str, req=None) -> None:
+    def serve_blocking(self, sock, name: str, req=None, *, document: dict | None = None) -> None:
         """Serve one client on a blocking socket with `send_text(str)` and
         `recv() -> (opcode, bytes) | None` (Radio's ohscore.server.ws),
         until it closes. Frames go from a thread of their own, so a slow
         client never holds up the reader and the reader never holds up
-        the frames."""
-        ch = self.channel(name)
-        s = ch.connect(getattr(req, "client", None), req)
+        the frames. `document`: the one this client fetched (the app builds
+        it for `req` again, or keeps it by form and language), so its hello
+        carries that rev."""
+        ch, rev = self._bind(name, document)
+        s = ch.connect(getattr(req, "client", None), req, rev=rev)
         cond = threading.Condition()
         closed = threading.Event()
 
@@ -608,13 +722,14 @@ class LiveHub:
             ch.disconnect(s)
             t.join(timeout=2)
 
-    async def serve(self, ws, name: str, req=None) -> None:
+    async def serve(self, ws, name: str, req=None, *, document: dict | None = None) -> None:
         """Serve one client on an asyncio WebSocket: `send_str(str)` (or
         `send`) and async iteration over messages (str, or objects with
-        `.data`: aiohttp's WSMessage), until it closes."""
+        `.data`: aiohttp's WSMessage), until it closes. `document` as for
+        serve_blocking."""
         loop = asyncio.get_running_loop()
-        ch = self.channel(name)
-        s = ch.connect(getattr(req, "client", None), req)
+        ch, rev = self._bind(name, document)
+        s = ch.connect(getattr(req, "client", None), req, rev=rev)
         ev = asyncio.Event()
         s.wake = lambda: loop.call_soon_threadsafe(ev.set)
         send = getattr(ws, "send_str", None) or ws.send
