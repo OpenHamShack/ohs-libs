@@ -217,6 +217,18 @@ def documents() -> None:
     case("local-cycle-is-not-a-typed-value", broken(lambda d: d["keys"].update(
         info={"do": "local", "key": "map.style", "cycle": ["real", "night"]})), [], schema=True,
         note="an action's fields are not values: `cycle` here is §5.1's, not §2.1's typed value")
+    case("spectrum-overlay-flag", broken(lambda d: bar(d).append(
+        {"type": "spectrum", "id": "scope", "stream": {"path": "api/spectrum/v1", "name": "main"}, "overlay": True,
+         "tap": {"do": "call", "method": "POST", "path": "api/set", "body": {"changes": {"vfo": "$hz"}},
+                 "level": "control"}})), [], schema=True,
+        note="§3.7: a spectrum's `overlay` is a flag; only a video's is a part")
+    case("video-overlay-part", broken(lambda d: bar(d).append(
+        {"type": "video", "id": "rx", "src": "api/rx/stream.ts", "ticket": True,
+         "overlay": {"type": "text", "id": "mer", "value": "MER 9.1 dB"}})), [], schema=True)
+    case("video-overlay-broken", broken(lambda d: bar(d).append(
+        {"type": "video", "id": "rx", "src": "api/rx/stream.ts", "overlay": {"type": "image", "src": "/x.png"}})),
+        [("bad_path", "/root/children/1/children/2/overlay/src")], schema=False,
+        note="a video's overlay is a part and is checked as one")
     case("unknown-do-in-a-seq", broken(lambda d: d["keys"].update(info={"do": "seq", "actions": [
         {"do": "back"}, {"do": "shell"}]})), [("bad_action", "/keys/info/actions/1")], schema=False)
     case("evil-placeholder", broken(lambda d: d["holds"][0]["start"].update(body={"client": "$token"})),
@@ -342,7 +354,9 @@ OPS_DOC = {
         {"type": "panel", "id": "side", "child": {"type": "column", "children": [
             {"type": "text", "id": "inner", "value": "x"}]}},
         {"type": "chart", "id": "snr", "marks": [{"mark": "line", "points": [[0, 1]]}, {"mark": "line"}]},
-        {"type": "list", "id": "rows", "from": "c", "template": {"type": "text", "id": "cell", "value": {"$": "label"}}}]},
+        {"type": "list", "id": "rows", "from": "c", "template": {"type": "text", "id": "cell", "value": {"$": "label"}}},
+        {"type": "spectrum", "id": "scope", "stream": {"path": "api/spectrum/v1"}, "overlay": True},
+        {"type": "video", "id": "rx", "src": "api/rx/stream.ts", "overlay": {"type": "text", "id": "mer", "value": "x"}}]},
 }
 
 
@@ -372,9 +386,11 @@ def opscases() -> None:
         cases.append(c | {"steps": out, "state": final} | ({"note": note} if note else {}))
 
     case("start", [], lambda s: s["drawn"]["c"] == ["a", "b"] and s["parts"]["status"]["value"] == "Starting"
-         and "inner" in s["parts"] and s["charts"]["snr"] == [[[0, 1]], []] and "cell" not in s["parts"],
+         and "inner" in s["parts"] and s["charts"]["snr"] == [[[0, 1]], []] and "cell" not in s["parts"]
+         and s["parts"]["scope"]["overlay"] is True and "overlay" not in s["parts"]["rx"] and "mer" in s["parts"],
          "the state a renderer starts from: id'd parts flat with their own properties (no children), "
-         "template ids not indexed, chart points per mark")
+         "template ids not indexed, chart points per mark; a spectrum's overlay flag is a property, a "
+         "video's overlay part is a child")
     case("set-merges-and-null-deletes", [[{"op": "set", "id": "status", "v": {"value": "On", "tone": None}}]],
          lambda s: s["parts"]["status"] == {"type": "text", "id": "status", "value": "On"})
     case("set-unknown-part", [[{"op": "set", "id": "nowhere", "v": {"x": 1}}]],
@@ -443,7 +459,7 @@ def opscases() -> None:
                        "document's state (`document`: \"base\" is the file's `base` document, a fixture path "
                        "under fixtures/, or inline), applies each step in turn (a list of ops, or {\"frame\": "
                        "...} for a socket frame) and must reach `state`: id'd parts flat with their own "
-                       "properties (children, child, template, empty, fallback and overlay left out; a tabs "
+                       "properties (children, and child, template, empty, fallback and overlay when they hold a part, left out; a tabs "
                        "part's tabs without their child), collections as held, `drawn` (each collection's keys "
                        "as drawn: those in `order` that have an item, then the rest sorted by key), chart "
                        "points per mark, toasts and reload. A snap frame applies to the document's own state.",

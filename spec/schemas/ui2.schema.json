@@ -215,9 +215,6 @@
     "empty": {
      "$ref": "#/$defs/part"
     },
-    "overlay": {
-     "$ref": "#/$defs/part"
-    },
     "action": {
      "$ref": "#/$defs/actionOrBinding"
     },
@@ -433,6 +430,9 @@
         "type": "string",
         "minLength": 1,
         "pattern": "^(?![A-Za-z][A-Za-z0-9+.-]*:)(?!/)(?!.*\\\\)(?!(.*/)?(\\.\\.|%2[eE]%2[eE]|\\.%2[eE]|%2[eE]\\.)(/|\\?|$)).*$"
+       },
+       "overlay": {
+        "$ref": "#/$defs/part"
        }
       }
      }
@@ -720,6 +720,10 @@
        },
        "tap": {
         "$ref": "#/$defs/action"
+       },
+       "overlay": {
+        "type": "boolean",
+        "description": "§3.7: draw the overlay/1 items that come on the spectrum socket"
        }
       }
      }

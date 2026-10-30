@@ -54,7 +54,8 @@ beside them (SCREENS.md §4.3, item 3). The vectors write that as:
 
 - `parts`: every part with an `id`, outside templates, with its own
   properties: `children`, `child`, `template`, `empty`, `fallback` and
-  `overlay` left out, and a `tabs` part's `tabs` without each `child`.
+  `overlay` left out when they hold a part (a spectrum's `overlay: true`
+  is a property and stays), and a `tabs` part's `tabs` without each `child`.
 - `collections`: items and `order` as held; a collection's `filter` is
   not state.
 - `drawn`: per collection, the keys in `order` that have an item, then

@@ -23,7 +23,11 @@ def _props(part: dict) -> dict:
     """A part's own properties, without its child parts: the state keeps
     each id'd part flat, as a renderer's store does, so a `set` on a child
     never has to find it inside its parent."""
-    p = {k: copy.deepcopy(v) for k, v in part.items() if k not in PART_KEYS and k != "children"}
+    # A child-part key holding something that is not a part is an ordinary
+    # property: a spectrum's `overlay: true` (§3.7) is a flag, where a
+    # video's `overlay` (§9) is a part.
+    p = {k: copy.deepcopy(v) for k, v in part.items()
+         if not ((k in PART_KEYS and is_part(v)) or k == "children")}
     if part.get("type") == "tabs" and isinstance(p.get("tabs"), list):
         p["tabs"] = [{k: v for k, v in t.items() if k != "child"} if isinstance(t, dict) else t
                      for t in p["tabs"]]
