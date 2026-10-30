@@ -413,3 +413,31 @@ def test_the_drivers_bind_the_session_to_the_document_given():
     assert sock.out.get(timeout=3) == {"t": "hello", "rev": "phone-rev", "maxHz": 50}
     sock.inbox.put(None)
     t.join(timeout=3)
+
+
+def test_an_app_can_refresh_one_client_s_extras():
+    ch = channel()
+    ch.up("c", "a", label="A")
+    ch.up("c", "b", label="B")
+    photos = {"a": None}
+    ch.on_select(lambda client, key: key and photos.get(key) and client.up("c", key, photo=photos[key]), sel="one")
+    tv, phone, idle = Client(ch, "tv"), Client(ch, "phone"), Client(ch, "idle")
+    for c in (tv, phone, idle):
+        c.pump(0.0)
+    tv.session.receive(json.dumps({"t": "select", "sel": "one", "key": "a"}))
+    phone.session.receive(json.dumps({"t": "select", "sel": "one", "key": "b"}))
+    assert [c.client for c in ch.clients("one", "a")] == ["tv"]
+    assert sorted(c.client for c in ch.clients("one")) == ["phone", "tv"]
+    assert len(ch.clients()) == 3
+    photos["a"] = "a.jpg"                                # it arrives later
+    assert ch.refresh("one", "a") == 1
+    tv.pump(1.0), phone.pump(1.0), idle.pump(1.0)
+    assert tv.state["collections"]["c"]["items"]["a"]["photo"] == "a.jpg"
+    assert "photo" not in phone.state["collections"]["c"]["items"]["a"]
+    assert "photo" not in idle.state["collections"]["c"]["items"]["a"]
+    # Or straight to one client, and taken away again.
+    ch.clients("one", "b")[0].up("c", "b", note="only you")
+    phone.pump(2.0)
+    assert phone.state["collections"]["c"]["items"]["b"]["note"] == "only you"
+    ch.clients("one", "b")[0].clear("c", "b")
+    assert phone.pump(3.0)["ops"] == [{"op": "up", "c": "c", "items": {"b": {"note": None}}}]

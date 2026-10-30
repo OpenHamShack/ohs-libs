@@ -88,6 +88,15 @@ class ClientView:
     def up(self, c: str, key: str, fields: dict | None = None, **more) -> None:
         self._s.channel._extra(self._s, c, key, dict(fields or {}, **more))
 
+    def clear(self, c: str, key: str | None = None) -> None:
+        """Drop this client's extras on one item (or all of collection `c`);
+        the next frame sends their fields as nulls."""
+        self._s.channel._clear_extras(self._s, c, key)
+
+    def selected(self, sel: str) -> Any:
+        """The key this client has selected in `sel`, or None."""
+        return self._s.selected.get(sel)
+
 
 MAX_VARIANTS = 16
 
@@ -353,6 +362,39 @@ class Channel:
     def on_event(self, fn: Callable[[ClientView, str, Any], None]) -> None:
         """fn(client, name, value) for a `send` action's event."""
         self._event_cbs.append(fn)
+
+    def clients(self, sel: str | None = None, key: Any = None) -> list[ClientView]:
+        """The clients on this channel; with `sel`, those that have something
+        selected there; with `key` too, those that have that item selected.
+        Each ClientView's up() and clear() change only that client's extras,
+        from any thread."""
+        with self.lock:
+            out = []
+            for s in self.sessions:
+                if sel is not None:
+                    k = s.selected.get(sel)
+                    if k is None or (key is not None and k != key):
+                        continue
+                out.append(ClientView(s))
+            return out
+
+    def refresh(self, sel: str, key: Any = None) -> int:
+        """Run the on_select callbacks again for every client with `key`
+        (or anything) selected in `sel`, after dropping the extras they
+        made: for when what only the selected item shows changed (its photo
+        arrived, its cockpit values moved). Returns how many clients."""
+        clients = self.clients(sel, key)
+        for cv in clients:
+            cv._s._select(sel, cv.selected(sel))
+        return len(clients)
+
+    def _clear_extras(self, s: Session, c: str, key: str | None) -> None:
+        with self.lock:
+            items = s.extras.get(c, {})
+            for k in [key] if key is not None else list(items):
+                if items.pop(k, None) is not None:
+                    s.dirty.add(("c", c, k))
+            s._wake()
 
     def _extra(self, s: Session, c: str, key: str, fields: dict) -> None:
         with self.lock:
