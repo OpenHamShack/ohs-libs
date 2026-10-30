@@ -1,0 +1,30 @@
+{
+  "description": "Typed values (SCREENS.md §2.1) and whether each is well formed (check.py check_typed). The first of freq, ago, countdown, since, clock, time, cycle present names the kind.",
+  "version": 1,
+  "cases": [
+    {"id": "freq", "value": {"freq": 1090000000, "unit": "MHz", "decimals": 3}, "ok": true},
+    {"id": "freq-bound", "value": {"freq": {"$": "hz"}, "unit": "kHz"}, "ok": true},
+    {"id": "freq-string", "value": {"freq": "1090"}, "ok": false},
+    {"id": "freq-decimals-negative", "value": {"freq": 1, "decimals": -1}, "ok": false},
+    {"id": "ago", "value": {"ago": "2026-10-30T09:21:04Z"}, "ok": true},
+    {"id": "ago-bound", "value": {"ago": {"$": "at"}}, "ok": true},
+    {"id": "ago-offset", "value": {"ago": "2026-10-30T10:21:04+01:00"}, "ok": true},
+    {"id": "ago-fraction", "value": {"ago": "2026-10-30T09:21:04.250Z"}, "ok": true},
+    {"id": "ago-words", "value": {"ago": "yesterday"}, "ok": false},
+    {"id": "ago-no-zone", "value": {"ago": "2026-10-30T09:21:04"}, "ok": false, "note": "an ISO time names its zone"},
+    {"id": "since", "value": {"since": "2026-10-30T09:21:04Z"}, "ok": true},
+    {"id": "clock", "value": {"clock": "local+utc", "style": "hms"}, "ok": true},
+    {"id": "clock-mars", "value": {"clock": "mars"}, "ok": false},
+    {"id": "clock-style", "value": {"clock": "utc", "style": "dayhm"}, "ok": false, "note": "a clock is hm or hms"},
+    {"id": "time", "value": {"time": "2026-10-30T09:19:21Z", "zone": "local+utc", "style": "dayhm"}, "ok": true},
+    {"id": "time-zone", "value": {"time": "2026-10-30T09:19:21Z", "zone": "moon"}, "ok": false},
+    {"id": "countdown-three", "value": {"countdown": {"to": "2026-10-30T09:19:21Z", "then": "2026-10-30T09:34:21Z", "text": ["in {d}", "up, sets in {d}", "over"]}}, "ok": true},
+    {"id": "countdown-two", "value": {"countdown": {"to": "2026-10-30T09:34:21Z", "text": ["in {d}", "over"]}}, "ok": true},
+    {"id": "countdown-two-with-then", "value": {"countdown": {"to": "2026-10-30T09:19:21Z", "then": "2026-10-30T09:34:21Z", "text": ["in {d}", "over"]}}, "ok": false},
+    {"id": "countdown-three-without-then", "value": {"countdown": {"to": "2026-10-30T09:34:21Z", "text": ["a", "b", "c"]}}, "ok": false},
+    {"id": "countdown-no-to", "value": {"countdown": {"text": ["a", "b"]}}, "ok": false},
+    {"id": "cycle", "value": {"cycle": {"periodS": 15, "offsetS": 0}}, "ok": true},
+    {"id": "cycle-zero", "value": {"cycle": {"periodS": 0}}, "ok": false},
+    {"id": "not-typed", "value": {"label": "x"}, "ok": true, "note": "a dict naming no typed kind is not checked as one"}
+  ]
+}

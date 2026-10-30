@@ -1,0 +1,30 @@
+{
+  "description": "Paths and URLs (SCREENS.md §9, §11) and the problem check.py's check_path reports, or null. kind: \"path\" (relative to the document's base: a call, a stream, a tile), \"image\" (relative, or https on the client's built-in allow-list, today plnspttrs.net and its subdomains), \"link\" (an https URL a person may open). Decoding is applied before the `..` and backslash checks, so no spelling gets past them.",
+  "version": 1,
+  "cases": [
+    {"id": "relative", "value": "api/adsb/session", "kind": "path", "problem": null},
+    {"id": "relative-query", "value": "api/adsb/session?client={$client}", "kind": "path", "problem": null},
+    {"id": "braces", "value": "api/map/tiles/{z}/{x}/{y}.png", "kind": "path", "problem": null},
+    {"id": "dots-in-a-name", "value": "api/files/a..b.png", "kind": "path", "problem": null, "note": "only a whole `..` segment is refused"},
+    {"id": "leading-slash", "value": "/api/x", "kind": "path", "problem": "bad_path"},
+    {"id": "dotdot", "value": "../x", "kind": "path", "problem": "bad_path"},
+    {"id": "dotdot-inside", "value": "a/../b", "kind": "path", "problem": "bad_path"},
+    {"id": "dotdot-encoded", "value": "a/%2E%2E/b", "kind": "path", "problem": "bad_path"},
+    {"id": "dotdot-encoded-lower", "value": "a/%2e%2e", "kind": "path", "problem": "bad_path"},
+    {"id": "dotdot-half-encoded", "value": "a/.%2e/b", "kind": "path", "problem": "bad_path"},
+    {"id": "backslash", "value": "api\\x", "kind": "path", "problem": "bad_path"},
+    {"id": "backslash-encoded", "value": "api%5cx", "kind": "path", "problem": "bad_path"},
+    {"id": "scheme", "value": "http://x/y", "kind": "path", "problem": "absolute_url"},
+    {"id": "protocol-relative", "value": "//x/y", "kind": "path", "problem": "absolute_url"},
+    {"id": "javascript", "value": "javascript:alert(1)", "kind": "path", "problem": "absolute_url"},
+    {"id": "image-relative", "value": "ui/v2/art/radio.png", "kind": "image", "problem": null},
+    {"id": "image-allowed-host", "value": "https://t.plnspttrs.net/a.jpg", "kind": "image", "problem": null},
+    {"id": "image-allowed-apex", "value": "https://plnspttrs.net/a.jpg", "kind": "image", "problem": null},
+    {"id": "image-lookalike-host", "value": "https://evilplnspttrs.net/a.jpg", "kind": "image", "problem": "absolute_url", "note": "the host must be the listed one or under it, not merely end with its name"},
+    {"id": "image-allowed-host-http", "value": "http://t.plnspttrs.net/a.jpg", "kind": "image", "problem": "absolute_url"},
+    {"id": "image-other-host", "value": "https://example.com/a.jpg", "kind": "image", "problem": "absolute_url"},
+    {"id": "link-https", "value": "https://www.planespotters.net/photo/1", "kind": "link", "problem": null},
+    {"id": "link-http", "value": "http://www.planespotters.net/photo/1", "kind": "link", "problem": "absolute_url"},
+    {"id": "link-relative", "value": "photo/1", "kind": "link", "problem": "absolute_url", "note": "a link is an https URL a person may open"}
+  ]
+}
