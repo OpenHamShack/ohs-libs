@@ -28,4 +28,6 @@ where = ["src"]
 # spec/schemas/ui2.schema.json, read at run time by shack_ui.symbols and
 # shack_ui.schema; a wheel cannot reach the repository.
 # tools/gen-ui2-vectors.py refreshes them and a test fails if they differ.
-shack_ui = ["data/ui2/*.json", "data/ui2/symbols/*.json", "data/schemas/ui2.schema.json"]
+# locale/: the library's own words (i18n.py), as every ohs-libs package carries them.
+shack_ui = ["data/ui2/*.json", "data/ui2/symbols/*.json", "data/schemas/ui2.schema.json",
+            "locale/*.pot", "locale/*/LC_MESSAGES/*.mo"]

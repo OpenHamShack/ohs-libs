@@ -84,7 +84,7 @@ def bandplan_entries() -> dict:
 TARGETS = [
     *[(ROOT / "python" / pkg / "src" / pkg / "locale" / f"{pkg.replace('_', '-')}.pot", pkg.replace("_", "-"),
        lambda pkg=pkg: underscore_entries(pkg))
-      for pkg in ("shack_client", "shack_cw", "shack_desktop", "shack_packet", "shack_pad", "shack_rec", "shack_rig")],
+      for pkg in ("shack_client", "shack_cw", "shack_desktop", "shack_packet", "shack_pad", "shack_rec", "shack_rig", "shack_ui")],
     (ROOT / "rust" / "shack_sdr" / "python" / "shack_sdr" / "locale" / "shack-sdr.pot", "shack-sdr",
      lambda: underscore_entries("shack_sdr", ROOT / "rust" / "shack_sdr" / "python" / "shack_sdr")),
     (ROOT / "python" / "shack_bandplan" / "src" / "shack_bandplan" / "locale" / "shack-bandplan.pot",

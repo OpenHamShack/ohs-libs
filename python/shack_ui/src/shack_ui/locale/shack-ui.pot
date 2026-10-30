@@ -1,0 +1,17 @@
+# English template for the shack-ui domain. Written by tools/extract_pot.py; do not edit.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"X-Domain: shack-ui\n"
+
+#: python/shack_ui/src/shack_ui/holds.py
+msgid "A hold is started with POST and stopped with DELETE."
+msgstr ""
+
+#: python/shack_ui/src/shack_ui/holds.py
+msgid "A hold needs the client's id."
+msgstr ""
+
+#: python/shack_ui/src/shack_ui/holds.py
+msgid "There is no such hold here."
+msgstr ""
