@@ -1,0 +1,33 @@
+{
+  "ui": "2.0",
+  "screen": "radio/wxsat/viewer",
+  "rev": "v-55e0a1c3",
+  "title": "Meteor-M N2-3, 09:19",
+  "form": "tv",
+  "level": "control",
+  "backdrop": {"style": "plain"},
+  "root": {
+    "type": "stack", "children": [
+      {"type": "tabs", "id": "products", "align": "fill", "selected": "rgb", "focusSelects": true,
+       "place": "bottom", "style": "pills", "focus": {"initial": true},
+       "tabs": [
+         {"id": "rgb", "label": "RGB", "child":
+           {"type": "image", "src": "api/wxsat/images/meteor-m2-3-20261030T0919Z/rgb.jpg?w=1920", "fit": "contain",
+            "rotate": 180, "hero": "meteor-m2-3-20261030T0919Z", "alt": "AVHRR 221 False Color"}},
+         {"id": "ir", "label": "IR", "child":
+           {"type": "image", "src": "api/wxsat/images/meteor-m2-3-20261030T0919Z/ir.jpg?w=1920", "fit": "contain",
+            "rotate": 180, "alt": "10.8um Thermal IR (Uncalibrated)"}},
+         {"id": "msa", "label": "MSA", "child":
+           {"type": "image", "src": "api/wxsat/images/meteor-m2-3-20261030T0919Z/msa.jpg?w=1920", "fit": "contain",
+            "rotate": 180, "alt": "MSA"}},
+         {"id": "ch1", "label": "Channel 1", "child":
+           {"type": "image", "src": "api/wxsat/images/meteor-m2-3-20261030T0919Z/ch1.jpg?w=1920", "fit": "contain",
+            "rotate": 180, "alt": "Channel 1"}}
+       ]},
+      {"type": "column", "align": "top-start", "pad": "m", "surface": "glass", "children": [
+        {"type": "text", "value": "Meteor-M N2-3", "style": "title", "size": "l"},
+        {"type": "text", "value": {"time": "2026-10-30T09:19:21Z", "zone": "local+utc", "style": "dayhm"}, "tone": "muted"},
+        {"type": "text", "value": "Max elevation 41.9° · 1400 × 1820", "tone": "muted", "size": "s"}]}
+    ]
+  }
+}

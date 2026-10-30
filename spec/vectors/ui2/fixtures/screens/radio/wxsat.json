@@ -1,0 +1,120 @@
+{
+  "ui": "2.0",
+  "screen": "radio/wxsat",
+  "rev": "w-1b9e3a57",
+  "title": "Weather Sats",
+  "form": "tv",
+  "level": "control",
+  "backdrop": {"style": "aurora"},
+  "words": {"s": "{n}s", "min": "{n}m", "h": "{n}h", "d": "{n}d"},
+  "colors": {
+    "sat.n23": {"dark": "#5FD3FF", "light": "#0B6E99"},
+    "sat.n24": {"dark": "#B48CFF", "light": "#6A3FC0"},
+    "plan.record": {"dark": "#57E39B", "light": "#1E8A55"},
+    "plan.busy": {"dark": "#FFC857", "light": "#9A6A00"},
+    "plan.skip": {"dark": "#7F8C99", "light": "#5A6672"},
+    "plan.conflict": {"dark": "#FF6B6B", "light": "#B3261E"},
+    "plan.recording": {"dark": "#C08BFF", "light": "#7B3FC4"},
+    "plan.decoding": {"dark": "#4FE3E3", "light": "#0B7F7F"}
+  },
+  "symbols": {
+    "sat": {"paths": [{"d": "M10 10 H14 V14 H10 Z", "fill": "ink"},
+                      {"d": "M2 10.5 H9 V13.5 H2 Z M15 10.5 H22 V13.5 H15 Z", "fill": "tone", "stroke": "ink", "w": 0.5}]}
+  },
+  "collections": {
+    "passes": {"items": {}, "order": []},
+    "images": {"items": {}, "order": []},
+    "frames": {"items": {}, "order": []}
+  },
+  "selections": {"pass": {"from": "passes"}},
+  "poll": {"path": "ui/v2/poll/radio/wxsat", "everyS": 5},
+  "root": {
+    "type": "column", "pad": "l", "gap": "m", "children": [
+      {"type": "row", "gap": "m", "children": [
+        {"type": "icon", "sym": "sat", "tone": "sat.n23", "size": "l"},
+        {"type": "column", "weight": 1, "children": [
+          {"type": "text", "value": "Weather Sats", "style": "title", "size": "xl"},
+          {"type": "text", "id": "elements", "value": "from IO75rl", "tone": "muted"}]},
+        {"type": "text", "value": {"clock": "local+utc", "style": "hm"}, "style": "numeric", "size": "l"}]},
+
+      {"type": "tabs", "id": "tabs", "selected": "passes", "focusSelects": true, "weight": 1,
+       "badges": {"live": null},
+       "tabs": [
+        {"id": "passes", "label": "Passes", "child":
+          {"type": "split", "gap": "l", "children": [
+            {"type": "list", "id": "passList", "from": "passes", "selection": "pass", "w": 480,
+             "focus": {"initial": true}, "keepFocus": true,
+             "onActivate": {"$": "action"},
+             "empty": {"type": "empty", "icon": "satellite", "text": "No passes in the next day"},
+             "template": {"type": "row", "gap": "s", "pad": "s", "children": [
+               {"type": "badge", "style": "pill", "tone": {"$": "tone"}, "w": 6, "h": 48},
+               {"type": "column", "weight": 1, "children": [
+                 {"type": "text", "value": [{"$": "label"}, {"$": "freqText"}], "style": "title", "size": "s"},
+                 {"type": "text", "value": {"$": "when"}, "tone": "muted"},
+                 {"type": "text", "value": {"$": "dirText"}, "tone": "muted", "size": "s"}]},
+               {"type": "column", "align": "end", "children": [
+                 {"type": "badge", "style": "outline", "text": {"$": "planText"}, "tone": {"$": "planTone"}},
+                 {"type": "text", "value": {"$": "countdown"}, "style": "numeric", "size": "s"}]}]}},
+            {"type": "column", "gap": "s", "weight": 1, "children": [
+              {"type": "text", "id": "nextName", "value": "Next pass", "style": "caption", "tone": "muted"},
+              {"type": "text", "id": "nextCountdown", "value": "", "style": "display", "size": "xxl"},
+              {"type": "skyplot", "id": "sky", "from": "passes", "selection": "pass", "show": "selected",
+               "w": 250, "h": 250, "minEl": 15, "rings": [30, 60]},
+              {"type": "column", "id": "passInfo", "for": "pass", "gap": "xs", "children": [
+                 {"type": "text", "value": {"$": "summary"}},
+                 {"type": "text", "value": {"$": "whyText"}, "tone": {"$": "planTone"}},
+                 {"type": "text", "value": {"$": "hint"}, "tone": "muted", "size": "s"}]}]}]}},
+
+        {"id": "live", "label": "Live", "child":
+          {"type": "row", "gap": "l", "children": [
+            {"type": "skyplot", "id": "liveSky", "from": "passes", "show": {"key": null}, "w": 390, "h": 390,
+             "minEl": 15, "rings": [30, 60], "now": null},
+            {"type": "column", "id": "liveInfo", "gap": "s", "weight": 1, "children": [
+              {"type": "badge", "id": "liveState", "style": "pill", "tone": "muted", "text": "Nothing up"},
+              {"type": "text", "id": "liveSat", "value": null, "style": "title", "size": "xl"},
+              {"type": "text", "id": "liveLine", "value": null, "tone": "muted"},
+              {"type": "meter", "id": "snr", "value": null, "min": 0, "max": 25, "style": "bar",
+               "ticks": [{"at": 0, "label": "0"}, {"at": 10, "label": "10"}, {"at": 20, "label": "20 dB"}],
+               "zones": [{"from": 0, "to": 3, "tone": "bad"}, {"from": 3, "to": 8, "tone": "warn"}, {"from": 8, "to": 25, "tone": "good"}]},
+              {"type": "row", "gap": "m", "children": [
+                {"type": "field", "id": "lines", "label": "Lines", "value": null},
+                {"type": "field", "id": "elNow", "label": "Elevation now", "value": null}]},
+              {"type": "text", "id": "liveCountdown", "value": null, "style": "numeric", "size": "xl"},
+              {"type": "image", "id": "livePicture", "src": null, "w": 190, "h": 250, "refreshS": 4, "fit": "contain",
+               "alt": "The picture so far"}]}]}},
+
+        {"id": "gallery", "label": "Gallery", "child":
+          {"type": "grid", "id": "galleryGrid", "from": "images", "columns": {"tv": 4, "tablet": 3, "phone": 2},
+           "aspect": 1.25, "gap": "m",
+           "empty": {"type": "empty", "icon": "picture", "text": "No pictures yet: they appear after a pass is decoded"},
+           "template": {"type": "card", "surface": "card",
+             "action": {"do": "open", "screen": "radio/wxsat/viewer", "params": {"image": {"$": "id"}}},
+             "child": {"type": "stack", "children": [
+               {"type": "image", "src": {"$": "thumb"}, "fit": "cover", "align": "fill", "hero": {"$": "id"},
+                "rotate": {"$": "rotate"}, "alt": {"$": "label"}},
+               {"type": "column", "align": "bottom-fill", "surface": "scrim", "pad": "s", "children": [
+                 {"type": "text", "value": {"$": "label"}, "style": "title", "size": "s"},
+                 {"type": "text", "value": [{"$": "when"}, {"$": "maxElText"}], "size": "s", "tone": "muted"}]}]}}}},
+
+        {"id": "map", "label": "Map", "child":
+          {"type": "map", "id": "wxmap",
+           "ground": {"tiles": "api/map/tiles/{z}/{x}/{y}.png", "land": "api/map/land",
+                      "landBounds": [-11.0, 49.0, 2.5, 61.0], "zoom": [3, 9], "style": "night"},
+           "attribution": "© OpenStreetMap contributors",
+           "view": {"center": [52.0, 2.0], "zoom": 5},
+           "views": [{"center": [52.0, 2.0], "zoom": 5, "label": "Europe"}, {"center": [55.0, -3.5], "zoom": 7, "label": "UK"}],
+           "keys": {"down": {"do": "part", "part": "wxmap", "verb": "view", "hint": "Europe or UK"},
+                    "ok": {"do": "part", "part": "wxmap", "verb": "play", "hint": "Play"},
+                    "play": {"do": "part", "part": "wxmap", "verb": "play"},
+                    "left": {"do": "part", "part": "wxmap", "verb": "prev", "hint": "Earlier"},
+                    "right": {"do": "part", "part": "wxmap", "verb": "next", "hint": "Later"}},
+           "layers": [
+             {"id": "frames", "kind": "images", "from": "frames", "frame": -1, "alpha": 0.92,
+              "fadeMs": 600, "playMs": 1400, "scrubber": true,
+              "empty": "Pictures from the last day appear here once passes are projected"}]}}
+       ]},
+
+      {"type": "hints", "style": "pills"}
+    ]
+  }
+}

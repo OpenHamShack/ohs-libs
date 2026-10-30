@@ -1,0 +1,27 @@
+{
+  "ui": "2.0",
+  "app": "shack-radio",
+  "kind": "radio",
+  "name": "Radio",
+  "version": "0.1.23",
+  "minClient": "2.0",
+  "art": "ui/v2/art/radio.png",
+  "entries": [
+    {"id": "radio", "title": "Radio", "art": "ui/v2/art/radio.png", "icon": "radio",
+     "screen": "radio/home", "forms": ["tv", "phone", "tablet"]},
+    {"id": "dab", "title": "DAB Radio", "art": "ui/v2/art/dab.png", "icon": "dab",
+     "screen": "radio/dab", "forms": ["tv", "phone", "tablet"]},
+    {"id": "ships", "title": "Ships", "art": "ui/v2/art/ships.png", "icon": "ship",
+     "screen": "radio/ships", "forms": ["tv", "tablet"]},
+    {"id": "aircraft", "title": "Aircraft", "art": "ui/v2/art/aircraft.png", "icon": "aircraft",
+     "screen": "radio/aircraft", "forms": ["tv", "tablet"]},
+    {"id": "wxsat", "title": "Weather Sats", "art": "ui/v2/art/wxsat.png", "icon": "satellite",
+     "screen": "radio/wxsat", "forms": ["tv", "phone", "tablet"]},
+    {"id": "aprs", "title": "APRS", "art": "ui/v2/art/aprs.png", "icon": "aprs",
+     "screen": "radio/aprs", "forms": ["tv", "tablet"]},
+    {"id": "sonde", "title": "Sondes", "art": "ui/v2/art/sonde.png", "icon": "balloon",
+     "screen": "radio/sonde", "forms": ["tv", "tablet"]},
+    {"id": "dmr", "title": "DMR", "art": "ui/v2/art/dmr.png", "icon": "dmr",
+     "screen": "radio/dmr", "forms": ["tv", "phone", "tablet"]}
+  ]
+}

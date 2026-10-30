@@ -1,0 +1,22 @@
+{
+  "openhamshack": 1,
+  "contract": "1.1",
+  "controllerId": "5f0c1d2e-3a4b-4c5d-8e6f-708192a3b4c5",
+  "name": "N0CALL",
+  "version": "2.0.0-beta.12",
+  "time": "2026-10-30T09:20:00Z",
+  "station": {"callsign": "N0CALL", "locator": "IO75", "country": "GB"},
+  "auth": {"token": "api/shack/token", "pair": "api/shack/pair/start", "totp": "per-user", "anonymousView": []},
+  "services": {"base": "api/shack/v1/", "profile": 1, "logbook": 1, "lookup": 1, "spots": 1, "sync": 1,
+               "broker": 1, "presence": 1, "ui": 2},
+  "apps": [
+    {"id": "shack-digimodes", "kind": "digimodes", "name": "Digital Modes", "version": "0.4.0",
+     "base": "shack-digimodes/", "running": true, "txCapable": true, "anonymousView": false},
+    {"id": "shack-icom", "kind": "icom", "name": "Icom", "version": "1.24.0",
+     "base": "shack-icom/", "running": false, "txCapable": true, "anonymousView": false},
+    {"id": "shack-qo100nb", "kind": "qo100nb", "name": "QO-100 NB", "version": "0.1.24",
+     "base": "shack-qo100nb/", "running": true, "txCapable": true, "anonymousView": false},
+    {"id": "shack-radio", "kind": "radio", "name": "Radio", "version": "0.1.23",
+     "base": "shack-radio/", "running": true, "txCapable": true, "anonymousView": false}
+  ]
+}

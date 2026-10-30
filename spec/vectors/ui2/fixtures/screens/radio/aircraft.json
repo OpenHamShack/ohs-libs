@@ -1,0 +1,242 @@
+{
+  "ui": "2.0",
+  "screen": "radio/aircraft",
+  "rev": "a-7d41c09e",
+  "title": "Aircraft",
+  "form": "tv",
+  "level": "control",
+  "backdrop": {"style": "plain"},
+  "words": {"s": "{n} s", "min": "{n} min", "h": "{n} h", "ago": "{d} ago"},
+  "colors": {
+    "band.low":    {"dark": "#FF9F43", "light": "#B8610F"},
+    "band.lower":  {"dark": "#FFD54F", "light": "#9A7A00"},
+    "band.middle": {"dark": "#57E39B", "light": "#1E8A55"},
+    "band.upper":  {"dark": "#4FC3FF", "light": "#0A6FA8"},
+    "band.top":    {"dark": "#C08BFF", "light": "#7B3FC4"},
+    "band.ground": {"dark": "#B8C4CF", "light": "#5E6B77"},
+    "band.none":   {"dark": "#8FA3B3", "light": "#5A6E7E"}
+  },
+  "symbols": {
+    "jet":     {"paths": [{"d": "M12 1 L13.2 8 L21 12.5 L21 14 L13.2 12 L13 18 L15.5 20 L15.5 21.5 L12 20.6 L8.5 21.5 L8.5 20 L11 18 L10.8 12 L3 14 L3 12.5 L10.8 8 Z", "fill": "tone", "stroke": "ink", "w": 1}]},
+    "heavy":   {"scale": 1.3, "paths": [{"d": "M12 1 L13.2 8 L21 12.5 L21 14 L13.2 12 L13 18 L15.5 20 L15.5 21.5 L12 20.6 L8.5 21.5 L8.5 20 L11 18 L10.8 12 L3 14 L3 12.5 L10.8 8 Z", "fill": "tone", "stroke": "ink", "w": 1}]},
+    "light":   {"paths": [{"d": "M12 3 L13 8 L21 9 L21 10.5 L13 11 L12.6 17 L15 18 L15 19.3 L12 19 L9 19.3 L9 18 L11.4 17 L11 11 L3 10.5 L3 9 L11 8 Z", "fill": "tone", "stroke": "ink", "w": 1}]},
+    "rotor":   {"paths": [{"circle": [12, 12, 9], "fill": "none", "stroke": "tone", "w": 1},
+                          {"d": "M12 5 L13.5 9 L13.5 15 L12.6 21 L11.4 21 L10.5 15 L10.5 9 Z", "fill": "tone", "stroke": "ink", "w": 1}]},
+    "other":   {"paths": [{"d": "M12 3 L19 20 L12 16 L5 20 Z", "fill": "tone", "stroke": "ink", "w": 1}]},
+    "ground":  {"scale": 0.75, "paths": [{"d": "M12 1 L13.2 8 L21 12.5 L21 14 L13.2 12 L13 18 L15.5 20 L15.5 21.5 L12 20.6 L8.5 21.5 L8.5 20 L11 18 L10.8 12 L3 14 L3 12.5 L10.8 8 Z", "fill": "none", "stroke": "tone", "w": 1.5}]},
+    "station": {"paths": [{"circle": [12, 12, 7], "fill": "none", "stroke": "ink", "w": 2},
+                          {"circle": [12, 12, 4], "fill": "ink"}]},
+    "airport": {"paths": [{"circle": [12, 12, 5], "fill": "none", "stroke": "tone", "w": 2}]}
+  },
+  "collections": {
+    "aircraft": {"items": {}, "order": [],
+                 "filter": {"hide": {"local": "adsb.hide", "default": []},
+                            "maxAgeS": {"local": "adsb.forgetS", "default": null}}},
+    "airports": {"items": {
+                   "EGPK": {"lat": 55.5094, "lon": -4.5867, "sym": "airport", "tone": "muted", "label": "PIK", "minZoom": 5},
+                   "EGPF": {"lat": 55.8719, "lon": -4.4331, "sym": "airport", "tone": "muted", "label": "GLA", "minZoom": 5},
+                   "EGPH": {"lat": 55.9500, "lon": -3.3725, "sym": "airport", "tone": "muted", "label": "EDI", "minZoom": 5},
+                   "EGPN": {"lat": 56.4525, "lon": -3.0258, "sym": "airport", "tone": "muted", "label": "DND", "minZoom": 7}},
+                 "order": ["EGPK", "EGPF", "EGPH", "EGPN"]}
+  },
+  "selections": {"aircraft": {"from": "aircraft"}},
+  "holds": [
+    {"name": "adsb",
+     "start": {"do": "call", "method": "POST", "path": "api/adsb/session",
+               "body": {"client": "$client"}, "level": "control", "timeoutS": 30},
+     "stop": {"do": "call", "method": "DELETE", "path": "api/adsb/session?client={$client}", "level": "control"}}
+  ],
+  "live": {"path": "ui/v2/live/radio/aircraft"},
+  "keys": {
+    "menu":   {"do": "show", "part": "menu", "hint": "Menu"},
+    "play":   {"do": "part", "part": "map", "verb": "fit", "hint": "Show all"},
+    "chUp":   {"do": "part", "part": "map", "verb": "zoomIn", "hint": "Zoom"},
+    "ff":     {"do": "part", "part": "map", "verb": "zoomIn"},
+    "chDown": {"do": "part", "part": "map", "verb": "zoomOut"},
+    "rew":    {"do": "part", "part": "map", "verb": "zoomOut"}
+  },
+  "root": {
+    "type": "stack", "children": [
+      {"type": "map", "id": "map", "align": "fill",
+       "ground": {"tiles": "api/map/tiles/{z}/{x}/{y}.png", "land": "api/map/land",
+                  "landBounds": [-11.0, 49.0, 2.5, 61.0], "zoom": [6, 14],
+                  "style": {"local": "adsb.style", "default": "real"}},
+       "attribution": "© OpenStreetMap contributors",
+       "view": {"center": [54.5, -4.0], "zoom": 7, "fit": "layers", "minKm": 185.2, "maxKm": 450,
+                "free": "start"},
+       "follow": {"zoom": 10},
+       "back": {"do": "focus", "part": "nearest"},
+       "keys": {"ok": {"do": "part", "part": "map", "verb": "selectCentre", "hint": "Choose"}},
+       "layers": [
+         {"id": "rings", "kind": "rings", "center": [55.479, -4.542],
+          "rings": {"local": "adsb.rings", "default": [{"km": 46.3, "label": "25 nm"}, {"km": 92.6, "label": "50 nm"}, {"km": 185.2, "label": "100 nm"}]}},
+         {"id": "airports", "kind": "markers", "from": "airports", "labels": "all"},
+         {"id": "station", "kind": "markers",
+          "items": [{"lat": 55.479, "lon": -4.542, "sym": "station", "tone": "default", "label": "N0CALL", "pin": true}]},
+         {"id": "aircraft", "kind": "markers", "from": "aircraft", "selection": "aircraft",
+          "labels": {"local": "adsb.labels", "default": "all"},
+          "trails": {"fade": true, "width": 2.5}}
+       ]},
+
+      {"type": "row", "id": "header", "align": "top-fill", "h": 72, "pad": "m", "gap": "m", "surface": "scrim",
+       "children": [
+         {"type": "choice", "id": "chips", "style": "chips", "multi": true, "inverted": true,
+          "value": {"local": "adsb.hide", "default": []},
+          "action": {"do": "local", "key": "adsb.hide", "set": "$value"},
+          "options": [
+            {"value": "band:low",    "text": "Low",    "tone": "band.low"},
+            {"value": "band:lower",  "text": "Lower",  "tone": "band.lower"},
+            {"value": "band:middle", "text": "Middle", "tone": "band.middle"},
+            {"value": "band:upper",  "text": "Upper",  "tone": "band.upper"},
+            {"value": "band:top",    "text": "Top",    "tone": "band.top"},
+            {"value": "ground",      "text": "Ground", "tone": "band.ground"}]},
+         {"type": "spacer", "weight": 1},
+         {"type": "badge", "id": "emergency", "style": "pill", "tone": "emergency", "hidden": true, "text": ""},
+         {"type": "badge", "id": "status", "style": "dot", "tone": "warn", "text": "Starting"},
+         {"type": "text", "value": {"clock": "local", "style": "hm"}, "style": "numeric", "size": "l"}
+       ]},
+
+      {"type": "panel", "id": "nearest", "slot": "end", "w": 300, "open": true, "surface": "glass",
+       "back": {"do": "part", "part": "map", "verb": "fit"},
+       "keys": {"left": {"do": "focus", "part": "map", "hint": "Map"}},
+       "child": {"type": "column", "gap": "s", "children": [
+         {"type": "text", "value": "Nearest", "style": "caption", "tone": "muted"},
+         {"type": "text", "id": "count", "value": "", "style": "title", "size": "m"},
+         {"type": "text", "id": "session", "value": "", "tone": "muted", "lines": 1},
+         {"type": "text", "id": "ignored", "value": null, "tone": "muted", "size": "s"},
+         {"type": "list", "id": "list", "from": "aircraft", "selection": "aircraft", "weight": 1,
+          "keepFocus": true, "focus": {"initial": true},
+          "onActivate": {"do": "show", "part": "details", "hint": "Details"},
+          "empty": {"type": "empty", "icon": "aircraft", "text": "Listening for aircraft on 1090 MHz"},
+          "template": {"type": "row", "gap": "s", "pad": "s", "children": [
+            {"type": "badge", "style": "pill", "tone": {"$": "tone"}, "w": 9, "h": 27},
+            {"type": "column", "weight": 1, "children": [
+              {"type": "row", "gap": "xs", "children": [
+                {"type": "text", "value": {"$": "title"}, "style": "title", "size": "m", "lines": 1},
+                {"type": "text", "value": {"$": "routeText"}, "tone": "accent", "lines": 1}]},
+              {"type": "text", "value": {"$": "line2"}, "tone": "muted", "lines": 1},
+              {"type": "badge", "style": "pill", "tone": "emergency", "text": {"$": "emergencyText"}}]},
+            {"type": "text", "value": {"$": "distText"}, "style": "numeric", "tone": "muted"}]}}
+       ]}},
+
+      {"type": "panel", "id": "details", "slot": "end", "w": 375, "for": "aircraft", "step": true, "surface": "glass",
+       "keys": {"ok": {"do": "seq", "hint": "Follow", "actions": [
+                  {"do": "part", "part": "map", "verb": "follow"},
+                  {"do": "show", "part": "hud"}]}},
+       "child": {"type": "scroll", "child": {"type": "column", "gap": "s", "children": [
+         {"type": "row", "gap": "s", "children": [
+           {"type": "icon", "sym": {"$": "sym"}, "tone": {"$": "tone"}, "size": "xl", "surface": "card"},
+           {"type": "column", "weight": 1, "children": [
+             {"type": "text", "value": {"$": "kindText"}, "style": "caption", "tone": "muted"},
+             {"type": "text", "value": {"$": "title"}, "style": "display", "size": "xl"},
+             {"type": "text", "value": {"$": "icaoLine"}, "tone": "muted", "style": "mono"}]}]},
+         {"type": "text", "value": {"$": "regLine"}},
+         {"type": "text", "value": {"$": "opLine"}, "tone": "muted"},
+         {"type": "row", "gap": "s", "children": [
+           {"type": "image", "src": {"$": "photo.src"}, "h": 140, "weight": 1, "fit": "cover",
+            "credit": {"$": "photo.credit"}, "link": {"$": "photo.link"}, "qr": true,
+            "alt": {"$": "photo.alt"}}]},
+         {"type": "text", "value": {"$": "routeLong"}, "tone": "accent"},
+         {"type": "progress", "value": {"$": "progress"}, "style": "bar", "tone": "accent"},
+         {"type": "row", "gap": "m", "children": [
+           {"type": "field", "label": "To go", "value": {"$": "toGo"}},
+           {"type": "field", "label": "ETA", "value": {"$": "eta"}}]},
+         {"type": "banner", "tone": "emergency", "text": {"$": "emergencyText"}},
+         {"type": "grid", "columns": {"tv": 2, "tablet": 2, "phone": 2}, "gap": "s", "children": [
+           {"type": "field", "label": "Altitude", "value": {"$": "sub"}},
+           {"type": "field", "label": "Vertical", "value": {"$": "vertText"}},
+           {"type": "field", "label": "Speed", "value": {"$": "speedText"}},
+           {"type": "field", "label": "Track", "value": {"$": "trackText"}},
+           {"type": "field", "label": "Squawk", "value": {"$": "squawk"}, "tone": {"$": "squawkTone"}},
+           {"type": "field", "label": "From", "value": {"$": "distText"}},
+           {"type": "field", "label": "Heard", "value": [{"ago": {"$": "at"}}, {"$": "rssiText"}]},
+           {"type": "field", "label": "Messages", "value": {"$": "messagesText"}}]},
+         {"type": "section", "title": "Cockpit", "children": [
+           {"type": "grid", "columns": {"tv": 2, "tablet": 2, "phone": 2}, "gap": "s", "children": [
+             {"type": "field", "label": "Selected altitude", "value": {"$": "ehs.selAlt"}},
+             {"type": "field", "label": "Selected heading", "value": {"$": "ehs.selHdg"}},
+             {"type": "field", "label": "IAS", "value": {"$": "ehs.ias"}},
+             {"type": "field", "label": "TAS", "value": {"$": "ehs.tas"}},
+             {"type": "field", "label": "Mach", "value": {"$": "ehs.mach"}},
+             {"type": "field", "label": "Roll", "value": {"$": "ehs.roll"}},
+             {"type": "field", "label": "Pressure set", "value": {"$": "ehs.baro"}}]}]}
+       ]}}},
+
+      {"type": "panel", "id": "hud", "slot": "bottom", "maxW": 860, "surface": "glass",
+       "onClose": {"do": "seq", "actions": [
+         {"do": "part", "part": "map", "verb": "unfollow"},
+         {"do": "show", "part": "details"}]},
+       "for": "aircraft",
+       "child": {"type": "row", "gap": "l", "pad": "m", "children": [
+         {"type": "column", "children": [
+           {"type": "badge", "style": "outline", "tone": "accent", "text": "Following"},
+           {"type": "text", "value": {"$": "title"}, "style": "title", "size": "l"},
+           {"type": "text", "value": [{"$": "routeText"}, {"$": "kindText"}], "tone": "muted"}]},
+         {"type": "field", "label": "Altitude", "value": {"$": "sub"}},
+         {"type": "field", "label": "Speed", "value": {"$": "speedText"}},
+         {"type": "field", "label": "Heading", "value": {"$": "trackText"}},
+         {"type": "field", "label": "From", "value": {"$": "distText"}}]}},
+
+      {"type": "panel", "id": "menu", "slot": "end", "w": 315, "surface": "glass",
+       "child": {"type": "column", "gap": "s", "children": [
+         {"type": "text", "value": "Show", "style": "caption", "tone": "muted"},
+         {"type": "toggle", "text": "Below 5,000 ft", "tone": "band.low",
+          "value": {"local": "adsb.hide", "default": [], "has": "band:low", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "band:low"}},
+         {"type": "toggle", "text": "5,000 to 15,000 ft", "tone": "band.lower",
+          "value": {"local": "adsb.hide", "default": [], "has": "band:lower", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "band:lower"}},
+         {"type": "toggle", "text": "15,000 to 25,000 ft", "tone": "band.middle",
+          "value": {"local": "adsb.hide", "default": [], "has": "band:middle", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "band:middle"}},
+         {"type": "toggle", "text": "25,000 to 35,000 ft", "tone": "band.upper",
+          "value": {"local": "adsb.hide", "default": [], "has": "band:upper", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "band:upper"}},
+         {"type": "toggle", "text": "35,000 ft and above", "tone": "band.top",
+          "value": {"local": "adsb.hide", "default": [], "has": "band:top", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "band:top"}},
+         {"type": "toggle", "text": "Altitude unknown", "tone": "band.none",
+          "value": {"local": "adsb.hide", "default": [], "has": "band:none", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "band:none"}},
+         {"type": "toggle", "text": "Hide aircraft on the ground",
+          "value": {"local": "adsb.hide", "default": [], "has": "ground"},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "ground"}},
+         {"type": "text", "value": "Kinds", "style": "caption", "tone": "muted"},
+         {"type": "toggle", "text": "Light", "value": {"local": "adsb.hide", "default": [], "has": "kind:light", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "kind:light"}},
+         {"type": "toggle", "text": "Airliner", "value": {"local": "adsb.hide", "default": [], "has": "kind:airliner", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "kind:airliner"}},
+         {"type": "toggle", "text": "Heavy", "value": {"local": "adsb.hide", "default": [], "has": "kind:heavy", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "kind:heavy"}},
+         {"type": "toggle", "text": "Rotor", "value": {"local": "adsb.hide", "default": [], "has": "kind:rotor", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "kind:rotor"}},
+         {"type": "toggle", "text": "Other", "value": {"local": "adsb.hide", "default": [], "has": "kind:other", "not": true},
+          "action": {"do": "local", "key": "adsb.hide", "toggle": "kind:other"}},
+         {"type": "text", "value": "Map", "style": "caption", "tone": "muted"},
+         {"type": "choice", "style": "stepper", "text": "Style",
+          "value": {"local": "adsb.style", "default": "real"},
+          "action": {"do": "local", "key": "adsb.style", "set": "$value"},
+          "options": [{"value": "real", "text": "Real"}, {"value": "night", "text": "Night"}]},
+         {"type": "choice", "style": "stepper", "text": "Rings",
+          "value": {"local": "adsb.rings", "default": [{"km": 46.3, "label": "25 nm"}, {"km": 92.6, "label": "50 nm"}, {"km": 185.2, "label": "100 nm"}]},
+          "action": {"do": "local", "key": "adsb.rings", "set": "$value"},
+          "options": [
+            {"value": [], "text": "Off"},
+            {"value": [{"km": 18.5, "label": "10 nm"}, {"km": 46.3, "label": "25 nm"}, {"km": 92.6, "label": "50 nm"}], "text": "10, 25, 50 nm"},
+            {"value": [{"km": 46.3, "label": "25 nm"}, {"km": 92.6, "label": "50 nm"}, {"km": 185.2, "label": "100 nm"}], "text": "25, 50, 100 nm"},
+            {"value": [{"km": 92.6, "label": "50 nm"}, {"km": 185.2, "label": "100 nm"}, {"km": 370.4, "label": "200 nm"}], "text": "50, 100, 200 nm"}]},
+         {"type": "choice", "style": "stepper", "text": "Labels",
+          "value": {"local": "adsb.labels", "default": "all"},
+          "action": {"do": "local", "key": "adsb.labels", "set": "$value"},
+          "options": [{"value": "all", "text": "All"}, {"value": {"tag": "airborne"}, "text": "Airborne"}, {"value": "none", "text": "Off"}]},
+         {"type": "choice", "style": "stepper", "text": "Forget after",
+          "value": {"local": "adsb.forgetS", "default": null},
+          "action": {"do": "local", "key": "adsb.forgetS", "set": "$value"},
+          "options": [{"value": null, "text": "Radio's setting"}, {"value": 60, "text": "1 min"}, {"value": 120, "text": "2 min"},
+                      {"value": 180, "text": "3 min"}, {"value": 300, "text": "5 min"}, {"value": 600, "text": "10 min"}]}
+       ]}},
+
+      {"type": "hints", "id": "hints", "align": "bottom-start", "style": "pills"}
+    ]
+  }
+}

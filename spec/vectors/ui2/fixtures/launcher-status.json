@@ -1,0 +1,9 @@
+{
+  "everyS": 10,
+  "ops": [
+    {"op": "set", "id": "shack-radio/radio", "v": {"status": "145.500 MHz FM", "tone": "good"}},
+    {"op": "set", "id": "shack-radio/aircraft", "v": {"status": "The lounge TV is watching", "tone": "accent"}},
+    {"op": "set", "id": "shack-radio/wxsat", "v": {"status": "Recording Meteor-M N2-3", "tone": "onAir"}},
+    {"op": "set", "id": "shack-digimodes/ft8", "v": {"status": "On the air", "tone": "onAir"}}
+  ]
+}
